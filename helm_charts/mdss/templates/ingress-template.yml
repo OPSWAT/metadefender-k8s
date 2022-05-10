@@ -1,0 +1,64 @@
+{{ if .Values.mdss_ingress.enabled }}
+{{ if eq .Values.environment "generic" }}
+---
+kind: Ingress
+apiVersion: networking.k8s.io/v1
+metadata:
+  name: webclient-ingress
+  namespace: {{ .Values.app_name }}
+  annotations:
+    kubernetes.io/ingress.class: {{ .Values.mdss_ingress.class }}
+    ingress.kubernetes.io/rewrite-target: /
+spec:
+  rules:
+  - host: {{ .Values.mdss_ingress.host | replace "<APP_NAME>" .Values.app_name }}
+    http:
+      paths:
+        - path: /status
+          pathType: Prefix
+          backend:
+            service:
+              name: {{.Values.mdss_components.systemchecks.name }}
+              port:
+                number: {{ .Values.mdss_ingress.port }}
+        - path: /
+          pathType: Prefix
+          backend:
+            service:
+              name: {{ .Values.mdss_ingress.service }}
+              port:
+                number: {{ .Values.mdss_ingress.port }}
+{{ end }}
+
+{{ if .Values.webclient_target_group_arn }}
+---
+apiVersion: elbv2.k8s.aws/v1beta1
+kind: TargetGroupBinding
+metadata:
+  name: {{ printf "%s-webclient-tgb" .Values.app_name }}
+  annotations:
+    "helm.sh/hook": "post-install"
+    "helm.sh/hook-weight": "1"
+spec:
+  serviceRef:
+    name: {{ .Values.mdss_ingress.service }}
+    port: {{ .Values.mdss_ingress.port }}
+  targetGroupARN: {{ .Values.webclient_target_group_arn }}
+{{ end }}
+
+{{ if .Values.systemchecks_target_group_arn }}
+---
+apiVersion: elbv2.k8s.aws/v1beta1
+kind: TargetGroupBinding
+metadata:
+  name: {{ printf "%s-systemchecks-tgb" .Values.app_name }}
+  annotations:
+    "helm.sh/hook": "post-install"
+    "helm.sh/hook-weight": "2"
+spec:
+  serviceRef:
+    name: {{.Values.mdss_components.systemchecks.name }}
+    port: {{ .Values.mdss_ingress.port }}
+  targetGroupARN: {{ .Values.systemchecks_target_group_arn }}
+{{ end }}
+{{ end }}

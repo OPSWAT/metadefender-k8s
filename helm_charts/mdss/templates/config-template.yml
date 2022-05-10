@@ -1,0 +1,160 @@
+---
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: {{ .Values.mdss_config_map_env_name }}
+  namespace: {{ .Values.app_name }}
+data:
+  APIGATEWAY_PORT: {{ .Values.APIGATEWAY_PORT | quote }}
+  APIGATEWAY_PORT_SSL: {{ .Values.APIGATEWAY_PORT_SSL | quote }}
+  APP_LOG_LEVEL: {{ .Values.APP_LOG_LEVEL | quote }}
+  BACKUPS_TO_KEEP: {{ .Values.BACKUPS_TO_KEEP | quote }}
+  BRANCH: {{ .Values.BRANCH | quote }}
+  CORE_INCLUDED: {{ .Values.CORE_INCLUDED | quote }}
+  CORE_PORT: {{ .Values.CORE_PORT | quote }}
+  CORE_VERSION: {{ .Values.CORE_VERSION | quote }}
+  DISCOVERY_SERVICE_DEGREE_OF_PARALLELISM: {{ .Values.DISCOVERY_SERVICE_DEGREE_OF_PARALLELISM | quote }}
+  DISCOVERY_SERVICE_PERFORMANCE_OPTIMIZATION: {{ .Values.DISCOVERY_SERVICE_PERFORMANCE_OPTIMIZATION | quote }}
+  HOSTNAME: {{ .Values.HOSTNAME | quote }}
+  HTTPS_ACTIVE: {{ .Values.HTTPS_ACTIVE | quote }}
+  LICENSINGSERVICE_HOST: {{ .Values.LICENSINGSERVICE_HOST | quote }}
+  LICENSINGSERVICE_PORT: {{ .Values.LICENSINGSERVICE_PORT | quote }}
+  LICENSINGSERVICE_URL: {{ .Values.LICENSINGSERVICE_URL | quote }}
+  LOG_LEVEL: {{ .Values.LOG_LEVEL | quote }}
+  MAC_ADDRESS: {{ .Values.MAC_ADDRESS | quote }}
+  MONGO_MIGRATIONS_HOST: {{ .Values.MONGO_MIGRATIONS_HOST | quote }}
+  MONGO_MIGRATIONS_PORT: {{ .Values.MONGO_MIGRATIONS_PORT | quote }}
+  MONGO_URL: {{ .Values.MONGO_URL | quote }}
+  NGINX_TIMEOUT: {{ .Values.NGINX_TIMEOUT | quote }}
+  POLLY_LONG_RETRY: {{ .Values.POLLY_LONG_RETRY | quote }}
+  POLLY_RETRY_COUNT: {{ .Values.POLLY_RETRY_COUNT | quote }}
+  POLLY_SHORT_RETRY: {{ .Values.POLLY_SHORT_RETRY | quote }}
+  RABBITMQ_HOST: {{ .Values.RABBITMQ_HOST | quote }}
+  RABBITMQ_PORT: {{ .Values.RABBITMQ_PORT | quote }}
+  RABBITMQ_SCANNING_PREFETCH_COUNT: {{ .Values.RABBITMQ_SCANNING_PREFETCH_COUNT | quote }}
+  SMBSERVICE_FOLLOW_SYMLINKS: {{ .Values.SMBSERVICE_FOLLOW_SYMLINKS | quote }}
+  SMBSERVICE_PORT: {{ .Values.SMBSERVICE_PORT | quote }}
+  SMBSERVICE_URL: {{ .Values.SMBSERVICE_URL | quote }}
+  SMB_LONG_DEADLINE: {{ .Values.SMB_LONG_DEADLINE | quote }}
+  SMB_SHORT_DEADLINE: {{ .Values.SMB_SHORT_DEADLINE | quote }}
+  SMB_UPLOAD_CHUNK: {{ .Values.SMB_UPLOAD_CHUNK | quote }}
+  WEB_PORT: {{ .Values.WEB_PORT | quote }}
+  WEB_PORT_SSL: {{ .Values.WEB_PORT_SSL | quote }}
+  WEBCLIENT_HOST: {{ .Values.WEBCLIENT_HOST | quote }}
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: webclient-nginx-config
+  namespace: {{ .Values.app_name }}
+data:
+  default.conf: |
+    server {
+    listen 80 default_server;
+    listen [::]:80 default_server;
+    server_name _;
+    #return 301 https://$host$request_uri;
+    
+    add_header Referrer-Policy "no-referrer";
+    add_header X-Content-Type-Options "nosniff";
+    
+    location / {
+        try_files $uri $uri/ /index.html;
+        root   /usr/share/nginx/html;
+        index  index.html index.htm;
+    }
+
+    location /api {
+        proxy_pass http://apigateway;
+    }
+
+    }
+    server {
+        #listen 443 ssl;
+        #ssl_certificate /etc/nginx/conf.d/ssl.crt;
+        #ssl_certificate_key /etc/nginx/conf.d/ssl.key;
+        #ssl_protocols TLSv1.2 TLSv1.3;
+        #ssl_ciphers 'ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305:ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-SHA384:ECDHE-RSA-AES256-SHA384:ECDHE-ECDSA-AES128-SHA256:ECDHE-RSA-AES128-SHA256:DHE-RSA-AES128-GCM-SHA256:DHE-RSA-AES256-GCM-SHA384';
+        #ssl_prefer_server_ciphers on;
+        
+        add_header X-Content-Type-Options "nosniff";
+        add_header Referrer-Policy "no-referrer";
+        add_header Strict-Transport-Security "max-age=15724800; includeSubdomains;";
+        
+        location / {
+            try_files $uri $uri/ /index.html;
+            root   /usr/share/nginx/html;
+            index  index.html index.htm;
+        }
+
+        location /api {
+            proxy_pass http://apigateway;
+        }
+    }
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: systemchecks-nginx-config
+  namespace: {{ .Values.app_name }}
+data:
+  default.conf: |
+    server {
+    listen 80 default_server;
+    listen [::]:80 default_server;
+    server_name _;
+    #return 301 https://$host$request_uri;
+    
+    add_header Referrer-Policy "no-referrer";
+    add_header X-Content-Type-Options "nosniff";
+
+    location / {
+        try_files $uri $uri/ /index.html;
+        root   /usr/share/nginx/html;
+        index  index.html index.htm;
+    }
+
+    location /api {
+        proxy_pass http://127.0.0.1:5000/api;
+    }
+
+    location /status {
+      rewrite ^/status(.*) /$1 break;
+      proxy_pass         http://127.0.0.1:80/status;
+      proxy_set_header   Host $http_host;
+      proxy_set_header   X-Real-IP $remote_addr;
+    }
+
+    }
+    server {
+        #listen 443 ssl;
+        #ssl_certificate /etc/nginx/conf.d/ssl.crt;
+        #ssl_certificate_key /etc/nginx/conf.d/ssl.key;
+        #ssl_protocols TLSv1.2 TLSv1.3;
+        #ssl_ciphers 'ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305:ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-SHA384:ECDHE-RSA-AES256-SHA384:ECDHE-ECDSA-AES128-SHA256:ECDHE-RSA-AES128-SHA256:DHE-RSA-AES128-GCM-SHA256:DHE-RSA-AES256-GCM-SHA384';
+        #ssl_prefer_server_ciphers on;
+        
+        add_header X-Content-Type-Options "nosniff";
+        add_header Referrer-Policy "no-referrer";
+        add_header Strict-Transport-Security "max-age=15724800; includeSubdomains;";
+        
+        location / {
+            try_files $uri $uri/ /index.html;
+            root   /usr/share/nginx/html;
+            index  index.html index.htm;
+        }
+
+        location /api {
+            proxy_pass http://127.0.0.1:5000/api;
+        }
+
+        location /status {
+            rewrite ^/status(.*) /$1 break;
+            proxy_pass         http://127.0.0.1:80/status;
+            proxy_set_header   Host $http_host;
+            proxy_set_header   X-Real-IP $remote_addr;
+        }
+
+    }

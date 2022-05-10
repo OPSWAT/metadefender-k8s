@@ -1,0 +1,26 @@
+
+# Create a service for each component in MD Core it has exposed ports
+{{ range $component_name, $component := .Values.core_components }}
+{{ if $component.ports }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ $component.name | quote }}
+spec:
+  ports:
+  {{- range $component.ports }}
+    - name: {{ .port | quote }}
+      port: {{ .port }}
+      targetPort: {{ .port }}
+  {{- end }}
+  {{- if $component.service_type }}
+  type: {{ $component.service_type }}
+  {{- end }}
+  selector:
+      app: {{ $component.name | quote }}
+status:
+  loadBalancer: {}
+{{ end }}
+
+{{ end }}
