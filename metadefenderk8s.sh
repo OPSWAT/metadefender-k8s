@@ -490,7 +490,7 @@ function provision() {
     askProceed
 
     cd terraform/aws/
-    echo "Inicializando terraform"
+    echo "Starting terraform"
     terraform init
 
     if [ "$LOCATION_PARAM" == "aws" ];then
