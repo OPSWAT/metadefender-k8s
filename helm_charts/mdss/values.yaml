@@ -1,0 +1,301 @@
+# Default values for mdss. These will also be included in the environment of each mdss container
+MONGO_URL: mongodb://mongodb:27017/MDCS             # MongoDB connection string, this should be set only when using a remote database service
+MONGO_MIGRATIONS_HOST: mongomigrations
+MONGO_MIGRATIONS_PORT: 27777
+RABBITMQ_HOST: rabbitmq
+RABBITMQ_PORT: 5672
+APIGATEWAY_PORT: 8005
+APIGATEWAY_PORT_SSL: 8006
+WEB_PORT: 80                                        # HTTP port for the MDSS service
+WEB_PORT_SSL: 443                                   # HTTPS port for the MDSS service
+NGINX_TIMEOUT: 300                                  # Sets a custom timeout
+BACKUPS_TO_KEEP: 3
+LICENSINGSERVICE_HOST: licensingservice
+LICENSINGSERVICE_URL: http://licensingservice
+LICENSINGSERVICE_PORT: 5000
+SMBSERVICE_URL: http://smbservice
+SMBSERVICE_PORT: 5002
+RABBITMQ_SCANNING_PREFETCH_COUNT: 20
+CORE_INCLUDED: no
+CORE_VERSION: v4.17.1-1
+CORE_PORT: 35000
+HTTPS_ACTIVE: no
+MAC_ADDRESS: 02:42:ac:11:ff:ff
+HOSTNAME: mds_host
+BRANCH: stable                                     # Sets a custom MDSS branch for testing/preview versions, this value should be set to stable for production use
+LOG_LEVEL: 4
+APP_LOG_LEVEL: INFORMATION
+SMB_SHORT_DEADLINE: 5
+SMB_LONG_DEADLINE: 30
+POLLY_RETRY_COUNT: 3
+POLLY_LONG_RETRY: 5
+POLLY_SHORT_RETRY: 1
+SMB_UPLOAD_CHUNK: 2
+SMBSERVICE_FOLLOW_SYMLINKS: 0
+DISCOVERY_SERVICE_PERFORMANCE_OPTIMIZATION: 0
+DISCOVERY_SERVICE_DEGREE_OF_PARALLELISM: 10
+DISCOVERY_SERVICE_SMB_RTP_PROCESS_HANDLING: 0
+MD_CORE_CERTIFICATE_VALIDATION: 0
+POLLY_LONG_RETRY_BOX: 2
+POLLY_SHORT_RETRY_BOX: 1
+POLLY_POST_ACTION_RETRY_TIME: 30
+LOAD_BALANCER_MD_CORE_UNAVAILABLE_TIME: 5
+WEBCLIENT_HOST: webclient
+
+
+
+# Set to true if the respective database engine should also be deployed
+deploy_with_mdss_db: true                 # Enable or disable the local in-cluster database, set to false when deploying with an external database service
+
+# Set to false to not create any volumes or host paths in the deployment, all storage will be ephemeral
+persistance_enabled: true
+
+# Available storage providers:
+# - minikube-hostpath: Local storage on the current node using the minikube provisioner
+# - no-provisioner: WIP, Local storage using static Volumes
+# - hostPath
+storage_provisioner: hostPath
+storage_name: hostPath
+storage_node: minikube
+hostPathPrefix: mdss-storage              # If `deploy_with_mdss_db` is set to true, this is the absolute path on the node where to keep the database filesystem for persistance
+
+# Deploy on a generic cluster
+environment: generic                      # Deployment environment type, the default `generic` value will not configure or provision any additional resources in the cloud provider (like load balancers), other values: `aws_eks_fargate`
+
+## Uncomment for the desired deployment environment and their respective parameters
+# # Deploy on AWS EKS platform with the fargate backend, this will also create load balancers for both MD core and MDSS
+# # An eks cluster must already be created and the cluster name, vpc-id, region and credentials should be replaced below
+# environment: aws_eks_fargate
+
+aws-load-balancer-controller:
+  enabled: true                                         # If set to true and `environment` is set to `aws_eks_fargate`, an AWS Load Balancer Controller will be installed
+  clusterName: null                                     # Name of the EKS cluster, mandatory if aws-load-balancer-controller.enabled is set to true
+  rbac:
+    create: true
+  serviceAccount:
+    create: true
+    name: null                                          # Name of the load balancer service account, mandatory if aws-load-balancer-controller.enabled is set to true
+    annotations.eks\\.amazonaws\\.com/role-arn: null    # ARN of the load balancer service account role, mandatory if aws-load-balancer-controller.enabled is set to true
+  vpcId: null                                           # ID of the AWS VPC, mandatory if aws-load-balancer-controller.enabled is set to true
+  region: null                                          # AWS region code, mandatory if aws-load-balancer-controller.enabled is set to true
+
+webclient_target_group_arn: null                        # ARN of the load balancer target group that redirects traffic to the webclient service
+systemchecks_target_group_arn: null                     # ARN of the load balancer target group that redirects traffic to the systemchecks service
+
+# App name is used to define namespace and storage name. This helps to segregate multiple instances of the app if they run on the same cluster
+# by specifying a different app name for each instance 
+app_name: default             # Application name, it also sets the namespace on all created resources and replaces `<APP_NAME>` in the ingress host (if the ingress is enabled)
+
+# Ingress settings for mdss
+mdss_ingress:
+  host: <APP_NAME>-mdss.k8s             # Hostname for the publicly accessible ingress, the `<APP_NAME>` string will be replaced with the `app_name` value                
+  service: webclient                    # Service name where the ingress should route to, this should be left unchanged          
+  port: 80                              # Port where the ingress should route to
+  enabled: false                        # Enable or disable the ingress creation      
+  class: nginx                          # Sets the ingress class    
+
+## Uncomment if you want to use a private repo (it must already be configured in the cluster as a secret)
+#imagePullSecrets:
+#  - name: regcred
+
+# Docker repo to use, this should be changed when using private images (this string will be prepended to the image name)
+# If a component has "custom_repo: true" then the image name will be formated as "{docker_repo/}image_name{:BRANCH}" otherwise it will remain unaltered
+mdss_docker_repo: opswat
+
+mdss_config_map_env_name: 'mdss-env'
+mdssHostAliases:                              # Custom hosts entries
+  - ip: "10.0.1.16"
+    hostnames:
+    - "s3-us-west-1.cloudian-sf"
+    - "test.s3-us-west-1.cloudian-sf"
+    - "small.s3-us-west-1.cloudian-sf"
+
+mdss_components:
+  mongodb:
+    name: mongodb
+    image: mongo:3.6
+    ports:
+      - port: 27017
+    persistentDir: /data/db
+    is_db: true
+
+  mongomigrations:
+    name: mongomigrations
+    custom_repo: true
+    image: mdcloudservices_mongo-migrations
+    ports:
+      - port: 27777
+    persistentDir: /backup
+
+  rabbitmq:
+    name: rabbitmq
+    image: rabbitmq:3.8
+    ports:
+      - port: 5672
+    extra_labels:
+      aws-type: fargate
+
+  licensingservice:
+    name: licensingservice
+    custom_repo: true
+    image: mdcloudservices_licensing
+    ports:
+      - port: 5000
+    extra_labels:
+      aws-type: fargate
+  
+  smbservice:
+    name: smbservice
+    custom_repo: true
+    image: mdcloudservices_smbservice
+    ports:
+      - port: 5002
+    extra_labels:
+      aws-type: fargate
+  
+  discoveryservice:
+    name: discoveryservice
+    custom_repo: true
+    image: mdcloudservices_s3-discovery
+    extra_labels:
+      aws-type: fargate
+    resources:
+      requests:
+        memory: "2Gi"
+        cpu: "1"
+      limits:
+        memory: "4Gi"
+        cpu: "1"
+  
+  scanningservice:
+    name: scanningservice
+    custom_repo: true
+    image: mdcloudservices_scanning
+    extra_labels:
+      aws-type: fargate
+    resources:
+      requests:
+        memory: "2Gi"
+        cpu: "1"
+      limits:
+        memory: "4Gi"
+        cpu: "1"
+  
+  notificationservice:
+    name: notificationservice
+    custom_repo: true
+    image: mdcloudservices_notification
+    extra_labels:
+      aws-type: fargate
+    resources:
+      requests:
+        memory: "2Gi"
+        cpu: "1"
+      limits:
+        memory: "4Gi"
+        cpu: "1"
+
+  jobdispatcher:
+    name: jobdispatcher
+    custom_repo: true
+    image: mdcloudservices_job-dispatcher
+    extra_labels:
+      aws-type: fargate
+    resources:
+      requests:
+        memory: "2Gi"
+        cpu: "1"
+      limits:
+        memory: "4Gi"
+        cpu: "1"
+  
+  postactionsservice:
+    name: postactionsservice
+    custom_repo: true
+    image: mdcloudservices_post-actions
+    extra_labels:
+      aws-type: fargate
+    resources:
+      requests:
+        memory: "2Gi"
+        cpu: "1"
+      limits:
+        memory: "4Gi"
+        cpu: "1"
+
+  apigateway:
+    name: apigateway
+    custom_repo: true
+    image: mdcloudservices_api
+    env:
+      - name: ASPNETCORE_URLS
+        value: http://+
+    ports:
+      - port: 443
+      - port: 80
+    extra_labels:
+      aws-type: fargate
+
+  webclient:
+    name: webclient
+    custom_repo: true
+    image: mdcloudservices_web
+    ports:
+      - port: 443
+      - port: 80
+    service_type: ClusterIP
+    mountConfig:
+      configName: webclient-nginx-config
+      mountPath: /etc/nginx/conf.d/default.conf
+      subPath: default.conf
+    extra_labels:
+      aws-type: fargate
+
+  systemchecks:
+    name: systemchecks
+    image: mdcloudservices_systemchecks
+    custom_repo: true
+    ports:
+      - port: 443
+      - port: 80
+    mountConfig:
+      configName: systemchecks-nginx-config
+      mountPath: /etc/nginx/conf.d/default.conf
+      subPath: default.conf
+    extra_labels:
+      aws-type: fargate
+
+  securitychecklistservice:
+    name: securitychecklistservice
+    custom_repo: true
+    image: "mdcloudservices_security-checklist"
+    extra_labels:
+      aws-type: fargate
+              
+  loadbalancerservice:
+    name: loadbalancerservice
+    custom_repo: true
+    image: "mdcloudservices_load-balancer"
+    extra_labels:
+      aws-type: fargate
+    resources:
+      requests:
+        memory: "2Gi"
+        cpu: "1"
+      limits:
+        memory: "4Gi"
+        cpu: "1"
+
+  loggingservice:
+    name: loggingservice
+    custom_repo: true
+    image: "mdcloudservices_logging"
+    extra_labels:
+      aws-type: fargate
+    resources:
+      requests:
+        memory: "2Gi"
+        cpu: "1"
+      limits:
+        memory: "4Gi"
+        cpu: "1"

@@ -1,0 +1,70 @@
+## Uncomment the following lines to set a fixed user and password for the MD Core web interface that will overwrite 
+## any secret that already exists for these credentials (the secret will be kept when the chart is deleted)
+## If left unset the following will apply:
+## - if no "mdcore-cred" secret exists, it will be created with the user "admin" and a random password
+## - if the "mdcore-cred" secret exists, the values from the secret are used as credentials
+
+# mdcore_user: admin
+# mdcore_password: <SET_PASSWORD_HERE>
+
+
+## Uncomment the following lines to set a fixed user and password for the MD Core PostgreSQL database that will overwrite 
+## any secret that already exists for these credentials (the secret will be kept when the chart is deleted)
+## If left unset the following will apply:
+## - if no "mdcore-postgres-cred" secret exists, it will be created with the user "postgres" and a random password
+## - if the "mdcore-postgres-cred" secret exists, the values from the secret are used as credentials
+
+# db_user: postgres
+# db_password: <SET_PASSWORD_HERE>
+
+
+## Uncomment the following line to set a fixed API key for MD Core that will overwrite 
+## any secret that already exists for API key (the secret will be kept when the chart is deleted)
+## If left unset the following will apply:
+## - if no "mdcore-api-key" secret exists, it will be created with a random 36 character API key
+## - if the "mdcore-api-key" secret exists, the value from the secret is used
+
+# mdcore_api_key: <SET_36_CHARACTER_API_KEY>
+
+
+## Set your MD Core license key here and it will be stored in the "mdcore-license-key" secret that will be created 
+## if it does not exist. If left unset then a a secret is generated with and empty license key.
+
+# mdcore_license_key: <SET_LICENSE_KEY_HERE>
+
+# App name is used to define namespace and storage name. This helps to segregate multiple instances of the app if they run on the same cluster
+# by specifying a different app name for each instance 
+app_name: default
+
+## MD Core settings that are saved in the "mdcore_env" config map
+MDCORE_REST_PORT: "8008"
+MDCORE_DB_MODE: "4"
+MDCORE_DB_TYPE: remote
+MDCORE_DB_HOST: postgres-core
+MDCORE_DB_PORT: "5432"
+
+# Set to true for each product if the respective database engine should also be deployed
+deploy_with_core_db: true
+storage_provisioner: hostPath
+hostPathPrefix: /opswat
+
+# Set to false to not create any volumes or host paths in the deployment, all storage will be ephemeral
+persistance_enabled: true
+
+# Deploy on a generic cluster
+environment: generic
+
+# # Set the service_type to LoadBalancer in order to create an Azure load balancer routing traffic directly to the web interface
+# core_components:
+#   md-core:
+#     service_type: LoadBalancer
+
+# Ingress setting for mdss and md core (md core setting are ignored if deploy_with_core is false)
+core_ingress:
+  host: <APP_NAME>-mdcore.azure
+  enabled: true
+  class: addon-http-application-routing
+
+# Docker repo to use, this should be changed when using private images (this string will be prepended to the image name)
+# If a component has "custom_repo: true" then the image name will be formated as "{docker_repo/}image_name{:BRANCH}" otherwise it will remain unaltered
+core_docker_repo: opswat

@@ -1,0 +1,40 @@
+{{ if .Values.core_ingress.enabled }}
+{{ if eq .Values.environment "generic" }}
+---
+kind: Ingress
+apiVersion: networking.k8s.io/v1
+metadata:
+  name: core-ingress
+  annotations:
+    kubernetes.io/ingress.class: {{ .Values.core_ingress.class }}
+    ingress.kubernetes.io/rewrite-target: /
+spec:
+  rules:
+  - host: {{ .Values.core_ingress.host | replace "<APP_NAME>" .Values.app_name }} 
+    http:
+      paths:
+        - path: /
+          pathType: Prefix
+          backend:
+            service:
+              name: {{ .Values.core_ingress.service }}
+              port:
+                number: {{ .Values.core_ingress.port }}
+{{ end }}
+
+{{ if .Values.mdcore_target_group_arn }}
+---
+apiVersion: elbv2.k8s.aws/v1beta1
+kind: TargetGroupBinding
+metadata:
+  name: {{ printf "%s-mdcore-tgb" .Values.app_name }}
+  annotations:
+    "helm.sh/hook": "post-install"
+    "helm.sh/hook-weight": "1"
+spec:
+  serviceRef:
+    name: {{ .Values.core_ingress.service }}
+    port: {{ .Values.core_ingress.port }}
+  targetGroupARN: {{ .Values.mdcore_target_group_arn }}
+{{ end }}
+{{ end }}
