@@ -28,10 +28,10 @@ OPSWAT MetaDefender products are adapting year over year for our customers to ge
 
 Main Metadefender documentation pages:
 
-* AWS Cloud Deployment Architectures Recommended [Doc](https://app.developerhub.io/metadefender-core/v5.1.1/cloud-deployment/architecture-solutions-in-aws)
-* MetaDefender Core Provisioned in AWS EKS [Doc](https://app.developerhub.io/metadefender-core/v5.1.1/cloud-deployment/metadefender-core-provisioned-in-aws-eks)
-* MetaDefender Core Kubernetes Components [Doc](https://app.developerhub.io/metadefender-core/v5.1.1/kubernetes-configuration/kubernetes-components)
-* MetaDefender Core In Your Already Created Kubernetes Cluster [Doc](https://app.developerhub.io/metadefender-core/v5.1.1/kubernetes-configuration/metadefender-core-in-your-already-created-k8s)
+* AWS Cloud Deployment Architectures Recommended [Doc](https://docs.opswat.com/mdcore/cloud-deployment/architecture-solutions-in-aws)
+* MetaDefender Core Provisioned in AWS EKS [Doc](https://docs.opswat.com/mdcore/cloud-deployment/metadefender-core-provisioned-in-aws-eks)
+* MetaDefender Core Kubernetes Components [Doc](https://docs.opswat.com/mdcore/kubernetes-configuration/kubernetes-components)
+* MetaDefender Core In Your Already Created Kubernetes Cluster [Doc](https://docs.opswat.com/mdcore/kubernetes-configuration/metadefender-core-in-your-already-created-k8s)
 
 
 <p align="right">(<a href="#top">back to top</a>)</p>

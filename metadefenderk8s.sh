@@ -290,21 +290,6 @@ function installMDCore() {
     echo "Starting to install MD Core inside the K8S cluster"
     askProceed
 
-    echo "lb_enabled: "$lb_enabled 
-    echo "cluster_name: "$cluster_name 
-    echo "region: "$region 
-    echo "vpc_id: "$vpc_id 
-    echo "serviceAccountName: "$serviceAccountName 
-    echo "serviceAccountNameRoleARN: "$serviceAccountNameRoleARN 
-    echo "mdCoreTarget: "$mdCoreTarget 
-    echo "MDCORE_LICENSE_KEY: "$MDCORE_LICENSE_KEY 
-    echo "k8s_db: "$k8s_db 
-    echo "lb_enabled: "$lb_enabled 
-    echo "replicas: "$replicas 
-    echo "db_user: "$db_user 
-    echo "db_password: "$db_password 
-    echo "db_host: "$db_host
-
     if [ "$LOCATION_PARAM" == "aws" ];then
         helm_file="mdcore-aws-eks-values.yml"
         
