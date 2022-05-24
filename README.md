@@ -28,8 +28,8 @@ OPSWAT MetaDefender products are adapting year over year for our customers to ge
 
 Main Metadefender documentation pages:
 
-* AWS Cloud Deployment Architectures Recommended [Doc](https://docs.opswat.com/mdcore/cloud-deployment/recommended-architectures-in-aws)
-* MetaDefender Core Provisioned in AWS EKS [Doc](https://docs.opswat.com/mdcore/cloud-deployment/eks-cluster-architecture)
+* AWS Cloud Deployment Architectures Recommended [Doc](https://docs.opswat.com/mdcore/cloud-deployment/architecture-solutions-in-aws)
+* MetaDefender Core Provisioned in AWS EKS [Doc](https://docs.opswat.com/mdcore/cloud-deployment/metadefender-core-provisioned-in-aws-eks)
 * MetaDefender Core Kubernetes Components [Doc](https://docs.opswat.com/mdcore/kubernetes-configuration/kubernetes-components)
 * MetaDefender Core In Your Already Created Kubernetes Cluster [Doc](https://docs.opswat.com/mdcore/kubernetes-configuration/metadefender-core-in-your-already-created-k8s)
 
@@ -64,8 +64,8 @@ To get a local copy up and running follow these simple example steps.
 
  There are two modes for using the script provision and install. 
 
- For provision in AWS follow this [doc](https://docs.opswat.com/mdcore/cloud-deployment/eks-cluster-provision)
- For install MD Core in an already created cluster follow this [doc](https://docs.opswat.com/mdcore/kubernetes-configuration/metadefender-core-in-your-already-created-k8s)
+ For provision in AWS follow this [doc](https://app.developerhub.io/metadefender-core/v5.1.1/cloud-deployment/metadefender-core-provisioned-in-aws-eks)
+ For install MD Core in an already created cluster follow this [doc](https://app.developerhub.io/metadefender-core/v5.1.1/kubernetes-configuration/metadefender-core-in-your-already-created-k8s)
 
 <p align="right">(<a href="#top">back to top</a>)</p>
 

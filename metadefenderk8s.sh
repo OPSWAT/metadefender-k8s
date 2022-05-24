@@ -290,7 +290,6 @@ function installMDCore() {
     echo "Starting to install MD Core inside the K8S cluster"
     askProceed
 
-
     if [ "$LOCATION_PARAM" == "aws" ];then
         helm_file="mdcore-aws-eks-values.yml"
         
@@ -375,6 +374,16 @@ function installMDSS () {
 function provisionAWS() {
 
   echo "Running terrafrom apply"
+
+  echo "cluster_name: "$cluster_name 
+  echo "region: "$region 
+  echo "persistent: "$persistent
+  echo "fargate: "$serverless
+  echo "ingressMDSS: "$ingressMDSS
+  echo "ingressMDCORE: "$ingressMDCORE
+  echo "externalDB: "$externalDB
+  echo "db_user: "$db_user 
+  echo "db_password: "$db_password 
 
   askProceed
 
