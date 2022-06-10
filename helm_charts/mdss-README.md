@@ -20,19 +20,29 @@ MD Core can be installed directly from the source code, here's an example using 
 ```console
 git clone https://github.com/OPSWAT/metadefender-k8s.git metadefender
 cd metadefender/helm_carts
-helm install my_mdss ./mdss -f mdss-generic-values.yml
+helm install my_mdss ./mdss [-f <CUSTOM_VALUES_FILE>]
 ```
 
 ### From the latest release
 The installation can also be done using the latest release from github:
 ```console
-helm install my_mdss <MDSS_RELEASE_URL>.tgz -f mdss-generic-values.yml
+helm install my_mdss <MDSS_RELEASE_URL>.tgz [-f <CUSTOM_VALUES_FILE>]
 ```
 
 ## Operational Notes
 The entire deployment can be customized by overwriting the chart's default configuration values. Here are a few point to look out for when changing these values:
 - By default, a MongoDB database is deployed alongside the MDSS deployment
 - In a production environment it's recommended to use an external service for the database  and set `deploy_with_mdss_db` to false in order to not deploy an in-cluster database
+- By default, when accessing the MDSS web interface for the first time, the user onboarding process is presented and the initial credentials must be set. To skip this and have a preconfigured user and an initial setup, the following values can be set:
+```yaml
+# Auto onboarding settings
+auto_onboarding: true                  # If set to true, it will deploy a container that will do the initial setup automatically if correct values are provided
+mdss_import_config: null                # Content of config file to be imported by the onboarding container
+ONBOARDING_USER_NAME: null              # User name of user that will be created by onboarding container (defaults to admin if left unset)
+ONBOARDING_PASSWORD: null               # Password of user that will be created by onboarding container (randomly generated if left unset, can be retrieved from the "onboarding-env" secret)
+ONBOARDING_EMAIL: null                  # Email of user that will be created by onboarding container
+ONBOARDING_FULL_NAME: null              # Full name of user that will be created by onboarding container
+```
 
 ## Configuration
 

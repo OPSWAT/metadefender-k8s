@@ -22,16 +22,16 @@ mdss_docker_repo: opswat
 # Deploy on AWS EKS platform with the fargate backend, this will also create load balancers for both MD core and MDSS
 # An eks cluster must already be created and the cluster name, vpc-id, region and credentials should be replaced below
 
-environment: generic
-# environment: aws_eks_fargate
-# aws-load-balancer-controller:
-#   enabled: true
-#   clusterName: null
-#   serviceAccount:
-#     name: null
-#     annotations.eks\\.amazonaws\\.com/role-arn: null
-#   vpcId: null
-#   region: null
+# environment: generic
+environment: aws_eks_fargate
+aws-load-balancer-controller:
+  enabled: false
+  clusterName: null
+  serviceAccount:
+    name: null
+    annotations.eks\\.amazonaws\\.com/role-arn: null
+  vpcId: null
+  region: null
 
 # webclient_target_group_arn: null
 # systemchecks_target_group_arn: null

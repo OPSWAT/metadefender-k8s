@@ -375,16 +375,6 @@ function provisionAWS() {
 
   echo "Running terrafrom apply"
 
-  echo "cluster_name: "$cluster_name 
-  echo "region: "$region 
-  echo "persistent: "$persistent
-  echo "fargate: "$serverless
-  echo "ingressMDSS: "$ingressMDSS
-  echo "ingressMDCORE: "$ingressMDCORE
-  echo "externalDB: "$externalDB
-  echo "db_user: "$db_user 
-  echo "db_password: "$db_password 
-
   askProceed
 
   terraform apply -auto-approve -var-file="variables/variables.tfvars" \
@@ -428,22 +418,6 @@ function provisionAWS() {
     echo $db_host
   fi 
   
-
-  
-  if [ "$ingressMDCORE" == "true" ];then
-    status_alb="$(aws elbv2 describe-load-balancers --names $cluster_name"-mdcore-load-balancer" | jq ".LoadBalancers[].State.Code")"
-    echo $status_alb
-    until [ "$status_alb" = "\"active\"" ];
-    do
-        echo "Checking availabilty of load balancer.... Try number "$x
-        sleep 6s
-        ((x=x+1))
-        if [ x == 10 ];then
-            echo "Tried "$x" times for checking the availability of the alb for setting up the target for MD Core service"
-            exit 1
-        fi
-    done
-  fi
 
 }
 

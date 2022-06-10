@@ -7,6 +7,10 @@ kind: Service
 metadata:
   name: {{ $component.name | quote }}
   namespace: {{ $.Values.app_name }}
+  {{- if $component.service_annotations }}
+  annotations:
+    {{- toYaml $component.service_annotations | nindent 4 }}
+  {{- end }}
 spec:
   ports:
   {{- range $component.ports }}
@@ -16,6 +20,9 @@ spec:
   {{- end }}
   {{- if $component.service_type }}
   type: {{ $component.service_type }}
+  {{- end }}
+  {{- if $component.sessionAffinity }}
+  sessionAffinity: {{ $component.sessionAffinity }}
   {{- end }}
   selector:
       app: {{ $component.name | quote }}

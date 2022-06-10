@@ -60,12 +60,12 @@ To get a local copy up and running follow these simple example steps.
 ### Installation
 
  OPSWAT has prepared a recommended architecture for having Metadefender products deployed in a Kubernetes Cluster in the main CSP. 
- Depending on the architecture prefered the installation process is different as each product has its own conifguration options. To facilitate the deployment of the product we have created what we call MetaDefender K8S script that will guide you through the different options and configure the enviroment for you. 
+ Depending on the architecture prefered the installation process is different as each product has its own configuration options. To facilitate the deployment of the product we have created what we call MetaDefender K8S script that will guide you through the different options and configure the enviroment for you. 
 
  There are two modes for using the script provision and install. 
 
- For provision in AWS follow this [doc](https://app.developerhub.io/metadefender-core/v5.1.1/cloud-deployment/metadefender-core-provisioned-in-aws-eks)
- For install MD Core in an already created cluster follow this [doc](https://app.developerhub.io/metadefender-core/v5.1.1/kubernetes-configuration/metadefender-core-in-your-already-created-k8s)
+ For provision in AWS follow this [doc](https://docs.opswat.com/mdcore/cloud-deployment/metadefender-core-provisioned-in-aws-eks)
+ For install MD Core in an already created cluster follow this [doc](https://docs.opswat.com/mdcore/kubernetes-configuration/metadefender-core-in-your-already-created-k8s)
 
 <p align="right">(<a href="#top">back to top</a>)</p>
 
@@ -91,7 +91,7 @@ Don't forget to give the project a star! Thanks again!
 <!-- LICENSE -->
 ## Licensing
 
-For running MetaDefender products you will need to set up the license needed for each of the products, in case of not having such license key please contact Sales:sales-inquiry@opswat.com. 
+For running MetaDefender products you will need to set up the license needed for each of the products, in case of not having such license key please contact Sales: sales-inquiry@opswat.com. 
 
 In case of having any issue with your license please contact [Support](https://www.opswat.com/support)
 
