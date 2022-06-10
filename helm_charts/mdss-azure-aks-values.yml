@@ -8,14 +8,17 @@ hostPathPrefix: /opswat
 environment: generic
 
 # # Set the service_type to LoadBalancer in order to create an Azure load balancer routing traffic directly to the web interface
-# mdss_components:
-#   webclient:
-#     service_type: LoadBalancer
+mdss_components:
+  webclient:
+    service_type: LoadBalancer
+    sessionAffinity: ClientIP
+    service_annotations:
+      service.beta.kubernetes.io/azure-load-balancer-internal: "true"         # Restrict access to the MDSS web interface by making the load-balancer internal
 
-# Ingress setting for mdss
-mdss_ingress:
-  host: <APP_NAME>-mdss.azure
-  class: addon-http-application-routing
+# # Ingress setting for mdss
+# mdss_ingress:
+#   host: <APP_NAME>-mdss.azure
+#   class: addon-http-application-routing
 
 # Docker repo to use, this should be changed when using private images (this string will be prepended to the image name)
 # If a component has "custom_repo: true" then the image name will be formated as "{docker_repo/}image_name{:BRANCH}" otherwise it will remain unaltered

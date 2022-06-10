@@ -1,3 +1,4 @@
+
 ## Uncomment the following lines to set a fixed user and password for the MD Core web interface that will overwrite 
 ## any secret that already exists for these credentials (the secret will be kept when the chart is deleted)
 ## If left unset the following will apply:
@@ -30,7 +31,7 @@
 ## Set your MD Core license key here and it will be stored in the "mdcore-license-key" secret that will be created 
 ## if it does not exist. If left unset then a a secret is generated with and empty license key.
 
-# mdcore_license_key: <SET_LICENSE_KEY_HERE>
+mdcore_license_key: <SET_LICENSE_KEY_HERE>
 
 # App name is used to define namespace and storage name. This helps to segregate multiple instances of the app if they run on the same cluster
 # by specifying a different app name for each instance 
@@ -42,6 +43,7 @@ MDCORE_DB_MODE: "4"
 MDCORE_DB_TYPE: remote
 MDCORE_DB_HOST: postgres-core
 MDCORE_DB_PORT: "5432"
+MDCORE_CERT_PATH: "/cert"
 
 # Set to true for each product if the respective database engine should also be deployed
 deploy_with_core_db: true
@@ -54,16 +56,29 @@ persistance_enabled: true
 # Deploy on a generic cluster
 environment: generic
 
-# # Set the service_type to LoadBalancer in order to create an Azure load balancer routing traffic directly to the web interface
-# core_components:
-#   md-core:
-#     service_type: LoadBalancer
+# Set the service_type to LoadBalancer in order to create an external load balancer routing traffic directly to the web interface
+core_components:
+  md-core:
+    name: md-core
+    service_type: LoadBalancer
+    sessionAffinity: ClientIP
+    service_annotations:
+      service.beta.kubernetes.io/azure-load-balancer-internal: "true"         # Restrict access to the MD Core web interface by making the load-balancer internal
+#     replicas: 1
+
 
 # Ingress setting for mdss and md core (md core setting are ignored if deploy_with_core is false)
 core_ingress:
-  host: <APP_NAME>-mdcore.azure
-  enabled: true
-  class: addon-http-application-routing
+  host: <APP_NAME>-mdcore.k8s
+  enabled: false
+
+# enable TLS
+# md-core:
+#   livenessProbe:
+#     httpGet:
+#       scheme: HTTPS
+#   tls:
+#     enabled: true
 
 # Docker repo to use, this should be changed when using private images (this string will be prepended to the image name)
 # If a component has "custom_repo: true" then the image name will be formated as "{docker_repo/}image_name{:BRANCH}" otherwise it will remain unaltered

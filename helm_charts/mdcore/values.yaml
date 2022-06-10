@@ -170,6 +170,8 @@ core_components:
     ports:
       - port: 8008                                       # Port to expose for the MD Core pod
     service_type: ClusterIP                              # Sets the service type for MD Core service (ClusterIP, NodePort, LoadBalancer)
+    sessionAffinity: None
+    service_annotations: null
     extra_labels:
       aws-type: fargate                                  # If `aws-type` is set to `fargate`, the MD Core pod will be scheduled on an AWS Fargate virtual node (if a fargate profile is provisioned and configured)
     resources:
@@ -177,7 +179,7 @@ core_components:
         memory: "4Gi"                                    # Minimum reserved memory
         cpu: "1.0"                                       # Minimum reserved cpu
       limits:
-        memory: "8Gi"                                    # Maximum memory limit
+        memory: "5Gi"                                    # Maximum memory limit
         cpu: "1.0"                                       # Maximum cpu limit
     livenessProbe:
       httpGet:
