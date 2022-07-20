@@ -1,0 +1,156 @@
+# Example of loading a custom certificate from a secret named "my-custom-cert" that has the certificate data in the "cert-data" field.
+
+mdss_components:
+  mongomigrations:
+    update_ca: true
+    customMounts:
+      - mountPath: "/usr/local/share/ca-certificates/my-custom-cert.crt"
+        name: my-cert
+        subPath: cert-data
+    customVolumes:
+      - name: my-cert
+        secret:
+          secretName: my-custom-cert
+
+  licensingservice:
+    update_ca: true
+    customMounts:
+      - mountPath: "/usr/local/share/ca-certificates/my-custom-cert.crt"
+        name: my-cert
+        subPath: cert-data
+    customVolumes:
+      - name: my-cert
+        secret:
+          secretName: my-custom-cert
+
+  smbservice:
+    update_ca: true
+    customMounts:
+      - mountPath: "/usr/local/share/ca-certificates/my-custom-cert.crt"
+        name: my-cert
+        subPath: cert-data
+    customVolumes:
+      - name: my-cert
+        secret:
+          secretName: my-custom-cert
+
+  discoveryservice:
+    update_ca: true
+    customMounts:
+      - mountPath: "/usr/local/share/ca-certificates/my-custom-cert.crt"
+        name: my-cert
+        subPath: cert-data
+    customVolumes:
+      - name: my-cert
+        secret:
+          secretName: my-custom-cert
+
+  scanningservice:
+    update_ca: true
+    customMounts:
+      - mountPath: "/usr/local/share/ca-certificates/my-custom-cert.crt"
+        name: my-cert
+        subPath: cert-data
+    customVolumes:
+      - name: my-cert
+        secret:
+          secretName: my-custom-cert
+
+  notificationservice:
+    update_ca: true
+    customMounts:
+      - mountPath: "/usr/local/share/ca-certificates/my-custom-cert.crt"
+        name: my-cert
+        subPath: cert-data
+    customVolumes:
+      - name: my-cert
+        secret:
+          secretName: my-custom-cert
+
+  jobdispatcher:
+    update_ca: true
+    customMounts:
+      - mountPath: "/usr/local/share/ca-certificates/my-custom-cert.crt"
+        name: my-cert
+        subPath: cert-data
+    customVolumes:
+      - name: my-cert
+        secret:
+          secretName: my-custom-cert
+
+  postactionsservice:
+    update_ca: true
+    customMounts:
+      - mountPath: "/usr/local/share/ca-certificates/my-custom-cert.crt"
+        name: my-cert
+        subPath: cert-data
+    customVolumes:
+      - name: my-cert
+        secret:
+          secretName: my-custom-cert
+
+  apigateway:
+    update_ca: true
+    customMounts:
+      - mountPath: "/usr/local/share/ca-certificates/my-custom-cert.crt"
+        name: my-cert
+        subPath: cert-data
+    customVolumes:
+      - name: my-cert
+        secret:
+          secretName: my-custom-cert
+
+  webclient:
+    update_ca: true
+    customMounts:
+      - mountPath: "/usr/local/share/ca-certificates/my-custom-cert.crt"
+        name: my-cert
+        subPath: cert-data
+    customVolumes:
+      - name: my-cert
+        secret:
+          secretName: my-custom-cert
+
+  systemchecks:
+    update_ca: true
+    customMounts:
+      - mountPath: "/usr/local/share/ca-certificates/my-custom-cert.crt"
+        name: my-cert
+        subPath: cert-data
+    customVolumes:
+      - name: my-cert
+        secret:
+          secretName: my-custom-cert
+
+  securitychecklistservice:
+    update_ca: true
+    customMounts:
+      - mountPath: "/usr/local/share/ca-certificates/my-custom-cert.crt"
+        name: my-cert
+        subPath: cert-data
+    customVolumes:
+      - name: my-cert
+        secret:
+          secretName: my-custom-cert
+              
+  loadbalancerservice:
+    update_ca: true
+    customMounts:
+      - mountPath: "/usr/local/share/ca-certificates/my-custom-cert.crt"
+        name: my-cert
+        subPath: cert-data
+    customVolumes:
+      - name: my-cert
+        secret:
+          secretName: my-custom-cert
+
+  loggingservice:
+    update_ca: true
+    customMounts:
+      - mountPath: "/usr/local/share/ca-certificates/my-custom-cert.crt"
+        name: my-cert
+        subPath: cert-data
+    customVolumes:
+      - name: my-cert
+        secret:
+          secretName: my-custom-cert
