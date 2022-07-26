@@ -95,6 +95,7 @@ core_docker_repo: opswat
 # Settings for ingress controller (enabled should be false if a controller is already deployed in the cluster) 
 aws-load-balancer-controller:
   enabled: false
+  replicaCount: 1
   clusterName: <MD_CLUSTER_NAME>
   serviceAccount:
     name: <SERVICE_ACCOUNT_NAME>

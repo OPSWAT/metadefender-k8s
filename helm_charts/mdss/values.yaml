@@ -95,7 +95,7 @@ mdss_ingress:
   class: nginx                          # Sets the ingress class    
 
 # Auto onboarding settings
-auto_onboarding: true                  # If set to true, it will deploy a container that will do the initial setup automatically if correct values are provided
+auto_onboarding: false                  # If set to true, it will deploy a container that will do the initial setup automatically if correct values are provided
 mdss_import_config: null                # Content of config file to be imported by the onboarding container
 ONBOARDING_USER_NAME: null              # User name of user that will be created by onboarding container (defaults to admin if left unset)
 ONBOARDING_PASSWORD: null               # Password of user that will be created by onboarding container (randomly generated if left unset, can be retrieved from the "onboarding-env" secret)
@@ -228,7 +228,6 @@ mdss_components:
     ports:
       - port: 443
       - port: 80
-    service_type: ClusterIP
     mountConfig:
       configName: webclient-nginx-config
       mountPath: /etc/nginx/conf.d/default.conf
