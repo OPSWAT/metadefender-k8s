@@ -18,6 +18,22 @@ entries:
     version: 5.1.1
   MetaDefender_for_Secure_Storage:
   - apiVersion: v2
+    created: "2022-08-18T13:22:28.460701579Z"
+    dependencies:
+    - condition: aws-load-balancer-controller.enabled
+      name: aws-load-balancer-controller
+      repository: https://aws.github.io/eks-charts
+      version: 1.4.2
+    description: This is a Helm chart for deploying MetaDefender for Secure Storage
+      (https://www.opswat.com/products/metadefender/metadefender-for-secure-storage)
+      in a Kubernetes cluster
+    digest: b08a7f51a71d42aa7ff23266a860c9d1ba0db0b09e6542b12a52e676503a109f
+    name: MetaDefender_for_Secure_Storage
+    type: application
+    urls:
+    - https://github.com/OPSWAT/metadefender-k8s/releases/download/MetaDefender_for_Secure_Storage-3.0.0/MetaDefender_for_Secure_Storage-3.0.0.tgz
+    version: 3.0.0
+  - apiVersion: v2
     created: "2022-06-28T12:08:47.179416202Z"
     dependencies:
     - condition: aws-load-balancer-controller.enabled
@@ -33,4 +49,4 @@ entries:
     urls:
     - https://github.com/OPSWAT/metadefender-k8s/releases/download/MetaDefender_for_Secure_Storage-2.2.3/MetaDefender_for_Secure_Storage-2.2.3.tgz
     version: 2.2.3
-generated: "2022-06-28T12:08:47.179422502Z"
+generated: "2022-08-18T13:22:28.460715979Z"
