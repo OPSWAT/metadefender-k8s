@@ -1,6 +1,0 @@
-{{ if ne .Values.app_name "default" }}
-kind: Namespace
-apiVersion: v1
-metadata:
-  name: {{ .Values.app_name }}
-{{ end }}

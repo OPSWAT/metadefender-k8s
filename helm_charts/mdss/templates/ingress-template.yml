@@ -5,13 +5,12 @@ kind: Ingress
 apiVersion: networking.k8s.io/v1
 metadata:
   name: webclient-ingress
-  namespace: {{ .Values.app_name }}
   annotations:
     kubernetes.io/ingress.class: {{ .Values.mdss_ingress.class }}
     ingress.kubernetes.io/rewrite-target: /
 spec:
   rules:
-  - host: {{ .Values.mdss_ingress.host | replace "<APP_NAME>" .Values.app_name }}
+  - host: {{ .Values.mdss_ingress.host | replace "<APP_NAMESPACE>" .Release.Namespace }}
     http:
       paths:
         - path: /status
@@ -35,7 +34,7 @@ spec:
 apiVersion: elbv2.k8s.aws/v1beta1
 kind: TargetGroupBinding
 metadata:
-  name: {{ printf "%s-webclient-tgb" .Values.app_name }}
+  name: {{ printf "%s-webclient-tgb" .Release.Namespace }}
   annotations:
     "helm.sh/hook": "post-install"
     "helm.sh/hook-weight": "1"
@@ -51,7 +50,7 @@ spec:
 apiVersion: elbv2.k8s.aws/v1beta1
 kind: TargetGroupBinding
 metadata:
-  name: {{ printf "%s-systemchecks-tgb" .Values.app_name }}
+  name: {{ printf "%s-systemchecks-tgb" .Release.Namespace }}
   annotations:
     "helm.sh/hook": "post-install"
     "helm.sh/hook-weight": "2"

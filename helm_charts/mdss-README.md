@@ -6,7 +6,7 @@ This is a Helm chart for deploying MetaDefender for Secure Storage (https://www.
 
 This chart can deploy the following depending on the provided values:
 - All MDSS services in separate pods 
-- A MongoDB database instance pre-configured to be used by MD Core
+- A MongoDB database instance pre-configured to be used by MDSS
 
 In addition to the chart, we also provide a number of values files for specific scenarios:
 - mdss-aws-eks-values.yml - for deploying in an AWS environment using Amazon EKS
