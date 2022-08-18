@@ -1,14 +1,16 @@
 # Default values for mdss. These will also be included in the environment of each mdss container
-MONGO_URL: mongodb://mongodb:27017/MDCS             # MongoDB connection string, this should be set only when using a remote database service
+
+MONGO_URL: mongodb://mongodb:27017/MDCS
+MONGO_SSL_ALLOW_INVALID_CERTIFICATES: false
+MONGO_CA_CERTIFICATE: ""
+MONGO_DB: MDCS
 MONGO_MIGRATIONS_HOST: mongomigrations
 MONGO_MIGRATIONS_PORT: 27777
 RABBITMQ_HOST: rabbitmq
 RABBITMQ_PORT: 5672
 APIGATEWAY_PORT: 8005
 APIGATEWAY_PORT_SSL: 8006
-WEB_PORT: 80                                        # HTTP port for the MDSS service
-WEB_PORT_SSL: 443                                   # HTTPS port for the MDSS service
-NGINX_TIMEOUT: 300                                  # Sets a custom timeout
+NGINX_TIMEOUT: 300
 BACKUPS_TO_KEEP: 3
 LICENSINGSERVICE_HOST: licensingservice
 LICENSINGSERVICE_URL: http://licensingservice
@@ -16,13 +18,8 @@ LICENSINGSERVICE_PORT: 5000
 SMBSERVICE_URL: http://smbservice
 SMBSERVICE_PORT: 5002
 RABBITMQ_SCANNING_PREFETCH_COUNT: 20
-CORE_INCLUDED: no
-CORE_VERSION: v4.17.1-1
-CORE_PORT: 35000
 HTTPS_ACTIVE: no
-MAC_ADDRESS: 02:42:ac:11:ff:ff
-HOSTNAME: mds_host
-BRANCH: stable                                     # Sets a custom MDSS branch for testing/preview versions, this value should be set to stable for production use
+BRANCH: stable3.0                                   # Sets a custom MDSS branch for testing/preview versions, this value should be set to stable for production use
 LOG_LEVEL: 4
 APP_LOG_LEVEL: INFORMATION
 SMB_SHORT_DEADLINE: 5
@@ -41,7 +38,14 @@ POLLY_SHORT_RETRY_BOX: 1
 POLLY_POST_ACTION_RETRY_TIME: 30
 LOAD_BALANCER_MD_CORE_UNAVAILABLE_TIME: 5
 WEBCLIENT_HOST: webclient
-
+AZURE_BLOBS_PAGE_SIZE: 100
+DISCOVERY_SERVICE_IGNORE_EMPTY_OBJECTS: 0
+SMBSERVICE_DISCOVERY_DEBOUNCE_TIME: 120
+DISCOVERY_SERVICE_REPROCESSING_FAILED_TIME_HOURS: 24
+CACHE_SERVICE_URL: redis
+CACHE_SERVICE_PORT: 6379
+POLLY_RETRY_TIME: 30
+DOTNET_HOSTBUILDER__RELOADCONFIGONCHANGE: false
 
 
 # Set to true if the respective database engine should also be deployed
@@ -82,17 +86,14 @@ aws-load-balancer-controller:
 webclient_target_group_arn: null                        # ARN of the load balancer target group that redirects traffic to the webclient service
 systemchecks_target_group_arn: null                     # ARN of the load balancer target group that redirects traffic to the systemchecks service
 
-# App name is used to define namespace and storage name. This helps to segregate multiple instances of the app if they run on the same cluster
-# by specifying a different app name for each instance 
-app_name: default             # Application name, it also sets the namespace on all created resources and replaces `<APP_NAME>` in the ingress host (if the ingress is enabled)
 
 # Ingress settings for mdss
 mdss_ingress:
-  host: <APP_NAME>-mdss.k8s             # Hostname for the publicly accessible ingress, the `<APP_NAME>` string will be replaced with the `app_name` value                
+  host: <APP_NAMESPACE>-mdss.k8s             # Hostname for the publicly accessible ingress, the `<APP_NAMESPACE>` string will be replaced with the current namespace                
   service: webclient                    # Service name where the ingress should route to, this should be left unchanged          
   port: 80                              # Port where the ingress should route to
   enabled: false                        # Enable or disable the ingress creation      
-  class: nginx                          # Sets the ingress class    
+  class: public                         # Sets the ingress class, it can be "public" or "nginx" or some other value depending on the ingress controller in the cluster
 
 # Auto onboarding settings
 auto_onboarding: false                  # If set to true, it will deploy a container that will do the initial setup automatically if correct values are provided
@@ -142,6 +143,14 @@ mdss_components:
       - port: 5672
     extra_labels:
       aws-type: fargate
+  
+  redis:
+    name: redis
+    image: redis:7.0
+    ports:
+      - port: 6379
+    extra_labels:
+      aws-type: fargate
 
   licensingservice:
     name: licensingservice
@@ -164,12 +173,32 @@ mdss_components:
   discoveryservice:
     name: discoveryservice
     custom_repo: true
-    image: mdcloudservices_s3-discovery
+    image: mdcloudservices_discovery
     extra_labels:
       aws-type: fargate
     resources:
       requests:
-        memory: "1Gi"
+        memory: "0.5Gi"
+  
+  discoveryamazonsdkservice:
+    name: discoveryamazonsdkservice
+    custom_repo: true
+    image: mdcloudservices_discoveryamazonsdk
+    extra_labels:
+      aws-type: fargate
+    resources:
+      requests:
+        memory: "0.5Gi"
+
+  discoveryazureblobservice:
+    name: discoveryazureblobservice
+    custom_repo: true
+    image: mdcloudservices_discoveryazureblob
+    extra_labels:
+      aws-type: fargate
+    resources:
+      requests:
+        memory: "0.5Gi"
   
   scanningservice:
     name: scanningservice
@@ -189,24 +218,7 @@ mdss_components:
       aws-type: fargate
     resources:
       requests:
-        memory: "1Gi"
-
-  jobdispatcher:
-    name: jobdispatcher
-    custom_repo: true
-    image: mdcloudservices_job-dispatcher
-    extra_labels:
-      aws-type: fargate
-    resources:
-      requests:
-        memory: "1Gi"
-  
-  postactionsservice:
-    name: postactionsservice
-    custom_repo: true
-    image: mdcloudservices_post-actions
-    extra_labels:
-      aws-type: fargate
+        memory: "0.5Gi"
 
   apigateway:
     name: apigateway
@@ -235,6 +247,71 @@ mdss_components:
     extra_labels:
       aws-type: fargate
 
+  jobdispatcher:
+    name: jobdispatcher
+    custom_repo: true
+    image: mdcloudservices_job-dispatcher
+    extra_labels:
+      aws-type: fargate
+    resources:
+      requests:
+        memory: "0.5Gi"
+  
+  securitychecklistservice:
+    name: securitychecklistservice
+    custom_repo: true
+    image: "mdcloudservices_security-checklist"
+    extra_labels:
+      aws-type: fargate
+
+  loadbalancerservice:
+    name: loadbalancerservice
+    custom_repo: true
+    image: "mdcloudservices_load-balancer"
+    extra_labels:
+      aws-type: fargate
+    resources:
+      requests:
+        memory: "0.5Gi"
+
+  loggingservice:
+    name: loggingservice
+    custom_repo: true
+    image: "mdcloudservices_logging"
+    extra_labels:
+      aws-type: fargate
+    resources:
+      requests:
+        memory: "0.5Gi"
+
+  terraformservice:
+    name: terraformservice
+    custom_repo: true
+    image: mdcloudservices_terraform
+    extra_labels:
+      aws-type: fargate
+
+  remediationsservice:
+    name: remediationsservice
+    custom_repo: true
+    image: mdcloudservices_remediations
+    extra_labels:
+      aws-type: fargate
+
+  remediationsservice-amazonsdk:
+    name: remediationsservice-amazonsdk
+    custom_repo: true
+    image: mdcloudservices_remediationsamazonsdk
+    extra_labels:
+      aws-type: fargate
+
+  remediationsservice-azureblob:
+    name: remediationsservice-azureblob
+    custom_repo: true
+    image: mdcloudservices_remediationsazureblob
+    extra_labels:
+      aws-type: fargate
+
   systemchecks:
     name: systemchecks
     image: mdcloudservices_systemchecks
@@ -249,29 +326,3 @@ mdss_components:
     extra_labels:
       aws-type: fargate
 
-  securitychecklistservice:
-    name: securitychecklistservice
-    custom_repo: true
-    image: "mdcloudservices_security-checklist"
-    extra_labels:
-      aws-type: fargate
-              
-  loadbalancerservice:
-    name: loadbalancerservice
-    custom_repo: true
-    image: "mdcloudservices_load-balancer"
-    extra_labels:
-      aws-type: fargate
-    resources:
-      requests:
-        memory: "1Gi"
-
-  loggingservice:
-    name: loggingservice
-    custom_repo: true
-    image: "mdcloudservices_logging"
-    extra_labels:
-      aws-type: fargate
-    resources:
-      requests:
-        memory: "1Gi"

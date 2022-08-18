@@ -6,7 +6,6 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: {{ $component.name | quote }}
-  namespace: {{ $.Values.app_name }}
 spec:
   replicas: 1
   selector:
@@ -89,7 +88,7 @@ spec:
         {{- if eq $.Values.storage_provisioner "hostPath" }}
         - name: {{ $component.name }}
           hostPath:
-            path: {{ printf "/%s/%s/%s" $.Values.hostPathPrefix $.Values.app_name $component.name }}
+            path: {{ printf "/%s/%s/%s" $.Values.hostPathPrefix $.Release.Namespace $component.name }}
             type: DirectoryOrCreate
         {{ else }}
         - name: {{ $component.name }}

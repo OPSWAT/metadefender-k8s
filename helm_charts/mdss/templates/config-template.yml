@@ -3,51 +3,59 @@ kind: ConfigMap
 apiVersion: v1
 metadata:
   name: {{ .Values.mdss_config_map_env_name }}
-  namespace: {{ .Values.app_name }}
 data:
-  APIGATEWAY_PORT: {{ .Values.APIGATEWAY_PORT | quote }}
-  APIGATEWAY_PORT_SSL: {{ .Values.APIGATEWAY_PORT_SSL | quote }}
-  APP_LOG_LEVEL: {{ .Values.APP_LOG_LEVEL | quote }}
-  BACKUPS_TO_KEEP: {{ .Values.BACKUPS_TO_KEEP | quote }}
-  BRANCH: {{ .Values.BRANCH | quote }}
-  CORE_INCLUDED: {{ .Values.CORE_INCLUDED | quote }}
-  CORE_PORT: {{ .Values.CORE_PORT | quote }}
-  CORE_VERSION: {{ .Values.CORE_VERSION | quote }}
-  DISCOVERY_SERVICE_DEGREE_OF_PARALLELISM: {{ .Values.DISCOVERY_SERVICE_DEGREE_OF_PARALLELISM | quote }}
-  DISCOVERY_SERVICE_PERFORMANCE_OPTIMIZATION: {{ .Values.DISCOVERY_SERVICE_PERFORMANCE_OPTIMIZATION | quote }}
-  HOSTNAME: {{ .Values.HOSTNAME | quote }}
-  HTTPS_ACTIVE: {{ .Values.HTTPS_ACTIVE | quote }}
-  LICENSINGSERVICE_HOST: {{ .Values.LICENSINGSERVICE_HOST | quote }}
-  LICENSINGSERVICE_PORT: {{ .Values.LICENSINGSERVICE_PORT | quote }}
-  LICENSINGSERVICE_URL: {{ .Values.LICENSINGSERVICE_URL | quote }}
-  LOG_LEVEL: {{ .Values.LOG_LEVEL | quote }}
-  MAC_ADDRESS: {{ .Values.MAC_ADDRESS | quote }}
-  MONGO_MIGRATIONS_HOST: {{ .Values.MONGO_MIGRATIONS_HOST | quote }}
-  MONGO_MIGRATIONS_PORT: {{ .Values.MONGO_MIGRATIONS_PORT | quote }}
-  MONGO_URL: {{ .Values.MONGO_URL | quote }}
-  NGINX_TIMEOUT: {{ .Values.NGINX_TIMEOUT | quote }}
-  POLLY_LONG_RETRY: {{ .Values.POLLY_LONG_RETRY | quote }}
-  POLLY_RETRY_COUNT: {{ .Values.POLLY_RETRY_COUNT | quote }}
-  POLLY_SHORT_RETRY: {{ .Values.POLLY_SHORT_RETRY | quote }}
-  RABBITMQ_HOST: {{ .Values.RABBITMQ_HOST | quote }}
-  RABBITMQ_PORT: {{ .Values.RABBITMQ_PORT | quote }}
-  RABBITMQ_SCANNING_PREFETCH_COUNT: {{ .Values.RABBITMQ_SCANNING_PREFETCH_COUNT | quote }}
-  SMBSERVICE_FOLLOW_SYMLINKS: {{ .Values.SMBSERVICE_FOLLOW_SYMLINKS | quote }}
-  SMBSERVICE_PORT: {{ .Values.SMBSERVICE_PORT | quote }}
-  SMBSERVICE_URL: {{ .Values.SMBSERVICE_URL | quote }}
-  SMB_LONG_DEADLINE: {{ .Values.SMB_LONG_DEADLINE | quote }}
-  SMB_SHORT_DEADLINE: {{ .Values.SMB_SHORT_DEADLINE | quote }}
-  SMB_UPLOAD_CHUNK: {{ .Values.SMB_UPLOAD_CHUNK | quote }}
-  WEB_PORT: {{ .Values.WEB_PORT | quote }}
-  WEB_PORT_SSL: {{ .Values.WEB_PORT_SSL | quote }}
-  WEBCLIENT_HOST: {{ .Values.WEBCLIENT_HOST | quote }}
+  MONGO_URL: {{ .Values.MONGO_URL  | quote }}
+  MONGO_SSL_ALLOW_INVALID_CERTIFICATES: {{ .Values.MONGO_SSL_ALLOW_INVALID_CERTIFICATES  | quote }}
+  MONGO_CA_CERTIFICATE: {{ .Values.MONGO_CA_CERTIFICATE  | quote }}
+  MONGO_DB: {{ .Values.MONGO_DB  | quote }}
+  MONGO_MIGRATIONS_HOST: {{ .Values.MONGO_MIGRATIONS_HOST  | quote }}
+  MONGO_MIGRATIONS_PORT: {{ .Values.MONGO_MIGRATIONS_PORT  | quote }}
+  RABBITMQ_HOST: {{ .Values.RABBITMQ_HOST  | quote }}
+  RABBITMQ_PORT: {{ .Values.RABBITMQ_PORT  | quote }}
+  APIGATEWAY_PORT: {{ .Values.APIGATEWAY_PORT  | quote }}
+  APIGATEWAY_PORT_SSL: {{ .Values.APIGATEWAY_PORT_SSL  | quote }}
+  NGINX_TIMEOUT: {{ .Values.NGINX_TIMEOUT  | quote }}
+  BACKUPS_TO_KEEP: {{ .Values.BACKUPS_TO_KEEP  | quote }}
+  LICENSINGSERVICE_HOST: {{ .Values.LICENSINGSERVICE_HOST  | quote }}
+  LICENSINGSERVICE_URL: {{ .Values.LICENSINGSERVICE_URL  | quote }}
+  LICENSINGSERVICE_PORT: {{ .Values.LICENSINGSERVICE_PORT  | quote }}
+  SMBSERVICE_URL: {{ .Values.SMBSERVICE_URL  | quote }}
+  SMBSERVICE_PORT: {{ .Values.SMBSERVICE_PORT  | quote }}
+  RABBITMQ_SCANNING_PREFETCH_COUNT: {{ .Values.RABBITMQ_SCANNING_PREFETCH_COUNT  | quote }}
+  HTTPS_ACTIVE: {{ .Values.HTTPS_ACTIVE  | quote }}
+  BRANCH: {{ .Values.BRANCH  | quote }}
+  LOG_LEVEL: {{ .Values.LOG_LEVEL  | quote }}
+  APP_LOG_LEVEL: {{ .Values.APP_LOG_LEVEL  | quote }}
+  SMB_SHORT_DEADLINE: {{ .Values.SMB_SHORT_DEADLINE  | quote }}
+  SMB_LONG_DEADLINE: {{ .Values.SMB_LONG_DEADLINE  | quote }}
+  POLLY_RETRY_COUNT: {{ .Values.POLLY_RETRY_COUNT  | quote }}
+  POLLY_LONG_RETRY: {{ .Values.POLLY_LONG_RETRY  | quote }}
+  POLLY_SHORT_RETRY: {{ .Values.POLLY_SHORT_RETRY  | quote }}
+  SMB_UPLOAD_CHUNK: {{ .Values.SMB_UPLOAD_CHUNK  | quote }}
+  SMBSERVICE_FOLLOW_SYMLINKS: {{ .Values.SMBSERVICE_FOLLOW_SYMLINKS  | quote }}
+  DISCOVERY_SERVICE_PERFORMANCE_OPTIMIZATION: {{ .Values.DISCOVERY_SERVICE_PERFORMANCE_OPTIMIZATION  | quote }}
+  DISCOVERY_SERVICE_DEGREE_OF_PARALLELISM: {{ .Values.DISCOVERY_SERVICE_DEGREE_OF_PARALLELISM  | quote }}
+  DISCOVERY_SERVICE_SMB_RTP_PROCESS_HANDLING: {{ .Values.DISCOVERY_SERVICE_SMB_RTP_PROCESS_HANDLING  | quote }}
+  MD_CORE_CERTIFICATE_VALIDATION: {{ .Values.MD_CORE_CERTIFICATE_VALIDATION  | quote }}
+  POLLY_LONG_RETRY_BOX: {{ .Values.POLLY_LONG_RETRY_BOX  | quote }}
+  POLLY_SHORT_RETRY_BOX: {{ .Values.POLLY_SHORT_RETRY_BOX  | quote }}
+  POLLY_POST_ACTION_RETRY_TIME: {{ .Values.POLLY_POST_ACTION_RETRY_TIME  | quote }}
+  LOAD_BALANCER_MD_CORE_UNAVAILABLE_TIME: {{ .Values.LOAD_BALANCER_MD_CORE_UNAVAILABLE_TIME  | quote }}
+  WEBCLIENT_HOST: {{ .Values.WEBCLIENT_HOST  | quote }}
+  AZURE_BLOBS_PAGE_SIZE: {{ .Values.AZURE_BLOBS_PAGE_SIZE  | quote }}
+  DISCOVERY_SERVICE_IGNORE_EMPTY_OBJECTS: {{ .Values.DISCOVERY_SERVICE_IGNORE_EMPTY_OBJECTS  | quote }}
+  SMBSERVICE_DISCOVERY_DEBOUNCE_TIME: {{ .Values.SMBSERVICE_DISCOVERY_DEBOUNCE_TIME  | quote }}
+  DISCOVERY_SERVICE_REPROCESSING_FAILED_TIME_HOURS: {{ .Values.DISCOVERY_SERVICE_REPROCESSING_FAILED_TIME_HOURS  | quote }}
+  CACHE_SERVICE_URL: {{ .Values.CACHE_SERVICE_URL  | quote }}
+  CACHE_SERVICE_PORT: {{ .Values.CACHE_SERVICE_PORT  | quote }}
+  POLLY_RETRY_TIME: {{ .Values.POLLY_RETRY_TIME  | quote }}
+  DOTNET_HOSTBUILDER__RELOADCONFIGONCHANGE: {{ .Values.DOTNET_HOSTBUILDER__RELOADCONFIGONCHANGE  | quote }}
 
 ---
 apiVersion: v1
 kind: ConfigMap
 metadata:
   name: webclient-nginx-config
-  namespace: {{ .Values.app_name }}
 data:
   default.conf: |
     server {
@@ -98,7 +106,6 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: systemchecks-nginx-config
-  namespace: {{ .Values.app_name }}
 data:
   default.conf: |
     server {
