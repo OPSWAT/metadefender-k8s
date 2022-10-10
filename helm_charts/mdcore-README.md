@@ -11,7 +11,6 @@ This chart can deploy the following depending on the provided values:
 In addition to the chart, we also provide a number of values files for specific scenarios:
 - mdcore-aws-eks-values.yml - for deploying in an AWS environment using Amazon EKS
 - mdcore-azure-aks-values.yml - for deploying in an Azure environment using AKS
-- mdcore-generic-values.yml - for deploying in a standalone cluster
 
 ## Installation
 
@@ -20,13 +19,15 @@ MD Core can be installed directly from the source code, here's an example using 
 ```console
 git clone https://github.com/OPSWAT/metadefender-k8s.git metadefender
 cd metadefender/helm_carts
-helm install my_mdcore ./mdcore -f mdcore-generic-values.yml
+helm install my_mdcore ./mdcore
 ```
 
-### From the latest release
-The installation can also be done using the latest release from github:
-```console
-helm install my_mdcore <MDCORE_RELEASE_URL>.tgz -f mdcore-generic-values.yml
+### From the GitHub helm repo
+The installation can also be done using the helm repo which is updated on each release:
+ ```console
+helm repo add mdk8s https://opswat.github.io/metadefender-k8s/
+helm repo update mdk8s
+helm install my_mdcore mdk8s/metadefender_core
 ```
 
 ## Operational Notes

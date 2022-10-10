@@ -77,6 +77,14 @@ data:
         proxy_pass http://apigateway;
     }
 
+    location /hubs { 
+        proxy_pass http://apigateway;
+        
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_http_version 1.1;
+    }
+
     }
     server {
         #listen 443 ssl;
@@ -98,6 +106,14 @@ data:
 
         location /api {
             proxy_pass http://apigateway;
+        }
+
+        location /hubs { 
+            proxy_pass http://apigateway;
+            
+            proxy_set_header Upgrade $http_upgrade;
+            proxy_set_header Connection "upgrade";
+            proxy_http_version 1.1;
         }
     }
 

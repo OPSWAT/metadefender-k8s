@@ -58,35 +58,9 @@ storage_name: hostPath
 storage_node: minikube
 hostPathPrefix: mdcore-storage      # If `deploy_with_core_db` is set to true, this is the absolute path on the node where to keep the database filesystem for persistance
 
-# Deploy on a generic cluster
-environment: generic                # Deployment environment type, the default `generic` value will not configure or provision any additional resources in the cloud provider (like load balancers), other values: `aws_eks_fargate`
-
-## Uncomment for the desired deployment environment and their respective parameters
-# # Deploy on AWS EKS platform with the fargate backend, this will also create load balancers for both MD core and MDSS
-# # An eks cluster must already be created and the cluster name, vpc-id, region and credentials should be replaced below
-# # For the persistent storage to work on EKS, an existing EFS with active Access Point (accessible from the cluster) is needed
-# environment: aws_eks_fargate
-aws-load-balancer-controller:
-  enabled: false                                        # If set to true and `environment` is set to `aws_eks_fargate`, an AWS Load Balancer Controller will be installed
-  clusterName: null                                     # Name of the EKS cluster, mandatory if aws-load-balancer-controller.enabled is set to true
-  rbac:
-    create: true
-  serviceAccount:
-    create: true
-    name: null                                          # Name of the load balancer service account, mandatory if aws-load-balancer-controller.enabled is set to true
-    annotations.eks\\.amazonaws\\.com/role-arn: null    # ARN of the load balancer service account role, mandatory if aws-load-balancer-controller.enabled is set to true
-  vpcId: null                                           # ID of the AWS VPC, mandatory if aws-load-balancer-controller.enabled is set to true
-  region: null                                          # AWS region code, mandatory if aws-load-balancer-controller.enabled is set to true
-
-mdcore_target_group_arn: null                           # ARN of the load balancer target group that redirects traffic to the mdcore service
-
-# App name is used to define namespace and storage name. This helps to segregate multiple instances of the app if they run on the same cluster
-# by specifying a different app name for each instance 
-app_name: default                   # Application name, it also sets the namespace on all created resources and replaces `<APP_NAME>` in the ingress host (if the ingress is enabled)
-
 # Ingress setting for md core (md core setting are ignored if deploy_with_core is false)
 core_ingress:
-  host: <APP_NAME>-mdcore.k8s       # Hostname for the publicly accessible ingress, the `<APP_NAME>` string will be replaced with the `app_name` value
+  host: <APP_NAMESPACE>-mdcore.k8s       # Hostname for the publicly accessible ingress, the `<APP_NAMESPACE>` string will be replaced with the namespace where the chart is deployed
   service: md-core                  # Service name where the ingress should route to, this should be left unchanged
   port: 8008                        # Port where the ingress should route to
   enabled: false                    # Enable or disable the ingress creation
@@ -124,7 +98,7 @@ core_components:
 
   md-core:
     name: md-core
-    image: opswat/metadefendercore-debian:5.1.1         # Overrides the default docker image for the MD Core service, this value can be changed if you want to set a different version of MD Core
+    image: opswat/metadefendercore-debian:5.2.1         # Overrides the default docker image for the MD Core service, this value can be changed if you want to set a different version of MD Core
     replicas: 1                                         # Sets the number of replicas if you want to have multiple MD Core instances
     env:
       - name: MD_USER
@@ -176,11 +150,11 @@ core_components:
       aws-type: fargate                                  # If `aws-type` is set to `fargate`, the MD Core pod will be scheduled on an AWS Fargate virtual node (if a fargate profile is provisioned and configured)
     resources:
       requests:
-        memory: "4Gi"                                    # Minimum reserved memory
-        cpu: "1.0"                                       # Minimum reserved cpu
+        memory: "7Gi"                                    # Minimum reserved memory
+        cpu: "7.0"                                       # Minimum reserved cpu
       limits:
-        memory: "5Gi"                                    # Maximum memory limit
-        cpu: "1.0"                                       # Maximum cpu limit
+        memory: "8Gi"                                    # Maximum memory limit
+        cpu: "8.0"                                       # Maximum cpu limit
     livenessProbe:
       httpGet:
         # scheme: HTTPS

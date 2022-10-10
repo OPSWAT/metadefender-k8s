@@ -19,16 +19,17 @@ db_host=postgres-core
 # Print the usage message
 function printHelp () {
   echo "Usage: "
-  echo "  md_core.sh provision|install|upgrade -l|--location <location> --mdcore|--mdss [-i|--image <image_version>] [--region <region>] [--name <name>] [--namespace <namespace>] [--replicas] "
-  echo "  md_core.sh -h|--help (print this message)"
+  echo "  metadefenderk8s.sh provision|install|upgrade -l|--location <location> --mdcore|--mdss [-i|--image <image_version>] [--region <region>] [--name <name>] [--namespace <namespace>] [--replicas] "
+  echo "  metadefenderk8s.sh -h|--help (print this message)"
   echo "    <mode> - one of 'provision', 'install' or 'upgrade'"
   echo "      - 'provision' - Generate resources in the CSP selected in --location"
   echo "      - 'install' - Install MD Core, use --mdss if you want to install mdss too"
   echo "      - 'upgrade'  - upgrade the MD Core version installed"
-  echo "    -l <location> - Cloud Provider or Local Cluster [AWS | Azure | GCP ] - Required on provision mode"
+  echo "    -l <location> - Cloud Provider or Local Cluster [AWS | Azure | Local (Install only) ] - Required on provision and install mode"
   echo "    -mdss|--mdss - When flag included OPSWAT MDSS will be installed"
   echo "    -mdcore|--mdcore - When flag included on provision mode it will also install MD Core"
-  echo "    -i | --image <image_version> - the image version of MD Core to be installed in the K8S Cluster (default: \"$MD_CORE_IMAGE\")"
+  echo "    -icap|--icap - When flag included on provision mode it will also install ICAP"
+  echo "    -i | --image <image_version> - the image version of MD Core to be installed in the K8S Cluster (default: \"$MD_CORE_IMAGE\"). For other MetaDefender products it will install the latest tag"
   echo "    --region <region> - Region where the K8S Cluster will be created (default: \"$region\")"
   echo "    --name <name> - Name of the K8S Cluster that will be created (default: \"$cluster_name\")"
   echo "    --namespace <namespace> - Name of the namespace where to install the products in the K8S Cluster (default: \"default\")"
@@ -37,8 +38,10 @@ function printHelp () {
   echo "Typically, one would first provision the cluster selecting the location option "
   echo "that will guide you through the options to select"
   echo
-  echo "	md_core.sh provision -l AWS -i 5.0.1 --mdcore"
-  echo "	md_core.sh provision -l AWS -i 5.0.1 --mdcore --mdss"
+  echo "	metadefenderk8s.sh provision -l AWS --mdcore"
+  echo "	metadefenderk8s.sh provision -l AWS -i 5.1.2 --mdcore"
+  echo "	metadefenderk8s.sh provision -l AWS -i 5.1.2 --mdcore --mdss"
+  echo "	metadefenderk8s.sh provision -l AWS -i 5.1.2 --mdcore --icap"
   echo
 }
 
@@ -47,12 +50,11 @@ declare -A cloudOptions
 cloudOptions[awscluster]="EKS"
 cloudOptions[aws1]="EC2"
 cloudOptions[aws2]="Fargate"
-cloudOptions[awslb]="Application Load Balancer (ALB)"
+cloudOptions[awslb]="Network Load Balancer (LB)"
 cloudOptions[awsdb]="RDS"
 cloudOptions[azurecluster]="AKS"
 cloudOptions[azure1]="VMS"
-cloudOptions[azure2]="Containers"
-cloudOptions[azurelb]="Application Gateway"
+cloudOptions[azurelb]="Private Load Balancer"
 cloudOptions[azuredb]="PostgreSQL"
 
 
@@ -110,34 +112,26 @@ function askAccess () {
 
   case "$ans" in
     Own | OWN )
-      echo "Disabling variables for Ingress"
+      if [ "$LOCATION_PARAM" == "local" ];then
+        echo "Disabling variables for Ingress, service type ClusterIp"
+      else
+        echo "Disabling variables for Ingress but it will create a LoadBalancer service type"
+      fi
       optAccessSelec="Own"
-      ingressMDCORE=false
-      ingressMDSS=false
-      lb_enabled=false
+      ingress_enabled=false
 
     ;;
     ingress | Ingress )
 
         optlb="${LOCATION_PARAM}lb"
         cloudOptlb=${cloudOptions[$optlb]}
-
-        echo "Enabling variables for Ingress"
-        echo "It will generate an $cloudOptlb in your $LOCATION account"
-        optAccessSelec="Ingress"
-
-        #As Ingress was selected we will create the load balancer for MD Core as default
-        ingressMDCORE=true
-        lb_enabled=true
-        if [ "$MDCORE" == "true" ];then
-          echo "An ingress controller for MD Core product will be installed"
-        fi
-        if [ "$MDSS" == "true" ];then
-          ingressMDSS=true
-          echo "An ingress controller for MDSS product will be installed"
+        if [ "$LOCATION_PARAM" == "local" ];then
+          echo "Enabling variables for Ingress, service type ClusterIp"
         else
-          ingressMDSS=false
+          echo "Enabling variables for Ingress, service type LoadBalancer"
         fi
+        optAccessSelec="Ingress"
+        ingress_enabled=true
 
     ;;
     * )
@@ -223,7 +217,6 @@ function askDB () {
           externalDB=false
           k8s_db=true
         else
-
           askDBExternal
         fi
         optDBSelec="New"
@@ -237,6 +230,11 @@ function askDB () {
 
 function askAWSCredentials () {
   echo "ERROR: Please export AWS_ACCESS_KEY_ID & AWS_SECRET_ACCESS_KEY"
+  exit 1
+}
+
+function askAzureCredentials () {
+  echo "ERROR: Please export ARM_CLIENT_ID, ARM_CLIENT_SECRET, ARM_SUBSCRIPTION_ID & ARM_TENANT_ID"
   exit 1
 }
 
@@ -267,14 +265,19 @@ function install(){
     setClusterContext
 
     cd helm_charts/
-    LOCATION_PARAM="local"
     
     askAccess
-    askDB
+    if [ "${MDCORE}" == "true" ];then
+      askDB
+    fi
+    
 
     echo "SUMMARY OF SELECTIONS: "
     echo " - $optAccessSelec access to the cluster"
-    echo " - $optDBSelec PostgreSQL DB $optExtDBSelec"
+    if [ "${MDCORE}" == "true" ];then
+      echo " - $optDBSelec PostgreSQL DB $optExtDBSelec"
+    fi
+    
     askProceed
 
     if [ "${MDCORE}" == "true" ];then
@@ -284,57 +287,55 @@ function install(){
     if [ "${MDSS}" == "true" ];then
       installMDSS
     fi
+    
+    if [ "${ICAP}" == "true" ];then
+      installICAP
+    fi
 }
 
 function installMDCore() {
     echo "Starting to install MD Core inside the K8S cluster"
+    
+    if [ -z "${MDCORE_LICENSE_KEY}" ]; then
+      echo "MDCORE_LICENSE_KEY not found in environment variables"
+      read -p "Add MetaDefender License Key: " MDCORE_LICENSE_KEY
+    else
+        echo "MDCORE_LICENSE_KEY found in the environment variables"
+    fi
     askProceed
 
-    if [ "$LOCATION_PARAM" == "aws" ];then
-        helm_file="mdcore-aws-eks-values.yml"
-        
-        if [ "$optAccessSelec" == "Ingress" ];then
-            helm install mdcore mdcore/ --wait --namespace $namespace --create-namespace -f $helm_file \
-            --set core_ingress.enabled=$lb_enabled \
-            --set environment=aws_eks_fargate \
-            --set aws-load-balancer-controller.enabled=$lb_enabled \
-            --set aws-load-balancer-controller.clusterName=$cluster_name \
-            --set aws-load-balancer-controller.region=$region \
-            --set aws-load-balancer-controller.vpcId=$vpc_id \
-            --set aws-load-balancer-controller.serviceAccount.name=$serviceAccountName \
-            --set aws-load-balancer-controller.serviceAccount.annotations\\.eks\\.amazonaws\\.com/role-arn=$serviceAccountNameRoleARN \
-            --set mdcore_target_group_arn=$mdCoreTarget \
-            --set mdcore_license_key=$MDCORE_LICENSE_KEY \
-            --set deploy_with_core_db=$k8s_db \
-            --set core_components.md-core.replicas=$replicas \
-            --set db_user=$db_user \
-            --set db_password=$db_password \
-            --set MDCORE_DB_HOST=$db_host \
-            --set md-core.image="opswat/metadefendercore-debian:"$MD_CORE_IMAGE
-        else
-            helm install mdcore mdcore/ --wait --namespace $namespace --create-namespace -f $helm_file \
-            --set mdcore_license_key=$MDCORE_LICENSE_KEY \
-            --set deploy_with_core_db=$k8s_db \
-            --set core_ingress.enabled=false \
-            --set core_components.md-core.replicas=$replicas \
-            --set db_user=$db_user \
-            --set db_password=$db_password \
-            --set MDCORE_DB_HOST=$db_host
-            --set md-core.image="opswat/metadefendercore-debian:"$MD_CORE_IMAGE
-        fi
-    elif [ "$LOCATION_PARAM" == "azure" ]; then
-        helm_file="mdcore-azure-aks-values.yml"
-        echo "Not ready yet"
-        exit 1
-    else
-        helm_file="mdcore-generic-values.yml"
-        helm install mdcore mdcore/ --wait --namespace $namespace --create-namespace -f $helm_file \
+    if [ "$LOCATION_PARAM" == "local" ];then
+
+        helm install mdcore mdcore/ --namespace $namespace --create-namespace -f $helm_file \
+        --set core_ingress.enabled=$ingress_enabled \
         --set mdcore_license_key=$MDCORE_LICENSE_KEY \
         --set deploy_with_core_db=$k8s_db \
         --set core_components.md-core.replicas=$replicas \
         --set db_user=$db_user \
         --set db_password=$db_password \
-        --set MDCORE_DB_HOST=$db_host
+        --set MDCORE_DB_HOST=$db_host \
+        --set md-core.image="opswat/metadefendercore-debian:"$MD_CORE_IMAGE
+
+    else
+
+      if [ "$LOCATION_PARAM" == "aws" ];then
+          helm_file="mdcore-aws-eks-values.yml"
+
+      elif [ "$LOCATION_PARAM" == "azure" ]; then
+          helm_file="mdcore-azure-aks-values.yml"
+
+      fi
+
+      helm install mdcore mdcore/ --namespace $namespace --create-namespace -f $helm_file \
+      --set core_ingress.enabled=$ingress_enabled \
+      --set mdcore_license_key=$MDCORE_LICENSE_KEY \
+      --set deploy_with_core_db=$k8s_db \
+      --set core_components.md-core.replicas=$replicas \
+      --set db_user=$db_user \
+      --set db_password=$db_password \
+      --set MDCORE_DB_HOST=$db_host \
+      --set md-core.image="opswat/metadefendercore-debian:"$MD_CORE_IMAGE
+
     fi
 
 }
@@ -343,31 +344,33 @@ function installMDSS () {
     echo "Starting to install MDSS inside the K8S cluster"
     askProceed
 
-    if [ "$LOCATION_PARAM" == "aws" ];then
-        helm_file="mdss-aws-eks-values.yml"
-    elif [ "$LOCATION_PARAM" == "azure" ]; then
-        helm_file="mdss-azure-aks-values.yml"
+    if [ "$LOCATION_PARAM" == "local" ];then
+      helm install mdss mdss/ --namespace $namespace --create-namespace \
+      --set mdss_ingress.enabled=$ingress_enabled
     else
-        echo "Will create generic environment"
+      if [ "$LOCATION_PARAM" == "aws" ];then
+          helm_file="mdss-aws-eks-values.yml"
+      elif [ "$LOCATION_PARAM" == "azure" ]; then
+          helm_file="mdss-azure-aks-values.yml"
+      fi
+      helm install mdss mdss/ --namespace $namespace --create-namespace -f $helm_file \
+      --set mdss_ingress.enabled=$ingress_enabled
     fi
 
-    if [ "$LOCATION_PARAM" == "aws" ];then
+}
 
-      helm install mdss mdss/ --wait --namespace $namespace --create-namespace -f $helm_file \
-      --set environment=aws_eks_fargate \
-      --set aws-load-balancer-controller.enabled=$lb_enabled \
-      --set aws-load-balancer-controller.clusterName=$cluster_name \
-      --set aws-load-balancer-controller.region=$region \
-      --set aws-load-balancer-controller.vpcId=$vpc_id \
-      --set aws-load-balancer-controller.serviceAccount.name=$serviceAccountName \
-      --set aws-load-balancer-controller.serviceAccount.annotations\\.eks\\.amazonaws\\.com/role-arn=$serviceAccountNameRoleARN \
-      --set webclient_target_group_arn=$webclient_target_group_arn \
-      --set systemchecks_target_group_arn=$systemchecks_target_group_arn
+function installICAP () {
+    echo "Starting to install ICAP inside the K8S cluster"
+    if [ -z "${MDICAPSRV_LICENSE_KEY}" ]; then
+      echo "MDICAPSRV_LICENSE_KEY not found in environment variables"
+      read -p "Add ICAP License Key: " MDICAPSRV_LICENSE_KEY
     else
-
-      helm install mdss mdss/ --wait --namespace $namespace --create-namespace
-
+        echo "MDICAPSRV_LICENSE_KEY found in the environment variables"
     fi
+    askProceed
+    helm install icap icap/ --namespace $namespace --create-namespace \
+    --set icap_ingress.enabled=$ingress_enabled \
+    --set mdicapsrv_license_key=$MDICAPSRV_LICENSE_KEY
 
 }
 
@@ -384,25 +387,43 @@ function provisionAWS() {
   -var="MD_CLUSTER_REGION=$region" \
   -var="PERSISTENT_DEPLOYMENT=$persistent" \
   -var="DEPLOY_FARGATE_NODES=$serverless" \
-  -var="DEPLOY_MDSS_INGRESS=$ingressMDSS" \
-  -var="DEPLOY_MDCORE_INGRESS=$ingressMDCORE" \
   -var="DEPLOY_RDS_POSTGRES_DB=$externalDB" \
   -var="POSTGRES_USERNAME=$db_user" \
   -var="POSTGRES_PASSWORD=$db_password"
 
-
   cluster_name=$(terraform output -raw MD_CLUSTER_NAME)
   echo $cluster_name
-  vpc_id=$(terraform output -raw VPC_ID)
-  echo $vpc_id
-  serviceAccountName=$(terraform output -raw LOAD_BALANCER_SERVICE_ACCOUNT_NAME)
-  echo $serviceAccountName
-  serviceAccountNameRoleARN=$(terraform output -raw LOAD_BALANCER_SERVICE_ACCOUNT_ROLE_ARN)
-  echo $serviceAccountNameRoleARN
 
-  mdCoreTarget=$(terraform output -raw MDCORE_TARGET_GROUP_ARN)
-  echo $mdCoreTarget
   
+  #DB Endpoint
+  if [ "${externalDB}" == "true" ];then
+    db_host=$(terraform output -raw POSTGRES_ENDPOINT)
+    db_host=$(echo $db_host | awk -F ':' '{print $1}')
+    echo $db_host
+  fi 
+  
+}
+
+function provisionAzure() {
+
+  echo "Running terrafrom apply"
+
+  askProceed
+
+  terraform apply -auto-approve \
+  -var="aks_service_principal_app_id=$ARM_CLIENT_ID" \
+  -var="aks_service_principal_client_secret=$ARM_CLIENT_SECRET" \
+  -var="cluster_name=$cluster_name" \
+  -var="deploy_postgres_db=$externalDB" \
+  -var="postgres_admin=$db_user" \
+  -var="postgres_password=$db_password"
+
+
+  cluster_name=$(terraform output -raw cluster_name)
+  echo $cluster_name
+  resource_group_name=$(terraform output -raw resource_group_name)
+  echo $resource_group_name
+
   #MDSS target groups (ADD CONTROL)
   if [ "${MDSS}" == "true" ];then
     webclient_target_group_arn=$(terraform output -raw WEBCLIENT_TARGET_GROUP_ARN)
@@ -413,11 +434,17 @@ function provisionAWS() {
   
   #DB Endpoint
   if [ "${externalDB}" == "true" ];then
-    db_host=$(terraform output -raw POSTGRES_ENDPOINT)
-    db_host=$(echo $db_host | awk -F ':' '{print $1}')
+    db_host=$(terraform output -json db_server_fqdn_postgres)
     echo $db_host
+    db_host=$(echo $db_host | tr -d '"')
+    echo $db_host
+    db_name=$(terraform output -json db_server_name_postgres)
+    echo $db_name
+    db_name=$(echo $db_name | tr -d '"')
+    echo $db_name
+    username_postgres=$(terraform output -json db_server_username_postgres)
+    echo $username_postgres
   fi 
-  
 
 }
 
@@ -429,16 +456,24 @@ function provision() {
       askAWSCredentials
       else
           echo "AWS Credentials detected in environment variables"
+          cd terraform/aws/
       fi
     elif [ "$LOCATION_PARAM" == "azure" ]; then
-      echo "Azure provision is in development, you cannot use this script for Azure yet"
-      exit 1
-      #askAzureCredentials
+      if [ -z "${ARM_CLIENT_ID}" ] || [ -z "${ARM_CLIENT_SECRET}" ] || [ -z "${ARM_SUBSCRIPTION_ID}" ] || [ -z "${ARM_TENANT_ID}" ]; then
+        echo "Provisioning MD Core in "$LOCATION
+        askAzureCredentials
+      else
+          echo "Azure Credentials detected in environment variables"
+          echo "For accesing to the cluster we will use the following public key '~/.ssh/id_rsa.pub'"
+          cd terraform/azure/
+      fi
     else
       echo "To be developed"
     fi
+    if [ "$LOCATION_PARAM" == "aws" ];then
+      askCluster
+    fi
 
-    askCluster
     askAccess
     askDB
 
@@ -448,8 +483,7 @@ function provision() {
     echo " - $optDBSelec PostgreSQL DB $optExtDBSelec"
     askProceed
 
-    cd terraform/aws/
-    echo "Starting terraform"
+    echo "Initializing terraform"
     terraform init
 
     if [ "$LOCATION_PARAM" == "aws" ];then
@@ -457,6 +491,13 @@ function provision() {
       echo "Including context info in the .kube/config"
       #Including context info in the .kube/config
       aws eks update-kubeconfig --region $region --name $cluster_name
+    elif [ "$LOCATION_PARAM" == "azure" ];then
+      provisionAzure
+      echo "Including context info in the .kube/config"
+      #Including context info in the .kube/config
+      az aks get-credentials --name $cluster_name --overwrite-existing --resource-group $resource_group_name
+      
+      #aws eks update-kubeconfig --region $region --name $cluster_name
     fi
 
     if [ "${MDCORE}" == "true" ];then
@@ -468,13 +509,19 @@ function provision() {
     if [ "${MDSS}" == "true" ];then
       cd ../../helm_charts/
       installMDSS
+      cd -
+    fi
+    if [ "${ICAP}" == "true" ];then
+      cd ../../helm_charts/
+      installICAP
+      cd -
     fi
 
 }
 
 
 function upgradeCluster() {
-    echo "Upgrading Cluster"
+    echo "Upgrading Cluster from MetaDefender Script Coming Soon"
 }
 
 
@@ -497,14 +544,14 @@ fi
       shift;
       current_arg="$1"
       if [[ "$current_arg" =~ ^-{1,2}.* ]] || [ "$current_arg" == "" ]; then
-        if [ "${opt}" != "--mdss" ] && [ "${opt}" != "--mdcore" ];then
+        if [ "${opt}" != "--mdss" ] && [ "${opt}" != "--mdcore" ] && [ "${opt}" != "--icap" ];then
             echo "ERROR: You may have left an argument blank. Double check your command." 
             exit 1;
         fi
       fi
       case "$opt" in
         "-l"|"--location")
-            if [ "$MODE" == "provision" ]; then
+            if [ "$MODE" == "provision" ] || [ "$MODE" == "install" ]; then
               LOCATION="$1";
               LOCATION_PARAM=$(echo $LOCATION | awk '{print tolower($0)}');
               shift
@@ -532,6 +579,8 @@ fi
             MDCORE="true";;
         "--mdss") 
             MDSS="true";;
+        "--icap") 
+            ICAP="true";;
         *) 
         echo "ERROR: Invalid option: \""$opt"\"" >&2
         exit 1;;
@@ -545,9 +594,15 @@ function checkLocation() {
         clusterType=${cloudOptions[$cluster]}
         message=${EXPMODE}" "${LOCATION}" "${clusterType}
   else
-      if [ "${MODE}" == "provision" ] ;then
+      if [ "${MODE}" == "provision" ];then
         # Location command is required
-        echo "Location parameter is required, options AWS | Azure | GCP"
+        echo "Location parameter is required, options AWS | Azure "
+        printHelp
+        exit 0
+      fi
+      if [ "${MODE}" == "install" ] && [ "${LOCATION_PARAM}" != "local" ];then
+        # Location command is required
+        echo "Location parameter is required, options AWS | Azure | Local"
         printHelp
         exit 0
       fi
@@ -570,6 +625,9 @@ if [ "${MODE}" == "provision" ];then
   fi
   if [ "${MDSS}" == "true" ];then
         message=${message}" with MDSS";
+  fi
+   if [ "${MDSS}" == "true" ];then
+        message=${message}" with ICAP";
   fi
   echo $message
 fi

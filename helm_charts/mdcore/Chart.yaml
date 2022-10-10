@@ -1,5 +1,5 @@
 apiVersion: v2
-name: MetaDefender_Core
+name: metadefender_core
 description: This is a Helm chart for deploying MetaDefender Core (https://www.opswat.com/products/metadefender/core) in a Kubernetes cluster
 
 long_description: |
@@ -10,22 +10,23 @@ long_description: |
   In addition to the chart, we also provide a number of values files for specific scenarios:
   - mdcore-aws-eks-values.yml - for deploying in an AWS environment using Amazon EKS
   - mdcore-azure-aks-values.yml - for deploying in an Azure environment using AKS
-  - mdcore-generic-values.yml - for deploying in a standalone cluster
 
   ## Installation
   
   ### From source
-  MD Core can be installed directly from the source code, here's an example using the generic values:
+  MD Core can be installed directly from the source code, here's an example using generic values:
   ```console
   git clone https://github.com/OPSWAT/metadefender-k8s.git metadefender
   cd metadefender/helm_carts
-  helm install my_mdcore ./mdcore -f mdcore-generic-values.yml
+  helm install my_mdcore ./mdcore
   ```
 
-  ### From the latest release
-  The installation can also be done using the latest release from github:
-  ```console
-  helm install my_mdcore <MDCORE_RELEASE_URL>.tgz -f mdcore-generic-values.yml
+  ### From the GitHub helm repo
+  The installation can also be done using the helm repo which is updated on each release:
+   ```console
+  helm repo add mdk8s https://opswat.github.io/metadefender-k8s/
+  helm repo update mdk8s
+  helm install my_mdcore mdk8s/metadefender_core
   ```
 
   ## Operational Notes
@@ -41,10 +42,4 @@ long_description: |
   
 type: application
 
-version: 5.1.1
-
-dependencies:
-- name: aws-load-balancer-controller
-  condition: aws-load-balancer-controller.enabled
-  version: 1.4.2
-  repository: https://aws.github.io/eks-charts
+version: 5.2.1

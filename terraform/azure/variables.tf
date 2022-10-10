@@ -9,13 +9,27 @@ variable "aks_service_principal_client_secret" {
 variable "aks_service_principal_object_id" {
   
 }
+variable "postgres_admin" {
+  
+}
+
+variable "postgres_password" {
+  
+}
 
 variable "deploy_cosmos_db" {
   type    = bool
   default = false
 }
+variable "deploy_postgres_db" {
+  type    = bool
+  default = false
+}
 variable "cosmos_db_account_name" {
-  default = "md-db-account"
+  default = "mdss-db-account"
+}
+variable "postgres_db_account_name" {
+  default = "mdcore-db"
 }
 
 variable "resource_group_name_prefix" {
@@ -24,15 +38,13 @@ variable "resource_group_name_prefix" {
 }
 
 variable "resource_group_location" {
-  default       = "eastus"
+  default       = "centralus"
   description   = "Location of the resource group."
 }
 
 variable "failover_location" {
-  default = "swedencentral"
+  default = "us-west-2"
 }
-
-
 
 variable "agent_count" {
     default = 3
@@ -50,10 +62,6 @@ variable cluster_name {
     default = "k8md"
 }
 
-variable resource_group_name {
-    default = "azure-k8md"
-}
-
 variable location {
     default = "Central US"
 }
@@ -64,7 +72,7 @@ variable log_analytics_workspace_name {
 
 # refer https://azure.microsoft.com/global-infrastructure/services/?products=monitor for log analytics available regions
 variable log_analytics_workspace_location {
-    default = "eastus"
+    default = "centralus"
 }
 
 # refer https://azure.microsoft.com/pricing/details/monitor/ for log analytics pricing 

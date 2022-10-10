@@ -675,7 +675,7 @@ resource "aws_eks_node_group" "node_group" {
   node_group_name = "terraform-${var.MD_CLUSTER_NAME}-nodegroup"
   node_role_arn   = aws_iam_role.eks_nodes_role[0].arn
   subnet_ids      = aws_subnet.pub_subnet.*.id
-  instance_types  = ["t3.xlarge"]
+  instance_types  = ["c5.2xlarge"]
   labels = {
     type = "ec2-db-node"
   }

@@ -1,0 +1,136 @@
+# Create a deployment for each component in MD ICAP Server if it's enabled
+
+{{ range $component_name, $component := .Values.icap_components }}
+
+{{ $ENV := $component.env}}
+{{- if $component.import_configuration.enabled }}
+{{ $importTargets := dict "name" "IMPORT_CONF_FILE_TARGET" "value" (toJson $component.import_configuration.targets) }}
+{{ $ENV = append $component.env $importTargets}}
+{{- end }}
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ $component.name | quote }}
+spec:
+  replicas: {{ $component.replicas }}
+  selector:
+    matchLabels:
+      app: {{ $component.name | quote }}
+  {{- if $component.strategy}}
+  strategy:
+    {{- toYaml $component.strategy | nindent 4 }}
+  {{- end }}
+  template:
+    metadata:
+      labels:
+        app: {{ $component.name | quote }}
+        {{- if $component.extra_labels }}
+          {{- toYaml $component.extra_labels | nindent 8 }}
+        {{- end }}
+    spec:
+      nodeSelector:
+        {{- toYaml $.Values.nodeSelector | nindent 8}}
+      containers:
+        - envFrom:
+            - configMapRef:
+                name: mdicapsrv-env
+          {{ if $component.custom_repo -}}
+          image: {{ printf "%s/%s:%s" $.Values.icap_docker_repo $component.image $.Values.BRANCH | quote }}
+          {{- else -}}
+          image: {{ $component.image | quote }}
+          {{- end }}
+          {{- if $ENV }}
+          env:
+            {{- toYaml $ENV | nindent 12 }}
+          {{- end }}
+          name: {{ $component.name | quote }}
+          {{- if $component.ports }}
+          ports:
+          {{- range $component.ports }}
+            - containerPort: {{ .port }}
+          {{- end }}
+          {{- end }}
+          {{- if $component.livenessProbe}}
+          livenessProbe:
+            {{- toYaml $component.livenessProbe | nindent 12 }}
+          {{- end }}
+          {{- if (or $component.mountConfig $component.tls.enabled $component.import_configuration.enabled $component.persistentDir)}}
+          volumeMounts:
+            {{- if $component.mountConfig }}
+            - name: {{ $component.mountConfig.configName }}
+              mountPath: {{ $component.mountConfig.mountPath }}
+              subPath: {{ $component.mountConfig.subPath }}
+            {{ end }}
+            {{- if $component.tls.enabled }}
+            - name: {{ $component.tls.certSecret }}
+              mountPath: {{ $.Values.MDICAPSRV_CERT_PATH }}/mdicapsrv.crt
+              subPath: {{ $component.tls.certSecretSubPath }}
+            - name: {{ $component.tls.certKeySecret }}
+              mountPath: {{ $.Values.MDICAPSRV_CERT_PATH }}/mdicapsrv.key
+              subPath: {{ $component.tls.certKeySecretSubPath }}
+            {{ end }}
+            {{- if $component.import_configuration.enabled }}
+            - name: {{ $component.import_configuration.importConfigMap }}
+              mountPath: {{ $.Values.MDICAPSRV_IMPORT_CONF_FILE }}
+              subPath: {{ $component.import_configuration.importConfigMapSubPath }}
+            {{ end }}
+            {{- if $component.persistentDir }}
+            - name: {{ $component.name }}
+              mountPath: {{ $component.persistentDir }}
+              {{- if not (eq $.Values.storage_provisioner "hostPath") }}
+              subPath: {{ $component.name }}
+              {{- end }}
+            {{ end }}
+          {{- end }}
+          {{- if $component.resources }}
+          resources:
+            {{- toYaml $component.resources | nindent 12 }}
+          {{- end }}
+          {{- if $component.sidecars }}
+            {{- toYaml $component.sidecars | nindent 8 }}
+          {{- end }}
+      {{- if $component.initContainers }}
+      initContainers:
+        {{- toYaml $component.initContainers | nindent 8 }}
+      {{- end }}
+      restartPolicy: Always
+      {{- if $.Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml $.Values.imagePullSecrets | nindent 8 }}
+      {{- end }}
+      {{- if (or $component.mountConfig $component.tls.enabled $component.import_configuration.enabled $component.persistentDir)}}
+      volumes:
+        {{- if $component.mountConfig }}
+        - name: {{ $component.mountConfig.configName }}
+          configMap:
+            name: {{ $component.mountConfig.configName }}
+        {{ end }} 
+        {{- if $component.tls.enabled }}
+        - name: {{ $component.tls.certSecret }}
+          secret:
+            secretName: {{ $component.tls.certSecret }}
+        - name: {{ $component.tls.certKeySecret }}
+          secret:
+            secretName: {{ $component.tls.certKeySecret }}
+        {{ end }}
+        {{- if $component.import_configuration.enabled }}
+        - name: {{ $component.import_configuration.importConfigMap }}
+          configMap:
+            name: {{ $component.import_configuration.importConfigMap }}
+        {{ end }}
+        {{- if $component.persistentDir }}
+        {{- if eq $.Values.storage_provisioner "hostPath" }}
+        - name: {{ $component.name }}
+          hostPath:
+            path: {{ printf "/%s/%s" $.Values.hostPathPrefix $component.name }}
+            type: DirectoryOrCreate
+        {{ else }}
+        - name: {{ $component.name }}
+          persistentVolumeClaim:
+            claimName: {{ printf "%s-pvc" $.Values.storage_name }}
+        {{ end }}
+        {{ end }}
+      {{- end }}
+{{ end }}
