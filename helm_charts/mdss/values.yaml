@@ -63,30 +63,6 @@ storage_name: hostPath
 storage_node: minikube
 hostPathPrefix: mdss-storage              # If `deploy_with_mdss_db` is set to true, this is the absolute path on the node where to keep the database filesystem for persistance
 
-# Deploy on a generic cluster
-environment: generic                      # Deployment environment type, the default `generic` value will not configure or provision any additional resources in the cloud provider (like load balancers), other values: `aws_eks_fargate`
-
-## Uncomment for the desired deployment environment and their respective parameters
-# # Deploy on AWS EKS platform with the fargate backend, this will also create load balancers for both MD core and MDSS
-# # An eks cluster must already be created and the cluster name, vpc-id, region and credentials should be replaced below
-# environment: aws_eks_fargate
-
-aws-load-balancer-controller:
-  enabled: false                                         # If set to true and `environment` is set to `aws_eks_fargate`, an AWS Load Balancer Controller will be installed
-  clusterName: null                                     # Name of the EKS cluster, mandatory if aws-load-balancer-controller.enabled is set to true
-  rbac:
-    create: true
-  serviceAccount:
-    create: true
-    name: null                                          # Name of the load balancer service account, mandatory if aws-load-balancer-controller.enabled is set to true
-    annotations.eks\\.amazonaws\\.com/role-arn: null    # ARN of the load balancer service account role, mandatory if aws-load-balancer-controller.enabled is set to true
-  vpcId: null                                           # ID of the AWS VPC, mandatory if aws-load-balancer-controller.enabled is set to true
-  region: null                                          # AWS region code, mandatory if aws-load-balancer-controller.enabled is set to true
-
-webclient_target_group_arn: null                        # ARN of the load balancer target group that redirects traffic to the webclient service
-systemchecks_target_group_arn: null                     # ARN of the load balancer target group that redirects traffic to the systemchecks service
-
-
 # Ingress settings for mdss
 mdss_ingress:
   host: <APP_NAMESPACE>-mdss.k8s             # Hostname for the publicly accessible ingress, the `<APP_NAMESPACE>` string will be replaced with the current namespace                
@@ -309,6 +285,20 @@ mdss_components:
     name: remediationsservice-azureblob
     custom_repo: true
     image: mdcloudservices_remediationsazureblob
+    extra_labels:
+      aws-type: fargate
+
+  remediationsservice-googlecloud:
+    name: remediationsservice-googlecloud
+    custom_repo: true
+    image: mdcloudservices_remediationsgooglecloud
+    extra_labels:
+      aws-type: fargate
+  
+  remediationsservice-alibabacloud:
+    name: remediationsservice-alibabacloud
+    custom_repo: true
+    image: mdcloudservices_remediationsalibabacloud
     extra_labels:
       aws-type: fargate
 

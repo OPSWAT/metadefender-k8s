@@ -33,10 +33,6 @@
 
 mdcore_license_key: <SET_LICENSE_KEY_HERE>
 
-# App name is used to define namespace and storage name. This helps to segregate multiple instances of the app if they run on the same cluster
-# by specifying a different app name for each instance 
-app_name: default
-
 ## MD Core settings that are saved in the "mdcore_env" config map
 MDCORE_REST_PORT: "8008"
 MDCORE_DB_MODE: "4"
@@ -45,7 +41,6 @@ MDCORE_DB_HOST: postgres-core
 MDCORE_DB_PORT: "5432"
 MDCORE_CERT_PATH: "/cert"
 
-# Set to true for each product if the respective database engine should also be deployed
 deploy_with_core_db: true
 storage_provisioner: hostPath
 hostPathPrefix: /opswat
@@ -53,30 +48,23 @@ hostPathPrefix: /opswat
 # Set to false to not create any volumes or host paths in the deployment, all storage will be ephemeral
 persistance_enabled: true
 
-# Deploy on a generic cluster
-# environment: generic
-environment: aws_eks_fargate
-# install_alb: true
-# eks_cluster_name: null
-# vpc_id: null
-# aws_region: null
-# AWS_ACCESS_KEY_ID: null
-# AWS_SECRET_ACCESS_KEY: null
-
-
 # # Set the service_type to LoadBalancer in order to create an external load balancer routing traffic directly to the web interface
-# core_components:
-#   md-core:
-#     name: md-core
-#     service_type: ClusterIP
-#     # extra_labels: null
-#     image: opswat/metadefendercore-debian:5.0.1
-#     replicas: 1
+core_components:
+  md-core:
+    name: md-core
+    service_type: LoadBalancer
+    sessionAffinity: ClientIP
+    service_annotations:
+      service.beta.kubernetes.io/aws-load-balancer-type: external
+      service.beta.kubernetes.io/aws-load-balancer-nlb-target-type: ip
+      service.beta.kubernetes.io/aws-load-balancer-scheme: internet-facing      # change to "internal" for no internet access to the load balancer
+    # extra_labels: null
+    replicas: 1
 
 
 # Ingress setting for mdss and md core (md core setting are ignored if deploy_with_core is false)
 core_ingress:
-  host: <APP_NAME>-mdcore.k8s
+  host: <APP_NAMESPACE>-mdcore.k8s
   enabled: false
 
 # enable TLS
@@ -90,17 +78,3 @@ core_ingress:
 # Docker repo to use, this should be changed when using private images (this string will be prepended to the image name)
 # If a component has "custom_repo: true" then the image name will be formated as "{docker_repo/}image_name{:BRANCH}" otherwise it will remain unaltered
 core_docker_repo: opswat
-
-
-# Settings for ingress controller (enabled should be false if a controller is already deployed in the cluster) 
-aws-load-balancer-controller:
-  enabled: false
-  replicaCount: 1
-  clusterName: <MD_CLUSTER_NAME>
-  serviceAccount:
-    name: <SERVICE_ACCOUNT_NAME>
-    annotations.eks\\.amazonaws\\.com/role-arn: <SERVICE_ACCOUNT_ROLE_ARN>
-  vpcId: <VPC_ID>
-  region: <AWS_REGION>
-
-mdcore_target_group_arn: <MD_CORE_TARGET_GROUP_ARN>

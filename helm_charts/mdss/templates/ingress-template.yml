@@ -1,5 +1,4 @@
 {{ if .Values.mdss_ingress.enabled }}
-{{ if eq .Values.environment "generic" }}
 ---
 kind: Ingress
 apiVersion: networking.k8s.io/v1
@@ -27,37 +26,5 @@ spec:
               name: {{ .Values.mdss_ingress.service }}
               port:
                 number: {{ .Values.mdss_ingress.port }}
-{{ end }}
 
-{{ if .Values.webclient_target_group_arn }}
----
-apiVersion: elbv2.k8s.aws/v1beta1
-kind: TargetGroupBinding
-metadata:
-  name: {{ printf "%s-webclient-tgb" .Release.Namespace }}
-  annotations:
-    "helm.sh/hook": "post-install"
-    "helm.sh/hook-weight": "1"
-spec:
-  serviceRef:
-    name: {{ .Values.mdss_ingress.service }}
-    port: {{ .Values.mdss_ingress.port }}
-  targetGroupARN: {{ .Values.webclient_target_group_arn }}
-{{ end }}
-
-{{ if .Values.systemchecks_target_group_arn }}
----
-apiVersion: elbv2.k8s.aws/v1beta1
-kind: TargetGroupBinding
-metadata:
-  name: {{ printf "%s-systemchecks-tgb" .Release.Namespace }}
-  annotations:
-    "helm.sh/hook": "post-install"
-    "helm.sh/hook-weight": "2"
-spec:
-  serviceRef:
-    name: {{.Values.mdss_components.systemchecks.name }}
-    port: {{ .Values.mdss_ingress.port }}
-  targetGroupARN: {{ .Values.systemchecks_target_group_arn }}
-{{ end }}
 {{ end }}

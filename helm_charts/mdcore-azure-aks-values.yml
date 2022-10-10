@@ -33,10 +33,6 @@
 
 mdcore_license_key: <SET_LICENSE_KEY_HERE>
 
-# App name is used to define namespace and storage name. This helps to segregate multiple instances of the app if they run on the same cluster
-# by specifying a different app name for each instance 
-app_name: default
-
 ## MD Core settings that are saved in the "mdcore_env" config map
 MDCORE_REST_PORT: "8008"
 MDCORE_DB_MODE: "4"
@@ -45,16 +41,12 @@ MDCORE_DB_HOST: postgres-core
 MDCORE_DB_PORT: "5432"
 MDCORE_CERT_PATH: "/cert"
 
-# Set to true for each product if the respective database engine should also be deployed
 deploy_with_core_db: true
 storage_provisioner: hostPath
 hostPathPrefix: /opswat
 
 # Set to false to not create any volumes or host paths in the deployment, all storage will be ephemeral
 persistance_enabled: true
-
-# Deploy on a generic cluster
-environment: generic
 
 # Set the service_type to LoadBalancer in order to create an external load balancer routing traffic directly to the web interface
 core_components:
@@ -69,7 +61,7 @@ core_components:
 
 # Ingress setting for mdss and md core (md core setting are ignored if deploy_with_core is false)
 core_ingress:
-  host: <APP_NAME>-mdcore.k8s
+  host: <APP_NAMESPACE>-mdcore.k8s
   enabled: false
 
 # enable TLS

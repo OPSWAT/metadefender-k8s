@@ -4,34 +4,21 @@ deploy_with_mdss_db: true
 storage_provisioner: hostPath
 hostPathPrefix: /opswat
 
-# # Set the service_type to LoadBalancer in order to create an Azure load balancer routing traffic directly to the web interface
-# mdss_components:
-#   webclient:
-#     service_type: LoadBalancer
+# # Set the service_type to LoadBalancer in order to create an AWS load balancer routing traffic directly to the web interface
+mdss_components:
+  webclient:
+    service_type: LoadBalancer
+    sessionAffinity: ClientIP
+    service_annotations:
+      service.beta.kubernetes.io/aws-load-balancer-type: external
+      service.beta.kubernetes.io/aws-load-balancer-nlb-target-type: ip
+      service.beta.kubernetes.io/aws-load-balancer-scheme: internet-facing      # change to "internal" for no internet access to the load balancer
 
 # Ingress setting for mdss
 mdss_ingress:
-  host: <APP_NAME>-mdss.k8s
+  host: <APP_NAMESPACE>-mdss.k8s
   enabled: false
 
 # Docker repo to use, this should be changed when using private images (this string will be prepended to the image name)
 # If a component has "custom_repo: true" then the image name will be formated as "{docker_repo/}image_name{:BRANCH}" otherwise it will remain unaltered
 mdss_docker_repo: opswat
-
-# Uncomment for the desired deployment environment and their respective parameters
-# Deploy on AWS EKS platform with the fargate backend, this will also create load balancers for both MD core and MDSS
-# An eks cluster must already be created and the cluster name, vpc-id, region and credentials should be replaced below
-
-# environment: generic
-environment: aws_eks_fargate
-aws-load-balancer-controller:
-  enabled: false
-  clusterName: null
-  serviceAccount:
-    name: null
-    annotations.eks\\.amazonaws\\.com/role-arn: null
-  vpcId: null
-  region: null
-
-# webclient_target_group_arn: null
-# systemchecks_target_group_arn: null

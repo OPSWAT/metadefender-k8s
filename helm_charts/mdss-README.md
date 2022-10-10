@@ -11,22 +11,23 @@ This chart can deploy the following depending on the provided values:
 In addition to the chart, we also provide a number of values files for specific scenarios:
 - mdss-aws-eks-values.yml - for deploying in an AWS environment using Amazon EKS
 - mdss-azure-aks-values.yml - for deploying in an Azure environment using AKS
-- mdss-generic-values.yml - for deploying in a standalone cluster
 
 ## Installation
 
 ### From source
-MD Core can be installed directly from the source code, here's an example using the generic values:
+MDSS can be installed directly from the source code, here's an example using the generic values:
 ```console
 git clone https://github.com/OPSWAT/metadefender-k8s.git metadefender
 cd metadefender/helm_carts
-helm install my_mdss ./mdss [-f <CUSTOM_VALUES_FILE>]
+helm install my_mdss ./mdss
 ```
 
-### From the latest release
-The installation can also be done using the latest release from github:
-```console
-helm install my_mdss <MDSS_RELEASE_URL>.tgz [-f <CUSTOM_VALUES_FILE>]
+### From the GitHub helm repo
+The installation can also be done using the helm repo which is updated on each release:
+ ```console
+helm repo add mdk8s https://opswat.github.io/metadefender-k8s/
+helm repo update mdk8s
+helm install my_mdss mdk8s/metadefender_for_secure_storage
 ```
 
 ## Operational Notes

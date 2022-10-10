@@ -15,30 +15,6 @@ module "aws_eks_cluster" {
   DEPLOY_FARGATE_NODES  = var.DEPLOY_FARGATE_NODES
 }
 
-module "aws_load_balancer" {
-  source = "./aws_load_balancer_module"
-  count  = var.DEPLOY_MDSS_INGRESS || var.DEPLOY_MDCORE_INGRESS ? 1 : 0
-
-  MD_CLUSTER_NAME           = var.MD_CLUSTER_NAME
-  MD_CLUSTER_REGION         = var.MD_CLUSTER_REGION
-  ACCESS_KEY_ID             = var.ACCESS_KEY_ID
-  SECRET_ACCESS_KEY         = var.SECRET_ACCESS_KEY
-  VPC_ID                    = module.aws_eks_cluster.vpc_id
-  VPC_CIDR                  = module.aws_eks_cluster.vpc_cidr
-  PUBLIC_SUBNETS            = module.aws_eks_cluster.public_subnets
-  PRIVATE_SUBNETS           = module.aws_eks_cluster.private_subnets
-  EKS_CLUSTER_OICD_URL      = module.aws_eks_cluster.eks_cluster_oicd_url
-  SERVICE_ACCOUNT_NAME      = var.LOAD_BALANCER_SERVICE_ACCOUNT_NAME
-  SERVICE_ACCOUNT_NAMESPACE = var.LOAD_BALANCER_SERVICE_ACCOUNT_NAMESPACE
-  DEPLOY_MDSS_INGRESS       = var.DEPLOY_MDSS_INGRESS
-  DEPLOY_MDCORE_INGRESS     = var.DEPLOY_MDCORE_INGRESS
-  EXTERNAL_ACCESS           = var.EXTERNAL_ACCESS
-
-  depends_on = [
-    module.aws_eks_cluster
-  ]
-}
-
 module "aws_rds_postgres" {
   source = "./aws_rds_postgres_module"
   count  = var.DEPLOY_RDS_POSTGRES_DB ? 1 : 0
