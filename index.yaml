@@ -8,7 +8,8 @@ entries:
       name: aws-load-balancer-controller
       repository: https://aws.github.io/eks-charts
       version: 1.3.2
-    description: This is a Helm chart for deploying MetaDefender Core (https://www.opswat.com/products/metadefender/core) in a Kubernetes cluster
+    description: This is a Helm chart for deploying MetaDefender Core (https://www.opswat.com/products/metadefender/core)
+      in a Kubernetes cluster
     digest: 20e6b1b56072358065f3847174a9f155098e53015c74d2e7124513e0fd80fb64
     name: MetaDefender_Core
     type: application
@@ -23,7 +24,9 @@ entries:
       name: aws-load-balancer-controller
       repository: https://aws.github.io/eks-charts
       version: 1.4.2
-    description: This is a Helm chart for deploying MetaDefender for Secure Storage (https://www.opswat.com/products/metadefender/metadefender-for-secure-storage) in a Kubernetes cluster
+    description: This is a Helm chart for deploying MetaDefender for Secure Storage
+      (https://www.opswat.com/products/metadefender/metadefender-for-secure-storage)
+      in a Kubernetes cluster
     digest: b08a7f51a71d42aa7ff23266a860c9d1ba0db0b09e6542b12a52e676503a109f
     name: MetaDefender_for_Secure_Storage
     type: application
@@ -46,4 +49,38 @@ entries:
     urls:
     - https://github.com/OPSWAT/metadefender-k8s/releases/download/MetaDefender_for_Secure_Storage-2.2.3/MetaDefender_for_Secure_Storage-2.2.3.tgz
     version: 2.2.3
-generated: "2022-08-18T13:22:28.460715979Z"
+  metadefender_core:
+  - apiVersion: v2
+    created: "2022-10-11T08:36:15.060104824Z"
+    description: This is a Helm chart for deploying MetaDefender Core (https://www.opswat.com/products/metadefender/core)
+      in a Kubernetes cluster
+    digest: 5c04449aa6cb6866792bc8f5c89c16b3032ef9be663a206ef0fce9907f2997cc
+    name: metadefender_core
+    type: application
+    urls:
+    - https://github.com/OPSWAT/metadefender-k8s/releases/download/metadefender_core-5.2.1/metadefender_core-5.2.1.tgz
+    version: 5.2.1
+  metadefender_for_secure_storage:
+  - apiVersion: v2
+    created: "2022-10-11T08:36:15.223799224Z"
+    description: This is a Helm chart for deploying MetaDefender for Secure Storage
+      (https://www.opswat.com/products/metadefender/metadefender-for-secure-storage)
+      in a Kubernetes cluster
+    digest: 5f24e8bf50e987a040c5315a20e6f9d8f8bce9ec8009aebe889959106b07301c
+    name: metadefender_for_secure_storage
+    type: application
+    urls:
+    - https://github.com/OPSWAT/metadefender-k8s/releases/download/metadefender_for_secure_storage-3.0.0/metadefender_for_secure_storage-3.0.0.tgz
+    version: 3.0.0
+  metadefender_icap_server:
+  - apiVersion: v2
+    created: "2022-10-11T08:36:15.386800585Z"
+    description: This is a Helm chart for deploying MetaDefender ICAP Server (https://www.opswat.com/products/metadefender/icap)
+      in a Kubernetes cluster
+    digest: 229a9e02010c758a85949c1a3035c1fa84b65e1dd6df4e89c6342e62ba11c441
+    name: metadefender_icap_server
+    type: application
+    urls:
+    - https://github.com/OPSWAT/metadefender-k8s/releases/download/metadefender_icap_server-4.13.0/metadefender_icap_server-4.13.0.tgz
+    version: 4.13.0
+generated: "2022-10-11T08:36:15.386810285Z"
