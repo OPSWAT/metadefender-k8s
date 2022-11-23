@@ -36,14 +36,14 @@ output "db_connections_string" {
 }
 
 output "db_server_fqdn_postgres" {
-    value = azurerm_postgresql_flexible_server.postgredb.*.fqdn[0]
+    value =  "${var.deploy_postgres_db == "false" ? azurerm_postgresql_flexible_server.postgredb.*.fqdn[0] : null}"
     sensitive = true
 }
 output "db_server_name_postgres" {
-    value = azurerm_postgresql_flexible_server.postgredb.*.name[0]
+    value = "${var.deploy_postgres_db == "false" ? azurerm_postgresql_flexible_server.postgredb.*.name[0] : null}"
     sensitive = true
 }
 output "db_server_username_postgres" {
-    value = azurerm_postgresql_flexible_server.postgredb.*.administrator_login[0]
+    value = "${var.deploy_postgres_db == "false" ? azurerm_postgresql_flexible_server.postgredb.*.administrator_login[0] : null}"
     sensitive = true
 }

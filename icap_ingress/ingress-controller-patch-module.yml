@@ -1,0 +1,17 @@
+---
+spec:
+  template:
+    spec:
+      containers:
+        - name: <NGINX_CONTAINER_NAME>                      # Container name within the Deployment/DaemonSet of the ingress controller
+          volumeMounts:
+            - mountPath: /etc/nginx/modules/icap/
+              name: nginx-icap-module
+      volumes:
+        - configMap:
+            items:
+            - key: ngx_http_ometascan_module.so
+              path: ngx_http_ometascan_module.so
+            name: nginx-icap-module
+          name: nginx-icap-module
+

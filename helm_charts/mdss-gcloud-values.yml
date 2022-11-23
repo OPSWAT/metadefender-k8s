@@ -1,0 +1,23 @@
+# Set to true for each product if the respective database engine should also be deployed
+deploy_with_mdss_db: true
+
+storage_provisioner: hostPath
+hostPathPrefix: /opswat
+
+# Deploy on an azure cluster
+environment: generic
+
+# # Set the service_type to LoadBalancer in order to create an Azure load balancer routing traffic directly to the web interface
+mdss_components:
+  webclient:
+    service_type: LoadBalancer
+
+# Ingress setting for mdss
+mdss_ingress:
+  host: <APP_NAMESPACE>-mdss.k8s
+  class: gce
+  enabled: false
+
+# Docker repo to use, this should be changed when using private images (this string will be prepended to the image name)
+# If a component has "custom_repo: true" then the image name will be formated as "{docker_repo/}image_name{:BRANCH}" otherwise it will remain unaltered
+mdss_docker_repo: opswat

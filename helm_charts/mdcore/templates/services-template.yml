@@ -2,6 +2,9 @@
 # Create a service for each component in MD Core it has exposed ports
 {{ range $component_name, $component := .Values.core_components }}
 {{ if $component.ports }}
+{{ if and (not $.Values.deploy_with_core_db) $component.is_db }}
+
+{{ else }}
 ---
 apiVersion: v1
 kind: Service
@@ -28,6 +31,8 @@ spec:
       app: {{ $component.name | quote }}
 status:
   loadBalancer: {}
+{{ end }}
+
 {{ end }}
 
 {{ end }}
