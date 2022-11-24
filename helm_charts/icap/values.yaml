@@ -30,7 +30,12 @@ MDICAPSRV_REST_PORT: "8048"              # Default REST port for the MD ICAP Ser
 MDICAPSRV_ICAP_PORT: "1344"              # Default ICAP port for the MD ICAP Server service
 MDICAPSRV_ICAPS_PORT: "11344"            # Default ICAPS port for the MD ICAP Server service
 MDICAPSRV_CERT_PATH: "/cert"
-MDICAPSRV_IMPORT_CONF_FILE: "/opt/opswat/mdicapsrv-config.json"
+MDICAPSRV_NGINX_CERT_PATH: "/nginx_cert"
+## Support password to encrypt/decrypt import JSON
+MDICAPSRV_IMPORT_CONF_FILE: "/opt/opswat/settings_export_package.zip"
+## Support set data retention
+MDICAPSRV_AUDIT_DATA_RETENTION: 168
+MDICAPSRV_HISTORY_DATA_RETENTION: 168
 
 # Set to false to not create any volumes or host paths in the deployment, all storage will be ephemeral
 persistance_enabled: true
@@ -89,7 +94,7 @@ icap_docker_repo: opswat
 icap_components:
   md_icapsrv:
     name: md-icapsrv
-    image: opswat/metadefendericapsrv-debian:4.13.0               # Overrides the default docker image for the MD ICAP Server service, this value can be changed if you want to set a different version of MD ICAP Server
+    image: opswat/metadefendericapsrv-debian:5.1.0               # Overrides the default docker image for the MD ICAP Server service, this value can be changed if you want to set a different version of MD ICAP Server
     # Warning: When to use this feature!
     replicas: 1                                                   # Sets the number of replicas if you want to have multiple MD ICAP Server instances
     env:
@@ -118,8 +123,22 @@ icap_components:
       targets: 
         - schema
         - servers
+      ## Support password to encrypt/decrypt exported JSON
+      ## Please copy file import configurations to folder "files" of the helm chart
+      ## Warning: The name of the file inside file zip should not be changed "settings_export.json"
       importConfigMap: mdicapsrv-import-configuration
-      importConfigMapSubPath: mdicapsrv-config.json
+      importConfigMapSubPath: settings_export_package.zip
+      importConfigFilePass: ""                              ## Provide password for unzip file (Only support file format as .zip or .json)
+    nginx_support:
+      enabled: false
+      port: 8043
+      port_s: 8443
+      tls:
+        enabled: false
+        nginxsCertSecret: mdicapsrv-nginx-tls-cert
+        nginxCertSecretSubPath: mdicapsrv-nginxs.crt
+        nginxsKeySecret: mdicapsrv-nginx-tls-key
+        nginxKeySecretSubPath: mdicapsrv-nginxs.key
     # If you enabled TLS, need to provide the secret name and key
     tls:
       enabled: false
@@ -131,6 +150,8 @@ icap_components:
       - port: 8048                                       # REST port to expose for the MD ICAP Server pod
       - port: 1344                                       # ICAP port to expose for the MD ICAP Server pod
       - port: 11344                                      # ICAPS port to expose for the MD ICAP Server pod
+      - port: 8043                                       # NGINX port for nginx ingress controller connect
+      - port: 8443                                       # NGINX (SSL) port for nginx ingress controller connect
     service_type: ClusterIP                              # Sets the service type for MD ICAP Server service (ClusterIP, NodePort, LoadBalancer)
     sessionAffinity: None
     service_annotations: null

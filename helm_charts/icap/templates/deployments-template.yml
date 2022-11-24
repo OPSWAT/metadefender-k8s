@@ -56,7 +56,7 @@ spec:
           livenessProbe:
             {{- toYaml $component.livenessProbe | nindent 12 }}
           {{- end }}
-          {{- if (or $component.mountConfig $component.tls.enabled $component.import_configuration.enabled $component.persistentDir)}}
+          {{- if (or $component.mountConfig $component.tls.enabled $component.import_configuration.enabled $component.nginx_support.tls.enabled $component.persistentDir)}}
           volumeMounts:
             {{- if $component.mountConfig }}
             - name: {{ $component.mountConfig.configName }}
@@ -70,6 +70,14 @@ spec:
             - name: {{ $component.tls.certKeySecret }}
               mountPath: {{ $.Values.MDICAPSRV_CERT_PATH }}/mdicapsrv.key
               subPath: {{ $component.tls.certKeySecretSubPath }}
+            {{ end }}
+            {{- if $component.nginx_support.tls.enabled }}
+            - name: {{ $component.nginx_support.tls.nginxsCertSecret }}
+              mountPath: {{ $.Values.MDICAPSRV_NGINX_CERT_PATH }}/mdicapsrv-nginxs.crt
+              subPath: {{ $component.nginx_support.tls.nginxCertSecretSubPath }}
+            - name: {{ $component.nginx_support.tls.nginxsKeySecret }}
+              mountPath: {{ $.Values.MDICAPSRV_NGINX_CERT_PATH }}/mdicapsrv-nginxs.key
+              subPath: {{ $component.nginx_support.tls.nginxKeySecretSubPath }}
             {{ end }}
             {{- if $component.import_configuration.enabled }}
             - name: {{ $component.import_configuration.importConfigMap }}
@@ -100,7 +108,7 @@ spec:
       imagePullSecrets:
         {{- toYaml $.Values.imagePullSecrets | nindent 8 }}
       {{- end }}
-      {{- if (or $component.mountConfig $component.tls.enabled $component.import_configuration.enabled $component.persistentDir)}}
+      {{- if (or $component.mountConfig $component.tls.enabled $component.import_configuration.enabled $component.nginx_support.tls.enabled $component.persistentDir)}}
       volumes:
         {{- if $component.mountConfig }}
         - name: {{ $component.mountConfig.configName }}
@@ -119,6 +127,14 @@ spec:
         - name: {{ $component.import_configuration.importConfigMap }}
           configMap:
             name: {{ $component.import_configuration.importConfigMap }}
+        {{ end }}
+        {{- if $component.nginx_support.tls.enabled }}
+        - name: {{ $component.nginx_support.tls.nginxsCertSecret }}
+          secret:
+            secretName: {{ $component.nginx_support.tls.nginxsCertSecret }}
+        - name: {{ $component.nginx_support.tls.nginxsKeySecret }}
+          secret:
+            secretName: {{ $component.nginx_support.tls.nginxsKeySecret }}
         {{ end }}
         {{- if $component.persistentDir }}
         {{- if eq $.Values.storage_provisioner "hostPath" }}
