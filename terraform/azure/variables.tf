@@ -43,7 +43,7 @@ variable "resource_group_location" {
 }
 
 variable "failover_location" {
-  default = "us-west-2"
+  default = "eastus"
 }
 
 variable "agent_count" {

@@ -1,0 +1,30 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: <INGRESS_CONTROLLER_CONFIGMAP_NAME>         # Name of the existing ConfigMap used by the ingress controller
+  namespace: <INGRESS_CONTROLLER_NAMESPACE>         # Namespace of the ingress controller
+data:
+  enable-ometascan: 'true'
+  # main-snippet: load_module /etc/nginx/modules/icap/ngx_http_ometascan_module.so;         # Uncomment this line if using the custom nginx module instead of the opswat nginx ingress controller image
+
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: ingress-rule-a
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /$1
+    nginx.ingress.kubernetes.io/ometascan-pass: "<ICAP_URL>"                  # Replace with the address and port of an existing ICAP instace, for example, if ICAP is running in the same cluster: http://<ICAP_SERVICE_NAME>.<ICAP_NAMESPACE>.svc.cluster.local:<ICAP_PORT> 
+spec:
+  rules:
+    - host: <TARGET_HOSTNAME>
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: <TARGET_SERVICE_NAME>
+                port:
+                  number: 80
+

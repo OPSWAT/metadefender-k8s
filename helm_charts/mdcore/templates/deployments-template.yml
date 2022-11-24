@@ -44,9 +44,21 @@ spec:
             - containerPort: {{ .port }}
           {{- end }}
           {{- end }}
-          {{- if $component.livenessProbe}}
+          {{- if $component.livenessProbe }}
           livenessProbe:
             {{- toYaml $component.livenessProbe | nindent 12 }}
+          {{- end }}
+          {{- if $component.command }}
+          command: 
+            {{- toYaml $component.command | nindent 12 }}
+          {{- end }}
+          {{- if $component.args }}
+          args:
+            {{- toYaml $component.args | nindent 12 }}
+          {{- end }}
+          {{- if $component.securityContext }}
+          securityContext:
+            {{- toYaml $component.securityContext | nindent 12 }}
           {{- end }}
           {{- if (or $component.mountConfig $component.tls.enabled $component.persistentDir)}}
           volumeMounts:

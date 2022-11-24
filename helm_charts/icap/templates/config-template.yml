@@ -10,19 +10,34 @@ data:
   ICAPS_PORT: {{ .Values.MDICAPSRV_ICAPS_PORT | quote }}
   HTTPS_CERT_PATH : {{ .Values.MDICAPSRV_CERT_PATH   | quote }}
   ICAPS_CERT_PATH : {{ .Values.MDICAPSRV_CERT_PATH   | quote }}
+  NGINXS_CERT_PATH: {{ .Values.MDICAPSRV_NGINX_CERT_PATH   | quote }}
   IMPORT_CONF_FILE : {{ .Values.MDICAPSRV_IMPORT_CONF_FILE  | quote }}
   ACTIVATION_SERVER: {{ .Values.activation_server }}
-
+  AUDIT_DATA_RETENTION: {{ .Values.MDICAPSRV_AUDIT_DATA_RETENTION | quote}}
+  HISTORY_DATA_RETENTION: {{ .Values.MDICAPSRV_HISTORY_DATA_RETENTION | quote}}
+  IMPORT_CONFIG_FILE_PASS: {{ .Values.icap_components.md_icapsrv.import_configuration.importConfigFilePass | quote }}
+{{- if .Values.icap_components.md_icapsrv.nginx_support.enabled }}
+{{- $nginx := .Values.icap_components.md_icapsrv.nginx_support }}
+  IGNITION_JSON: '{"nginxsupport/enabled":"{{$nginx.enabled}}", "nginxsupport/port":"{{$nginx.port}}", "nginxsupport/port_s":"{{$nginx.port_s}}"}'
+{{- end }}
 # # Uncomment for make ConfigMap for import configuration
-# ---
-# kind: ConfigMap
-# apiVersion: v1
-# metadata:
-#   name: mdicapsrv-import-configuration
-#   namespace: {{ $.Values.app_name }}
-# data:
-#   mdicapsrv-config.json: {{ toJson (.Files.Get "mdicapsrv-config.json")}}
-
+---
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: mdicapsrv-import-configuration
+  namespace: {{ $.Values.app_name }}
+{{- $file_path := printf "files/%s" .Values.icap_components.md_icapsrv.import_configuration.importConfigMapSubPath}}
+{{- $root := . }}
+{{- if .Values.icap_components.md_icapsrv.import_configuration.enabled }}
+{{- if regexMatch "^.*\\.(zip)$" $file_path }}
+binaryData:
+  {{ base $file_path }}: {{ $root.Files.Get $file_path | b64enc | quote }}
+{{- else if regexMatch "^.*\\.(json)$"  $file_path }}
+data:
+  {{ base $file_path }}: {{ toJson (.Files.Get $file_path )}}
+{{- end }}
+{{- end }}
 # Generate, set or keep the MD ICAP Server credentials
 {{- $icapPasswordValue := (randAlphaNum 24) | nospace | b64enc | quote }}
 {{- $icapUserValue := "admin" | b64enc | quote }}
@@ -93,81 +108,3 @@ metadata:
 data:
   value: {{ $icapLicenseKeyValue }}
 ---
-{{ $component := .Values.icap_components }}
-{{ if $component.md_icapsrv.import_configuration.enabled }}
-kind: ConfigMap
-apiVersion: v1
-metadata:
-  name: {{ $component.md_icapsrv.import_configuration.importConfigMap }}
-  namespace: {{ .Values.app_name }}
-  annotations:
-    "helm.sh/resource-policy": keep
-data:
-  {{ $component.md_icapsrv.import_configuration.importConfigMapSubPath}}: |
-    {
-      "schema": {
-          "config": {
-              "policy.rule.rule": {
-                  "items": [
-                      {
-                          "active": true,
-                          "description": "",
-                          "id": 1,
-                          "last_modified": 1658982216173,
-                          "mutable": true,
-                          "name": "Test",
-                          "rule_configs": {
-                              "advanced.allow_error_overwrite": false,
-                              "advanced.allow_error_overwrite.core_busy": false,
-                              "advanced.allow_error_overwrite.core_file_size_exceeded": false,
-                              "advanced.allow_error_overwrite.core_server_error": false,
-                              "advanced.allow_error_overwrite.multipart_error": false,
-                              "advanced.allow_error_overwrite.scan_timeout": false,
-                              "advanced.decoding_error": "BLOCK",
-                              "advanced.not_supported_encoding": "BLOCK",
-                              "request_filters.client_addresses": [],
-                              "request_filters.destination_addresses": [],
-                              "request_filters.headers": [],
-                              "request_filters.icap_client_addresses": [],
-                              "scan.allow_scan": true,
-                              "scan.allow_scan.scan_timeout_value": 0,
-                              "scan.allow_scan.target": 1,
-                              "trickling.enable_trickling": false,
-                              "trickling.enable_trickling.additional_drip_delay": 3,
-                              "trickling.enable_trickling.additional_drip_size": 100,
-                              "trickling.enable_trickling.enable_withhold": true,
-                              "trickling.enable_trickling.enable_withhold.size": 1000,
-                              "trickling.enable_trickling.first_drip_delay": 5,
-                              "trickling.enable_trickling.first_drip_size": 100
-                          }
-                      }
-                  ],
-                  "order": [
-                      1
-                  ]
-              }
-          },
-          "config-serial": 1,
-          "schema-version": 8
-      },
-      "servers": [
-          {
-              "data": {},
-              "id": 1,
-              "name": "core",
-              "server_preference": "failover",
-              "type": "core",
-              "uri_list": [
-                  {
-                      "enabled_local_scan": false,
-                      "enabled_webhook": false,
-                      "rule": "#",
-                      "uri": "http://md-core:8008"
-                  }
-              ],
-              "used": true
-          }
-      ],
-      "version": 2
-    }
-{{ end }}

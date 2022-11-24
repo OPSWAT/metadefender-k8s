@@ -40,6 +40,18 @@ spec:
             - containerPort: {{ .port }}
           {{- end }}
           {{- end }}
+          {{- if $component.command }}
+          command: 
+            {{- toYaml $component.command | nindent 12 }}
+          {{- end }}
+          {{- if $component.args }}
+          args:
+            {{- toYaml $component.args | nindent 12 }}
+          {{- end }}
+          {{- if $component.securityContext }}
+          securityContext:
+            {{- toYaml $component.securityContext | nindent 12 }}
+          {{- end }}
           {{- if (or $component.mountConfig (and $component.persistentDir $.Values.persistance_enabled) $component.customMounts)}}
           volumeMounts:
             {{- if $component.mountConfig }}
