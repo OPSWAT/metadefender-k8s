@@ -2,6 +2,8 @@
 {{ range $component_name, $component := .Values.mdss_components }}
 {{ if $component.ports }}
 {{ if and (not $.Values.deploy_with_mdss_db) $component.is_db }}
+
+{{ else }}
 ---
 apiVersion: v1
 kind: Service
