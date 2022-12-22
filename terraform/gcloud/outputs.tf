@@ -32,6 +32,10 @@ output "cloud_sql_connection_name" {
   value       = var.deploy_cloud_sql ? google_sql_database_instance.metadefender-db[0].connection_name : null
   description = "Cloud SQL connection name"
 }
+output "cloud_sql_private_ip_address" {
+  value       = var.deploy_cloud_sql ? google_sql_database_instance.metadefender-db[0].private_ip_address : null
+  description = "Cloud SQL Private IP Address"
+}
 
 output "cloud_sql_user" {
   value       = var.deploy_cloud_sql ? var.cloud_sql_user : null

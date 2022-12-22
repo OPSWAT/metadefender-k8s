@@ -61,7 +61,7 @@ persistance_enabled: true
 storage_provisioner: hostPath
 storage_name: hostPath
 storage_node: minikube
-hostPathPrefix: mdss-storage              # If `deploy_with_mdss_db` is set to true, this is the absolute path on the node where to keep the database filesystem for persistance
+hostPathPrefix: mdss-storage-<APP_NAMESPACE>         # This is the absolute path on the node where to keep the database filesystem for persistance, <APP_NAMESPACE> is replaced with the current deployment namespace
 
 # Ingress settings for mdss
 mdss_ingress:

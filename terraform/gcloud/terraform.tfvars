@@ -1,4 +1,4 @@
-# project_id = "metadefender-k8s"
+# project_id = "<ADD_YOUR_PROJECT_ID>"
 # region = "europe-central2"
 # cluster_location = "europe-central2-a"
 gcloud_json_key_path = "/path/to/json"
@@ -7,4 +7,4 @@ gcloud_json_key_path = "/path/to/json"
 # deploy_cloud_sql = true
 # private_ip_cloud_sql = true
 # cloud_sql_user = postgres
-# cloud_sql_password = mdcorepostgres
+# cloud_sql_password = <ADD_YOUR_POSTGRES_PASS>

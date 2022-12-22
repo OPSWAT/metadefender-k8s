@@ -2,7 +2,7 @@ terraform {
   required_providers {
     google = {
       source = "hashicorp/google"
-      version = "3.5.0"
+      version = "4.44.1"
     }
   }
 }
@@ -85,7 +85,7 @@ resource "google_sql_database_instance" "metadefender-db" {
   region           = var.region
 
   depends_on = [google_service_networking_connection.vpc_connection]
-
+  deletion_protection = var.deletion_protection
   settings {
     tier = "db-f1-micro"
     dynamic "ip_configuration" {
@@ -103,4 +103,5 @@ resource "google_sql_user" "users" {
   name     = var.cloud_sql_user
   instance = google_sql_database_instance.metadefender-db[0].name
   password = var.cloud_sql_password != null ? var.cloud_sql_password : random_password.random_pass.result
+  deletion_policy = "ABANDON"
 }
