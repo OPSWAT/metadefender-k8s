@@ -15,7 +15,8 @@ replicas=1
 db_user="postgres"
 db_password=null
 db_host=postgres-core
-
+project_id=""
+privateconnection=true
 # Print the usage message
 function printHelp () {
   echo "Usage: "
@@ -34,6 +35,7 @@ function printHelp () {
   echo "    --name <name> - Name of the K8S Cluster that will be created (default: \"$cluster_name\")"
   echo "    --namespace <namespace> - Name of the namespace where to install the products in the K8S Cluster (default: \"default\")"
   echo "    --replicas <replicas> - Number of replicas of MD Core service (default: 1)"
+  echo "    --project_id <project_id> - GCP Project ID (Required for GCP Provisioning)"
   echo
   echo "Typically, one would first provision the cluster selecting the location option "
   echo "that will guide you through the options to select"
@@ -56,6 +58,10 @@ cloudOptions[azurecluster]="AKS"
 cloudOptions[azure1]="VMS"
 cloudOptions[azurelb]="Private Load Balancer"
 cloudOptions[azuredb]="PostgreSQL"
+cloudOptions[gcpcluster]="GKE"
+cloudOptions[gcp1]="VMS"
+cloudOptions[gcplb]="Private Load Balancer"
+cloudOptions[gcpdb]="Cloud SQL"
 
 
 
@@ -141,14 +147,26 @@ function askAccess () {
   esac
 }
 
+function askPrivateConnection () {
+  read -p "Do you want to create a private connection for the external database? [Yes/No] " ans
+  case "$ans" in
+    Yes | yes )
+        echo "Create a private IP address for the Cloud SQL instance (requires the servicenetworking.services.addPeering permission)"
+        privateconnection=true
+    ;;
+    No | no )
+        echo "Private connection won't be created"
+        privateconnection=false
+    ;;
+    * )
+        echo "invalid response"
+        askOwnDB
+    ;;
+  esac
+}
 
 function askDBExternal () {
 
-
-    if [ "$LOCATION_PARAM" == "local" ];then
-        read -p "We will create an external database for, select bewteen AWS or Azure? [AWS/Azure] " location
-        LOCATION_PARAM=$(echo $LOCATION | awk '{print tolower($0)}'); 
-    fi
     optdb="${LOCATION_PARAM}db"
     cloudOptDB=${cloudOptions[$optdb]}
     
@@ -168,7 +186,9 @@ function askDBExternal () {
             k8s_db=false
             read -p "USERNAME for PostgreSQL DB $LOCATION $cloudOptDB: " db_user
             read -p "PASSWORD for PostgreSQL DB $LOCATION $cloudOptDB: " db_password
-
+            if [ "$LOCATION_PARAM" == "gcp" ];then
+              askPrivateConnection
+            fi
         ;;
         * )
             echo "invalid response"
@@ -207,15 +227,16 @@ function askDB () {
       optDBSelec="Own"
       externalDB=false
       k8s_db=false
-
+      privateconnection=false
     ;;
     new | New | NEW)
-        if [ "$LOCATION_PARAM" == "local" ];then
+        if [ "$LOCATION_PARAM" == "local" ] || [ "${MODE}" == "install" ];then
           echo "We will create an postgreSQL pod in your cluster"
           optExtDBSelec="K8S"
           persistent=true
           externalDB=false
           k8s_db=true
+          privateconnection=false
         else
           askDBExternal
         fi
@@ -235,6 +256,11 @@ function askAWSCredentials () {
 
 function askAzureCredentials () {
   echo "ERROR: Please export ARM_CLIENT_ID, ARM_CLIENT_SECRET, ARM_SUBSCRIPTION_ID & ARM_TENANT_ID"
+  exit 1
+}
+
+function askGCPCredentials () {
+  echo "ERROR: Please export GCP_JSON_CREDENTIALS_PATH"
   exit 1
 }
 
@@ -271,7 +297,6 @@ function install(){
       askDB
     fi
     
-
     echo "SUMMARY OF SELECTIONS: "
     echo " - $optAccessSelec access to the cluster"
     if [ "${MDCORE}" == "true" ];then
@@ -306,7 +331,7 @@ function installMDCore() {
 
     if [ "$LOCATION_PARAM" == "local" ];then
 
-        helm install mdcore mdcore/ --namespace $namespace --create-namespace -f $helm_file \
+        helm install mdcore mdcore/ --namespace $namespace --create-namespace \
         --set core_ingress.enabled=$ingress_enabled \
         --set mdcore_license_key=$MDCORE_LICENSE_KEY \
         --set deploy_with_core_db=$k8s_db \
@@ -324,6 +349,12 @@ function installMDCore() {
       elif [ "$LOCATION_PARAM" == "azure" ]; then
           helm_file="mdcore-azure-aks-values.yml"
 
+      elif [ "$LOCATION_PARAM" == "gcp" ]; then
+          if [ "$privateconnection" == "true" ];then
+            helm_file="mdcore-gcloud-values.yml"
+          else
+            helm_file="mdcore-gcloud-sqlproxy-values.yml"
+          fi
       fi
 
       helm install mdcore mdcore/ --namespace $namespace --create-namespace -f $helm_file \
@@ -352,6 +383,8 @@ function installMDSS () {
           helm_file="mdss-aws-eks-values.yml"
       elif [ "$LOCATION_PARAM" == "azure" ]; then
           helm_file="mdss-azure-aks-values.yml"
+      elif [ "$LOCATION_PARAM" == "gcp" ]; then
+          helm_file="mdss-gcloud-values.yml"
       fi
       helm install mdss mdss/ --namespace $namespace --create-namespace -f $helm_file \
       --set mdss_ingress.enabled=$ingress_enabled
@@ -423,14 +456,6 @@ function provisionAzure() {
   echo $cluster_name
   resource_group_name=$(terraform output -raw resource_group_name)
   echo $resource_group_name
-
-  #MDSS target groups (ADD CONTROL)
-  if [ "${MDSS}" == "true" ];then
-    webclient_target_group_arn=$(terraform output -raw WEBCLIENT_TARGET_GROUP_ARN)
-    echo $webclient_target_group_arn
-    systemchecks_target_group_arn=$(terraform output -raw SYSTEMCHECKS_TARGET_GROUP_ARN)
-    echo $systemchecks_target_group_arn
-  fi
   
   #DB Endpoint
   if [ "${externalDB}" == "true" ];then
@@ -446,6 +471,38 @@ function provisionAzure() {
     echo $username_postgres
   fi 
 
+}
+function provisionGCP() {
+
+  echo "Running terrafrom apply"
+
+  askProceed
+
+  terraform apply -auto-approve \
+  -var="gcloud_json_key_path=$GCP_JSON_CREDENTIALS_PATH" \
+  -var="deploy_cloud_sql=$externalDB" \
+  -var="cloud_sql_user=$db_user" \
+  -var="cloud_sql_password=$db_password" \
+  -var="private_ip_cloud_sql=$privateconnection" \
+  -var="project_id=$project_id"
+
+  cluster_name=$(terraform output -raw kubernetes_cluster_name)
+  echo $cluster_name
+  cluster_location=$(terraform output -raw cluster_location)
+  echo $cluster_location
+
+  
+  #DB Endpoint
+  if [ "${externalDB}" == "true" ];then
+    if [ "${privateconnection}" == "true" ];then
+      db_host=$(terraform output -raw cloud_sql_private_ip_address)
+      echo $db_host
+    else
+      db_host=$(terraform output -raw cloud_sql_connection_name)
+      echo $db_host
+    fi
+  fi 
+  
 }
 
 function provision() {
@@ -466,6 +523,17 @@ function provision() {
           echo "Azure Credentials detected in environment variables"
           echo "For accesing to the cluster we will use the following public key '~/.ssh/id_rsa.pub'"
           cd terraform/azure/
+      fi
+    elif [ "$LOCATION_PARAM" == "gcp" ]; then
+      if [ -z "${GCP_JSON_CREDENTIALS_PATH}" ]; then
+        echo "Provisioning MD Core in "$LOCATION
+        echo $GCP_JSON_CREDENTIALS_PATH
+        askGCPCredentials
+      else
+          echo "GCP Credentials detected in environment variables"
+          echo $GCP_JSON_CREDENTIALS_PATH
+          echo "For accesing to the cluster we will use the following public key '~/.ssh/id_rsa.pub'"
+          cd terraform/gcloud/
       fi
     else
       echo "To be developed"
@@ -495,9 +563,13 @@ function provision() {
       provisionAzure
       echo "Including context info in the .kube/config"
       #Including context info in the .kube/config
-      az aks get-credentials --name $cluster_name --overwrite-existing --resource-group $resource_group_name
-      
-      #aws eks update-kubeconfig --region $region --name $cluster_name
+      az aks get-credentials --name $cluster_name --overwrite-existing --resource-group $resource_group_name      
+    elif [ "$LOCATION_PARAM" == "gcp" ];then
+      provisionGCP
+      echo "Including context info in the .kube/config"
+      #Including context info in the .kube/config
+      gcloud auth activate-service-account --key-file=$GCP_JSON_CREDENTIALS_PATH
+      gcloud container clusters get-credentials $cluster_name --zone=$cluster_location
     fi
 
     if [ "${MDCORE}" == "true" ];then
@@ -575,6 +647,9 @@ fi
         "--replicas") 
             replicas="$1"; 
             shift;;
+        "--project_id") 
+            project_id="$1"; 
+            shift;;
         "--mdcore") 
             MDCORE="true";;
         "--mdss") 
@@ -596,13 +671,13 @@ function checkLocation() {
   else
       if [ "${MODE}" == "provision" ];then
         # Location command is required
-        echo "Location parameter is required, options AWS | Azure "
+        echo "Location parameter is required, options AWS | Azure | GCP "
         printHelp
         exit 0
       fi
       if [ "${MODE}" == "install" ] && [ "${LOCATION_PARAM}" != "local" ];then
         # Location command is required
-        echo "Location parameter is required, options AWS | Azure | Local"
+        echo "Location parameter is required, options AWS | Azure | GCP | Local"
         printHelp
         exit 0
       fi
@@ -626,7 +701,7 @@ if [ "${MODE}" == "provision" ];then
   if [ "${MDSS}" == "true" ];then
         message=${message}" with MDSS";
   fi
-   if [ "${MDSS}" == "true" ];then
+   if [ "${ICAP}" == "true" ];then
         message=${message}" with ICAP";
   fi
   echo $message
@@ -636,6 +711,11 @@ askProceed
 
 #Create the MD Core service in the location selected
 if [ "${MODE}" == "provision" ]; then ## Generate Artifacts
+  if [ "$LOCATION_PARAM" == "gcp" ] && [ -z "$project_id" ];then
+      echo "GCP Project ID is required for GCP provisioning"
+      printHelp
+      exit 0
+  fi
   provision
 elif [ "${MODE}" == "install" ]; then ## Upgrade the network from v1.0.x to v1.1
   install

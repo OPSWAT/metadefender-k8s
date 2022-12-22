@@ -50,7 +50,7 @@ data:
 {{- $coreUserValue = index $coreCredSecret.data "user" }}
 {{- end -}}
 {{- if .Values.mdcore_password }}
-{{- $corePasswordValue = .Values.mdcore_password  }}
+{{- $corePasswordValue = .Values.mdcore_password | b64enc }}
 {{- end -}}
 {{- if .Values.mdcore_user }}
 {{- $coreUserValue = .Values.mdcore_user | b64enc }}
@@ -108,3 +108,17 @@ metadata:
     "helm.sh/resource-policy": keep
 data:
   value: {{ $coreLicenseKeyValue }}
+
+---
+
+{{ if .Values.env }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ printf "%s-config" .Release.Name }}
+data:
+  {{- range $key, $val := .Values.env }}
+  {{ $key }}: {{ $val | quote }}
+  {{- end}}
+{{ end }}
+

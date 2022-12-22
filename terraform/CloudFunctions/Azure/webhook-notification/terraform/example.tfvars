@@ -1,0 +1,12 @@
+fn_name  =  "" # Function name
+fn_resource_group_name = "" # The name of the resource group in which the function app will be created.
+fn_service_plan_name = "" # The name of the app service plan
+fn_location = "" # Function resources location
+fn_storage_account_name = "" # The name of the storage account to be created for the function
+fn_site_config_always_on = "" # Set to true so the function will not idle
+STORAGECLIENTID  = "" # MDSS Storage client ID
+APIKEY = "" # MDSS Apikey
+APIENDPOINT = "" # MDSS Api Endpoint
+STORAGE_RG = "" # The resource group where the storage account the triggers the function is
+STORAGE_ACCOUNT = "" # The storage account name where the container triggers the function is
+STORAGE_CONTAINERNAME = "" # The container name that triggers the function

@@ -1,16 +1,21 @@
 variable "project_id" {
   description = "GCloud project id"
-  default = "metadefender-k8s"
+  default = ""
 }
 
 variable "region" {
   description = "Region where to deploy"
-  default = "europe-central2"
+  default = "us-central1"
 }
 
 variable "cluster_location" {
   description = "GKE cluster location that can be either a region or a specific zone"
-  default = "europe-central2-a"
+  default = "us-central1-a"
+}
+
+variable "deletion_protection" {
+  description = "Protect db instance to be deleted with terraform destroy"
+  default = false
 }
 
 variable "gcloud_json_key_path" {
@@ -36,7 +41,7 @@ variable "deploy_cloud_sql" {
 
 variable "private_ip_cloud_sql" {
   description = "Create a private IP address for the Cloud SQL instance (requires the servicenetworking.services.addPeering permission)"
-  default = false
+  default = true
 }
 
 variable "cloud_sql_user" {

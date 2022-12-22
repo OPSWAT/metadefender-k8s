@@ -100,7 +100,7 @@ spec:
         {{- if eq $.Values.storage_provisioner "hostPath" }}
         - name: {{ $component.name }}
           hostPath:
-            path: {{ printf "/%s/%s/%s" $.Values.hostPathPrefix $.Release.Namespace $component.name }}
+            path: {{ printf "/%s/%s" ( $.Values.hostPathPrefix | replace "<APP_NAMESPACE>" $.Release.Namespace) $component.name }}
             type: DirectoryOrCreate
         {{ else }}
         - name: {{ $component.name }}

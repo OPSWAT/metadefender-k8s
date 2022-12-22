@@ -54,6 +54,7 @@ core_components:
   md-core:
     name: md-core
     service_type: LoadBalancer
+    sessionAffinity: ClientIP
     replicas: 1
 
 # Ingress setting for mdss and md core
