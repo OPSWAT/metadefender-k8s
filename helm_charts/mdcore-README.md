@@ -5,7 +5,7 @@ Metadefender core
 This is a Helm chart for deploying MetaDefender Core (https://www.opswat.com/products/metadefender/core) in a Kubernetes cluster
 
 This chart can deploy the following depending on the provided values:
-- One or mode MD Core instances 
+- One or more MD Core instances 
 - A PostgreSQL database instance pre-configured to be used by MD Core
 
 In addition to the chart, we also provide a number of values files for specific scenarios:

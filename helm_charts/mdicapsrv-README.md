@@ -5,7 +5,7 @@ Metadefender ICAP Server
 This is a Helm chart for deploying MetaDefender ICAP (https://www.opswat.com/products/metadefender/icap) in a Kubernetes cluster
 
 This chart can deploy the following depending on the provided values:
-- One or mode MD ICAP Server instances 
+- One or more MD ICAP Server instances 
 
 ## Installation
 
