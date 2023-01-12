@@ -1,0 +1,86 @@
+
+## Uncomment the following lines to set a fixed user and password for the MD Core web interface that will overwrite 
+## any secret that already exists for these credentials (the secret will be kept when the chart is deleted)
+## If left unset the following will apply:
+## - if no "mdcore-cred" secret exists, it will be created with the user "admin" and a random password
+## - if the "mdcore-cred" secret exists, the values from the secret are used as credentials
+
+# mdcore_user: admin
+# mdcore_password: <SET_PASSWORD_HERE>
+
+
+## Uncomment the following lines to set a fixed user and password for the MD Core PostgreSQL database that will overwrite 
+## any secret that already exists for these credentials (the secret will be kept when the chart is deleted)
+## If left unset the following will apply:
+## - if no "mdcore-postgres-cred" secret exists, it will be created with the user "postgres" and a random password
+## - if the "mdcore-postgres-cred" secret exists, the values from the secret are used as credentials
+
+db_user: postgres
+db_password: <SET_POSTGRES_PASSWORD>
+
+
+## Uncomment the following line to set a fixed API key for MD Core that will overwrite 
+## any secret that already exists for API key (the secret will be kept when the chart is deleted)
+## If left unset the following will apply:
+## - if no "mdcore-api-key" secret exists, it will be created with a random 36 character API key
+## - if the "mdcore-api-key" secret exists, the value from the secret is used
+
+# mdcore_api_key: <SET_36_CHARACTER_API_KEY>
+
+
+## Set your MD Core license key here and it will be stored in the "mdcore-license-key" secret that will be created 
+## if it does not exist. If left unset then a a secret is generated with and empty license key.
+
+mdcore_license_key: <SET_LICENSE_KEY_HERE>
+
+## MD Core settings that are saved in the "mdcore_env" config map
+MDCORE_REST_PORT: "8008"
+MDCORE_DB_MODE: "4"
+MDCORE_DB_TYPE: remote
+MDCORE_DB_HOST: postgres-core
+MDCORE_DB_PORT: "5432"
+MDCORE_CERT_PATH: "/cert"
+
+deploy_with_core_db: true
+
+storage_provisioner: custom       # Type of storage to use in the pod definition
+storage_name: ocstorage           # Name of the PVC to use in the pod definition
+
+storage_configs:              # Example using a PVC with dynamic provisioning from an existing storage class
+  pvc-example:
+    apiVersion: v1
+    kind: PersistentVolumeClaim
+    metadata:
+      name: ocstorage
+    spec:
+      accessModes:
+        - ReadWriteOnce
+      resources:
+        requests:
+          storage: 1Gi
+      storageClassName: <SET_STORAGE_CLASS_NAME>
+
+env:
+  POSTGRESQL_ADMIN_PASSWORD: <SET_POSTGRES_ADMIN_PASSWORD>
+  # POSTGRESQL_USER: <DB_USER>
+  # POSTGRESQL_PASSWORD: <DB_PASSWORD>
+
+core_components:
+  md-core:
+    name: md-core
+    replicas: 1
+    # service_type: LoadBalancer          # Set to LoadBalancer or NodePort to expose MD Core directly from the service
+    # resources:
+    #   requests:
+    #     cpu: 2.0                        # Recommended minimum of 7 for production, can be lower for testing 
+  postgres-core:
+    image: registry.redhat.io/rhel8/postgresql-12
+    # persistentDir: null                 # Set to null to disable persistance of the database
+
+core_ingress:
+  host: <APP_NAMESPACE>-mdcore.k8s       # Hostname for the publicly accessible ingress, the `<APP_NAMESPACE>` string will be replaced with the namespace where the chart is deployed
+  enabled: true                         # Enable or disable the ingress creation
+
+# Docker repo to use, this should be changed when using private images (this string will be prepended to the image name)
+# If a component has "custom_repo: true" then the image name will be formated as "{docker_repo/}image_name{:BRANCH}" otherwise it will remain unaltered
+core_docker_repo: opswat

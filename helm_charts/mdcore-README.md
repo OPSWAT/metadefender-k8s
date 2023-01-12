@@ -9,8 +9,10 @@ This chart can deploy the following depending on the provided values:
 - A PostgreSQL database instance pre-configured to be used by MD Core
 
 In addition to the chart, we also provide a number of values files for specific scenarios:
-- mdcore-aws-eks-values.yml - for deploying in an AWS environment using Amazon EKS
-- mdcore-azure-aks-values.yml - for deploying in an Azure environment using AKS
+- `mdcore-aws-eks-values.yml` - for deploying in an AWS environment using Amazon EKS
+- `mdcore-azure-aks-values.yml` - for deploying in an Azure environment using AKS
+- `mdcore-azure-gcloud-*.yml` - for deploying in an GCP environment using GKE
+- `mdcore-openshift.yml` - for deploying in an OpenShift environment
 
 ## Installation
 
@@ -29,6 +31,40 @@ helm repo add mdk8s https://opswat.github.io/metadefender-k8s/
 helm repo update mdk8s
 helm install my_mdcore mdk8s/metadefender_core
 ```
+
+### OpenShift deployment
+
+#### **Cluster requirements**
+1. A configured image pull secret for the current OpenShift user for the RedHat docker repo: `registry.redhat.io` . The helm values for OpenShift use the following image from RedHat: `registry.redhat.io/rhel8/postgresql-12` . This is only required if using the database deployment from the Helm chart, a managed external database service can be configured instead if available.
+The repo credentials ca be configured with the following `oc` commands:
+```
+oc create secret docker-registry imagepullsecret --docker-server=registry.redhat.io --docker-username=<REDHAT_USER> --docker-password=<REDHAT_PASSWORD> --docker-email=<REDHAT_EMAIL>
+
+oc secrets link <OPENSHIFT_USER> imagepullsecret --for=pull
+```
+2. An existing persistent volume or storage class to be used for database persistency. The `mdcore-openshift.yml` values file is configured with an example persistent volume claim using a certain storage class.
+
+#### **Helm chart**
+To deploy the helm chart directly in a RedHat OpenShift cluster we have the `mdcore-openshift.yml` values file. This file can be used as an example of the changes required for OpenShift:
+- **PostgreSQL image**: the docker image has been changed to use the RedHat repo: `registry.redhat.io/rhel8/postgresql-12`
+- **Storage**: a persistent volume claim has been configured to use an existing storage class since `hostPath` is not supported on an unprivileged container
+
+Example installation when using local helm files and setting the custom values manually:
+```
+helm install my_mdcore ./helm_charts/mdcore -f mdcore-openshift.yml \
+ --set 'db_password=<SET_POSTGRES_PASSWORD>' \
+ --set 'env.POSTGRESQL_ADMIN_PASSWORD=<SET_POSTGRES_ADMIN_PASSWORD>' \
+ --set 'storage_configs.pvc-example.spec.storageClassName=<SET_STORAGE_CLASS_NAME>' \
+ --set 'mdcore_license_key=<SET_LICENSE_KEY>'
+```
+
+#### **Exposing MD Core**
+After installation MD Core can be exposed in OpenShift by creating a new route in the `Networking -> Routes` section with the following settings:
+- Path: `/`
+- Service: `md-core`
+- Target port: `8008 -> 8008`
+
+An ingress is also created by default and can be disabled by setting the `core_ingress.enabled` value to `false` .
 
 ## Operational Notes
 The entire deployment can be customized by overwriting the chart's default configuration values. Here are a few point to look out for when changing these values:
@@ -99,8 +135,6 @@ The following table lists the configurable parameters of the Metadefender core c
 | `core_components.md-core.livenessProbe.failureThreshold` |  | `3` |
 | `core_components.md-core.strategy.type` |  | `"RollingUpdate"` |
 | `core_components.md-core.strategy.rollingUpdate.maxSurge` |  | `0` |
-| `core_components.md-core.sidecars` | Configuration for the activation-manager sidecar | `[{"name": "activation-manager", "image": "alpine", "envFrom": [{"configMapRef": {"name": "mdcore-env"}}], "env": [{"name": "APIKEY", "valueFrom": {"secretKeyRef": {"name": "mdcore-api-key", "key": "value"}}}, {"name": "LICENSE_KEY", "valueFrom": {"secretKeyRef": {"name": "mdcore-license-key", "key": "value"}}}], "command": ["/bin/sh", "-c"], "args": ["apk add curl jq\nstop() {\n  echo 'Deactivating using the MD Core API'\n  curl -H \"apikey: $APIKEY\" -X POST \"https://localhost:$REST_PORT/admin/license/deactivation\"\n  echo 'Deactivating using activation server API'\n  curl -X GET \"https://$ACTIVATION_SERVER/deactivation?key=$LICENSE_KEY&deployment=$DEPLOYMENT\"\n  exit 0\n}\ntrap stop SIGTERM SIGINT SIGQUIT\n\nuntil [ -n $DEPLOYMENT ] && [ $DEPLOYMENT != null ]; do\n    echo 'Checking...'\n    export DEPLOYMENT=$(curl --silent -H \"apikey: $APIKEY\" \"http://localhost:$REST_PORT/admin/license\" | jq -r \".deployment\")\n    echo \"Deployment ID: $DEPLOYMENT\"\n    sleep 1\ndone\necho \"Waiting for termination signal...\"\nwhile true; do sleep 1; done\necho \"MD Core pod finished, exiting\"\nexit 0\n"]}]` |
-| `core_components.md-core.initContainers` |  | `[{"name": "check-db-ready", "image": "postgres", "envFrom": [{"configMapRef": {"name": "mdcore-env"}}], "command": ["sh", "-c", "until pg_isready -h $DB_HOST -p $DB_PORT; do echo waiting for database; sleep 2; done;"]}]` |
 | `podAnnotations` |  | `{}` |
 | `podSecurityContext` |  | `{}` |
 | `securityContext` |  | `{}` |
