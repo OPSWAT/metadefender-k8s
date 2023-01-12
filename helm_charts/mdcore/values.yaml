@@ -46,17 +46,29 @@ MDCORE_CERT_PATH: "/cert"
 # Set to true if the respective database engine should also be deployed
 deploy_with_core_db: true           # Enable or disable the local in-cluster PostgreSQL database
 
-# Set to false to not create any volumes or host paths in the deployment, all storage will be ephemeral
-persistance_enabled: true
+
+storage_configs: null        # Custom storage yaml, set to null for ephemeral or hostPath storage
+# storage_configs:              # Example using a PVC with dynamic provisioning from an existing storage class
+#   pvc-example:
+#     apiVersion: v1
+#     kind: PersistentVolumeClaim
+#     metadata:
+#       name: ocstorage
+#     spec:
+#       accessModes:
+#         - ReadWriteOnce
+#       resources:
+#         requests:
+#           storage: 1Gi
+#       storageClassName: <SET_STORAGE_CLASS_NAME>
 
 # Available storage providers:
-# - minikube-hostpath: Local storage on the current node using the minikube provisioner
-# - no-provisioner: WIP, Local storage using static Volumes
-# - hostPath
-storage_provisioner: hostPath
-storage_name: hostPath
-storage_node: minikube
-hostPathPrefix: mdcore-storage-<APP_NAMESPACE>      # This is the absolute path on the node where to keep the database filesystem for persistance, <APP_NAMESPACE> is replaced with the current deployment namespace
+# - hostPath: doesn't use any PVCs in the pod definitions and just mounts a path on the host starting with the hostPathPrefix
+# - custom: mounts from the PVC named as the storage_name value and uses component name as the subpath
+storage_provisioner: hostPath       # Type of storage to use in the pod definition
+storage_name: pvc-name              # Name of the PVC to use in the pod definition
+hostPathPrefix: mdcore-storage-<APP_NAMESPACE>      # The absolute path on the node where to keep the database filesystem for persistance
+
 
 # Ingress setting for md core (md core setting are ignored if deploy_with_core is false)
 core_ingress:
