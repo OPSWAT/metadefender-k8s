@@ -43,6 +43,17 @@ MDCORE_DB_HOST: postgres-core       # Hostname / entrypoint of the database, thi
 MDCORE_DB_PORT: "5432"              # Port for the PostgreSQL Database
 MDCORE_CERT_PATH: "/cert"
 
+RABBITMQ_DEFAULT_USER: rabbitmq
+RABBITMQ_DEFAULT_PASS: null          # RabbitMQ broker password, if not set it will be randomly generated
+
+CERT_KEY: |
+  <SET_MD_NAS_CERT_KEY>
+CERT: |
+  <SET_MD_NAS_CERT>
+
+ENABLED_MODULES: ""
+# ENABLED_MODULES: "mdhub"
+
 # Set to true if the respective database engine should also be deployed
 deploy_with_core_db: true           # Enable or disable the local in-cluster PostgreSQL database
 
@@ -61,6 +72,9 @@ storage_configs: null        # Custom storage yaml, set to null for ephemeral or
 #         requests:
 #           storage: 1Gi
 #       storageClassName: <SET_STORAGE_CLASS_NAME>
+
+# Generate secrets for MD Core username, password, postgres user and password
+mdcore_generate_secrets: true
 
 # Available storage providers:
 # - hostPath: doesn't use any PVCs in the pod definitions and just mounts a path on the host starting with the hostPathPrefix
@@ -113,7 +127,7 @@ core_components:
 
   md-core:
     name: md-core
-    image: opswat/metadefendercore-debian:5.2.1         # Overrides the default docker image for the MD Core service, this value can be changed if you want to set a different version of MD Core
+    image: opswat/metadefendercore-debian:5.4.0         # Overrides the default docker image for the MD Core service, this value can be changed if you want to set a different version of MD Core
     replicas: 1                                         # Sets the number of replicas if you want to have multiple MD Core instances
     env:
       - name: MD_USER
@@ -150,6 +164,11 @@ core_components:
           secretKeyRef:
             name: mdcore-postgres-cred
             key: password
+      - name: IGNITION_JSON
+        valueFrom: 
+          secretKeyRef:
+            name: mdcore-stack-configs
+            key: IGNITION_JSON
     tls:
       enabled: false
       certSecret: mdcore-tls-cert
@@ -183,6 +202,11 @@ core_components:
       type: RollingUpdate
       rollingUpdate:
         maxSurge: 0
+    extraVolumes:
+      - name: wait-for-hub-services
+        configMap:
+          name:  wait-for-hub-services
+          defaultMode: 0777
     sidecars:                                           # Configuration for the activation-manager sidecar
       - name: activation-manager
         image: opswat/md-activation-manager
@@ -211,3 +235,81 @@ core_components:
         command: ['sh', '-c', 
           'until pg_isready -h $DB_HOST -p $DB_PORT; 
           do echo waiting for database; sleep 2; done;']
+      - name: wait-for-hub-services
+        image: busybox
+        command: [ '/wait-for-hub-services.sh' ]
+        volumeMounts:
+          - name:  wait-for-hub-services
+            mountPath: /wait-for-hub-services.sh
+            subPath: wait-for-hub-services.sh
+#========================================== MDHUB MODULE ==========================================
+  md-hub:
+    image: opswat/mdhub-debian:1.1.0
+    name: md-hub
+    module_name: mdhub
+    ports:
+      - port: 8889
+    extraVolumeMounts:
+      - name: mdcore-stack-configs
+        mountPath: /etc/opswat/ometascan_hub.conf
+        subPath: ometascan_hub.conf
+    extraVolumes:
+      - name:  mdcore-stack-configs
+        secret:
+          secretName: mdcore-stack-configs
+      - name: wait-for-hub-services
+        configMap:
+          name:  wait-for-hub-services
+          defaultMode: 0777
+    initContainers:
+      - name: wait-for-hub-services
+        image: busybox
+        command: [ '/wait-for-hub-services.sh' ]
+        volumeMounts:
+          - name:  wait-for-hub-services
+            mountPath: /wait-for-hub-services.sh
+            subPath: wait-for-hub-services.sh
+          
+  md-nas:
+    image: opswat/mdnas-debian:1.1.0
+    name: md-nas
+    module_name: mdhub
+    ports:
+      - port: 8888
+    extraVolumeMounts:
+      - name:  mdcore-stack-configs
+        mountPath: /etc/opswat/ometascan_nas.conf
+        subPath: ometascan_nas.conf
+      - name:  mdcore-stack-configs
+        mountPath: /etc/opswat/local.key
+        subPath: CERT_KEY
+      - name:  mdcore-stack-configs
+        mountPath: /etc/opswat/local.cert
+        subPath: CERT
+    extraVolumes:
+      - name: mdcore-stack-configs
+        secret:
+          secretName: mdcore-stack-configs
+  redis:
+    image: "redis:7.0.5"
+    name: redis
+    module_name: mdhub
+    ports:
+      - port: 6379
+  rabbitmq:
+    image: "rabbitmq:3.10.7"
+    name: rabbitmq
+    module_name: mdhub
+    env:
+      - name: RABBITMQ_DEFAULT_USER
+        valueFrom:
+          secretKeyRef:
+            name: mdcore-stack-configs
+            key: RABBITMQ_DEFAULT_USER
+      - name: RABBITMQ_DEFAULT_PASS
+        valueFrom:
+          secretKeyRef:
+            name: mdcore-stack-configs
+            key: RABBITMQ_DEFAULT_PASS
+    ports:
+      - port: 5672

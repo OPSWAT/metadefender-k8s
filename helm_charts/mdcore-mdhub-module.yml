@@ -1,0 +1,28 @@
+## Uncomment the following line to set a fixed API key for MD Core that will overwrite 
+## any secret that already exists for API key (the secret will be kept when the chart is deleted)
+## If left unset the following will apply:
+## - if no "mdcore-api-key" secret exists, it will be created with a random 36 character API key
+## - if the "mdcore-api-key" secret exists, the value from the secret is used
+
+# mdcore_api_key: null               # 36 character API key used for the MD Core REST API, if not set it will be randomly generated
+
+RABBITMQ_DEFAULT_USER: rabbitmq
+RABBITMQ_DEFAULT_PASS: null          # RabbitMQ broker password, if not set it will be randomly generated
+
+## Set your MD Core license key here and it will be stored in the "mdcore-license-key" secret that will be created 
+## if it does not exist. If left unset then a a secret is generated with and empty license key.
+
+mdcore_license_key: <SET_LICENSE_KEY_HERE>    # A valid license key, **this value is mandatory**
+
+CERT_KEY: |                       # Certificate key contents (as text) for the MD Nas container
+  <SET_MD_NAS_CERT_KEY>
+CERT: |                           # Certificate contents (as text) for the MD Nas container
+  <SET_MD_NAS_CERT>
+
+ENABLED_MODULES: "mdhub"          # Enabling the MD Hub module will configure and start the redis, rabbitmq, md hub and md nas pods
+
+core_components:
+  md-hub:
+    ports:
+      - port: 8889
+    service_type: ClusterIP

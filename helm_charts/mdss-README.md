@@ -30,6 +30,17 @@ helm repo update mdk8s
 helm install my_mdss mdk8s/metadefender_for_secure_storage
 ```
 
+### Flexible deployment
+By default, the helm chart deploys MDSS with support for the following storage units: azureblob,amazonsdk,googlecloud,alibabacloud,azurefiles,box. For a more efficient use of resources, we can specify only the storage units that are required by changing the `ENABLED_MODULES` value. For example, we can enable support for just Azure, AWS and GCP:
+```
+ENABLED_MODULES: azureblob,azurefiles,amazonsdk,googlecloud
+```
+Currently supported modules:
+
+`azureblob,amazonsdk,googlecloud,alibabacloud,azurefiles,smb,box,onedrive,debug`
+
+The `debug` module is reserved for deploying debug and maintenance pods.
+
 ## Operational Notes
 The entire deployment can be customized by overwriting the chart's default configuration values. Here are a few point to look out for when changing these values:
 - By default, a MongoDB database is deployed alongside the MDSS deployment
