@@ -4,4 +4,4 @@ spec:
     spec:
       containers:
         - name: <NGINX_CONTAINER_NAME>                                            # Container name within the Deployment/DaemonSet of the ingress controller
-          image: opswat/nginx-ingress:controller-1.2.1_ometascan-0.1.1-beta
+          image: opswat/nginx-ingress:controller-1.5.1_ometascan-1.0.0_r1

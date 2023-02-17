@@ -1,3 +1,4 @@
+
 ---
 kind: ConfigMap
 apiVersion: v1
@@ -12,6 +13,7 @@ data:
   ACTIVATION_SERVER: {{ .Values.activation_server }}
   CERT_PATH: {{ .Values.MDCORE_CERT_PATH   | quote }}
 
+{{- if .Values.mdcore_generate_secrets}}
 
 # Generate, set or keep the postgres database credentials
 {{- $postgresPasswordValue := (randAlphaNum 24) | nospace | b64enc | quote }}
@@ -68,6 +70,7 @@ data:
   password: {{ $corePasswordValue }}
 
 
+
 # Generate, set or keep the MD Core API key
 {{- $coreApiKeyValue := (randNumeric 36) | b64enc | quote }}
 {{- $coreApiSecret := (lookup "v1" "Secret" .Release.Namespace "mdcore-api-key") }}
@@ -121,4 +124,190 @@ data:
   {{ $key }}: {{ $val | quote }}
   {{- end}}
 {{ end }}
+
+
+{{ if .Values.additional_secrets }}
+  {{ range $secret_name, $secret_data := .Values.additional_secrets }}
+
+---
+kind: Secret
+apiVersion: v1
+metadata:
+  name: {{ $secret_name }}
+data:
+    {{- range $data_key, $data_value := . }}
+  {{ $data_key }}: {{ $data_value | b64enc }}
+    {{- end }}
+
+  {{- end }}
+{{- end }}
+
+
+# Generate, set or keep the rabbitmq credentials
+{{- $rabbitmqPasswordValue := (randAlphaNum 24) | nospace }}
+{{- $rabbitmqUserValue := "rabbitmq" }}
+{{- $mdcoreConfigSecret := (lookup "v1" "Secret" .Release.Namespace "mdcore-stack-config") }}
+{{- if $mdcoreConfigSecret }}
+  {{- if and (index $mdcoreConfigSecret.data "RABBITMQ_DEFAULT_PASS") (index $mdcoreConfigSecret.data "RABBITMQ_DEFAULT_USER") }}
+    {{- $rabbitmqPasswordValue = index $mdcoreConfigSecret.data "RABBITMQ_DEFAULT_PASS" | b64dec }}
+    {{- $rabbitmqUserValue = index $mdcoreConfigSecret.data "RABBITMQ_DEFAULT_USER" | b64enc }}
+  {{- end -}}
+{{- end -}}
+{{- if .Values.RABBITMQ_DEFAULT_PASS }}
+{{- $rabbitmqPasswordValue = .Values.RABBITMQ_DEFAULT_PASS }}
+{{- end -}}
+{{- if .Values.RABBITMQ_DEFAULT_USER }}
+{{- $rabbitmqUserValue = .Values.RABBITMQ_DEFAULT_USER }}
+{{- end }}
+
+---
+kind: Secret
+apiVersion: v1
+metadata:
+  name: mdcore-stack-configs
+  annotations:
+    "helm.sh/resource-policy": keep
+stringData:
+  ometascan_hub.conf: |
+    {
+      "log": {
+        "streams": [
+          {
+            "log_type": "file",
+            "log_level": "info",
+            "log_format": "default",
+            "log_path": "/opt/ometascan-hub/hub_data/var/log/ometascan-hub/hub.log"
+          }
+        ]
+      },
+      "input": {
+        "technology": "rest",
+        "config": {
+          "port": {{ (index (index .Values.core_components "md-hub").ports 0).port }},
+          "log_path": "/opt/ometascan-hub/hub_data/var/log/ometascan-hub/nginx.log",
+          "log_level": "warning"
+        }
+      },
+      "cache": {
+        "technology": "redis",
+        "config": {
+          "host": "{{ (index .Values.core_components "redis").name }}",
+          "port": {{ (index (index .Values.core_components "redis").ports 0).port }}
+        }
+      },
+      "database": {
+        "technology": "postgres",
+        "config": {
+          "host": "{{ .Values.MDCORE_DB_HOST }}",
+          "port": {{ .Values.MDCORE_DB_PORT }},
+          "user": {{ $postgresUserValue | replace "\"" "" | b64dec | quote }},
+          "password": {{ $postgresPasswordValue | replace "\"" "" | b64dec | quote }},
+          "dbname": "metadefender_core"
+        }
+      },
+      "broker": {
+        "technology": "rabbitmq",
+        "config": {
+          "host": "{{ (index .Values.core_components "rabbitmq").name }}",
+          "port": {{ (index (index .Values.core_components "rabbitmq").ports 0).port }},
+        "user": {{ $rabbitmqUserValue | quote }},
+        "password": {{ $rabbitmqPasswordValue | quote }}
+        }
+      },
+      "storage": {
+        "technology": "h2",
+        "config": {
+          "host": "{{ (index .Values.core_components "md-nas").name }}",
+          "port": {{ (index (index .Values.core_components "md-nas").ports 0).port }}
+        }
+      }
+    }
+  ometascan_nas.conf: |
+    {
+      "log": {
+        "streams": [
+          {
+            "log_type": "file",
+            "log_level": "info",
+            "log_format": "default",
+            "log_path": "/opt/ometascan-nas/nas_data/var/log/ometascan-nas/nas.log"
+          }
+        ]
+      },
+      "server": {
+          "config": {
+                "port": {{ (index (index .Values.core_components "md-nas").ports 0).port }},
+                {{- range  (index (index .Values.core_components "md-nas").extraVolumeMounts) }}
+                  {{- if eq .subPath "CERT_KEY"}}
+                "key_path": "{{ .mountPath }}",
+                  {{- end }}
+                  {{- if eq .subPath "CERT"}}
+                "certificate_path": "{{ .mountPath }}",
+                  {{- end }}
+                {{- end }}
+                "host": "0.0.0.0"
+          }
+      },
+      "storage": {
+        "paths": [
+          {
+          "path": "/opt/ometascan-nas/nas_data/ometascan",
+          "max_size_gb": 10
+          }
+        ]
+      }
+    }
+  IGNITION_JSON: |
+    {
+    "global/dbmode": {{ .Values.MDCORE_DB_MODE }},
+    "dbserver/type": "{{ .Values.MDCORE_DB_TYPE }}",
+    "dbserver/host": "{{ .Values.MDCORE_DB_HOST }}",
+    "dbserver/port": "{{ .Values.MDCORE_DB_PORT }}",
+    "dbserver/user": {{ $postgresUserValue | replace "\"" "" | b64dec | quote }},
+    "dbserver/password": {{ $postgresPasswordValue | replace "\"" "" | b64dec | quote }},
+    "user/name": {{ $coreUserValue | replace "\"" "" | b64dec | quote }}, 
+    "user/password": {{ $corePasswordValue | replace "\"" "" | b64dec | quote }},
+{{- if contains "mdhub" $.Values.ENABLED_MODULES }}
+    "cache/host": "{{ (index .Values.core_components "redis").name }}",
+    "cache/port": "{{ (index (index .Values.core_components "redis").ports 0).port }}",
+    "nas/host": "{{ (index .Values.core_components "md-nas").name }}",
+    "nas/port": "{{ (index (index .Values.core_components "md-nas").ports 0).port }}",
+    "nas/worker_count": "4",
+    "broker/host": "{{ (index .Values.core_components "rabbitmq").name }}",
+    "broker/port": "{{ (index (index .Values.core_components "rabbitmq").ports 0).port }}",
+    "broker/user": {{ $rabbitmqUserValue | quote }},
+    "broker/password": {{ $rabbitmqPasswordValue | quote }},
+{{- end }}
+    "user/apikey":{{ $coreApiKeyValue | replace "\"" "" | b64dec | quote }}
+    }
+{{- if contains "mdhub" $.Values.ENABLED_MODULES }}
+  CERT_KEY: |
+    {{- $.Values.CERT_KEY | nindent 4 }}
+  CERT: |
+    {{- $.Values.CERT | nindent 4 }}
+{{ end }}
+{{- if contains "mdhub" $.Values.ENABLED_MODULES }}
+  RABBITMQ_DEFAULT_USER: {{ $rabbitmqUserValue }}
+  RABBITMQ_DEFAULT_PASS: {{ $rabbitmqPasswordValue }}
+{{ end }}
+
+{{ end }}
+
+---
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: wait-for-hub-services
+data:
+  wait-for-hub-services.sh: |
+    #!/bin/sh
+    {{- if contains "mdhub" $.Values.ENABLED_MODULES }}
+    until nc -vz {{ (index .Values.core_components "redis").name }} {{ (index (index .Values.core_components "redis").ports 0).port }}; do echo "Waiting for redis service"; sleep 2; done;
+    until nc -vz {{ (index .Values.core_components "rabbitmq").name }} {{ (index (index .Values.core_components "rabbitmq").ports 0).port }}; do echo "Waiting for rabbitmq service"; sleep 2; done;
+    until nc -vz {{ (index .Values.core_components "md-nas").name }} {{ (index (index .Values.core_components "md-nas").ports 0).port }}; do echo "Waiting for md-nas service"; sleep 2; done;
+    {{- else}}
+    echo "MD HUB not loaded, skipping..."
+
+    {{- end }}
+
 
