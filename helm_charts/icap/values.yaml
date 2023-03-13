@@ -1,4 +1,5 @@
-
+# Set the ACCEPT_EULA variable to any value to confirm your acceptance of the End-User Licensing Agreement.
+ACCEPT_EULA: false
 ## Uncomment the following lines to set a fixed user and password for the MD ICAP Server web interface that will overwrite 
 ## any secret that already exists for these credentials (the secret will be kept when the chart is deleted)
 ## If left unset the following will apply:
@@ -8,7 +9,6 @@
 mdicapsrv_user: admin                      # Initial admin user for the MD ICAP Server web interface
 mdicapsrv_password: null                   # Initial admin password for the MD ICAP Server web interface, if not set it will be randomly generated
 
-
 ## Uncomment the following line to set a fixed API key for MD ICAP Server that will overwrite 
 ## any secret that already exists for API key (the secret will be kept when the chart is deleted)
 ## If left unset the following will apply:
@@ -17,25 +17,12 @@ mdicapsrv_password: null                   # Initial admin password for the MD I
 
 mdicapsrv_api_key: null                   # 36 character API key used for the MD ICAP Server REST API, if not set it will be randomly generated
 
-
 ## Set your MD ICAP Server license key here and it will be stored in the "mdicapsrv-license-key" secret that will be created 
 ## if it does not exist. If left unset then a a secret is generated with and empty license key.
 
 mdicapsrv_license_key: <SET_LICENSE_KEY_HERE>    # A valid license key, **this value is mandatory**
 
 activation_server: activation.dl.opswat.com   # URL to the OPSWAT activation server, this value should not be changed
-
-## MD ICAP Server settings that are saved in the "mdicapsrv_env" config map
-MDICAPSRV_REST_PORT: "8048"              # Default REST port for the MD ICAP Server service
-MDICAPSRV_ICAP_PORT: "1344"              # Default ICAP port for the MD ICAP Server service
-MDICAPSRV_ICAPS_PORT: "11344"            # Default ICAPS port for the MD ICAP Server service
-MDICAPSRV_CERT_PATH: "/cert"
-MDICAPSRV_NGINX_CERT_PATH: "/nginx_cert"
-## Support password to encrypt/decrypt import JSON
-MDICAPSRV_IMPORT_CONF_FILE: "/opt/opswat/settings_export_package.zip"
-## Support set data retention
-MDICAPSRV_AUDIT_DATA_RETENTION: 168
-MDICAPSRV_HISTORY_DATA_RETENTION: 168
 
 # Set to false to not create any volumes or host paths in the deployment, all storage will be ephemeral
 persistance_enabled: true
@@ -49,35 +36,9 @@ storage_name: hostPath
 storage_node: minikube
 hostPathPrefix: mdicapsrv-storage      # This is the absolute path on the node where to keep the data filesystem for persistance
 
-# Deploy on a generic cluster
-environment: generic                # Deployment environment type, the default `generic` value will not configure or provision any additional resources in the cloud provider (like load balancers), other values: `aws_eks_fargate`
-
-## Uncomment for the desired deployment environment and their respective parameters
-# # Deploy on AWS EKS platform with the fargate backend, this will also create load balancers for both MD ICAP Server and MDSS
-# # An eks cluster must already be created and the cluster name, vpc-id, region and credentials should be replaced below
-# # For the persistent storage to work on EKS, an existing EFS with active Access Point (accessible from the cluster) is needed
-# environment: aws_eks_fargate
-# aws-load-balancer-controller:
-#   enabled: false                                        # If set to true and `environment` is set to `aws_eks_fargate`, an AWS Load Balancer Controller will be installed
-#   clusterName: null                                     # Name of the EKS cluster, mandatory if aws-load-balancer-controller.enabled is set to true
-#   rbac:
-#     create: true
-#   serviceAccount:
-#     create: true
-#     name: null                                          # Name of the load balancer service account, mandatory if aws-load-balancer-controller.enabled is set to true
-#     annotations.eks\\.amazonaws\\.com/role-arn: null    # ARN of the load balancer service account role, mandatory if aws-load-balancer-controller.enabled is set to true
-#   vpcId: null                                           # ID of the AWS VPC, mandatory if aws-load-balancer-controller.enabled is set to true
-#   region: null                                          # AWS region code, mandatory if aws-load-balancer-controller.enabled is set to true
-
-# mdicapsrv_target_group_arn: null                           # ARN of the load balancer target group that redirects traffic to the mdicapsrv service
-
-# App name is used to define namespace and storage name. This helps to segregate multiple instances of the app if they run on the same cluster
-# by specifying a different app name for each instance 
-app_name: default                   # Application name, it also sets the namespace on all created resources and replaces `<APP_NAME>` in the ingress host (if the ingress is enabled)
-
 # Ingress setting for MD ICAP Server
 icap_ingress:
-  host: <APP_NAME>-mdicapsrv.k8s    # Hostname for the publicly accessible ingress, the `<APP_NAME>` string will be replaced with the `app_name` value
+  host: mdicapsrv-ingress.k8s       # Hostname for the publicly accessible ingress
   service: md-icapsrv               # Service name where the ingress should route to, this should be left unchanged
   rest_port: 8048                   # Port where the ingress should route to
   enabled: false                    # Enable or disable the ingress creation
@@ -94,7 +55,7 @@ icap_docker_repo: opswat
 icap_components:
   md_icapsrv:
     name: md-icapsrv
-    image: opswat/metadefendericapsrv-debian:5.1.0               # Overrides the default docker image for the MD ICAP Server service, this value can be changed if you want to set a different version of MD ICAP Server
+    image: opswat/metadefendericapsrv-debian:5.1.1                                # Overrides the default docker image for the MD ICAP Server service, this value can be changed if you want to set a different version of MD ICAP Server
     # Warning: When to use this feature!
     replicas: 1                                                   # Sets the number of replicas if you want to have multiple MD ICAP Server instances
     env:
@@ -118,40 +79,58 @@ icap_components:
           secretKeyRef:
             name: mdicapsrv-license-key
             key: value
+    ## Support set data retention
+    data_retention:
+      config_history: 168
+      processing_history: 168
     import_configuration:
       enabled: false
       targets: 
         - schema
         - servers
       ## Support password to encrypt/decrypt exported JSON
-      ## Please copy file import configurations to folder "files" of the helm chart
-      ## Warning: The name of the file inside file zip should not be changed "settings_export.json"
       importConfigMap: mdicapsrv-import-configuration
+      importConfigPath: /opt/opswat
       importConfigMapSubPath: settings_export_package.zip
-      importConfigFilePass: ""                              ## Provide password for unzip file (Only support file format as .zip or .json)
+      importConfigFilePass: ""
     nginx_support:
       enabled: false
-      port: 8043
-      port_s: 8443
-      tls:
-        enabled: false
-        nginxsCertSecret: mdicapsrv-nginx-tls-cert
-        nginxCertSecretSubPath: mdicapsrv-nginxs.crt
-        nginxsKeySecret: mdicapsrv-nginx-tls-key
-        nginxKeySecretSubPath: mdicapsrv-nginxs.key
     # If you enabled TLS, need to provide the secret name and key
+    # The application support for: "TLSv1.3","TLSv1.2","TLSv1.1","TLSv1", "SSLv3"
     tls:
-      enabled: false
-      certSecret: mdicapsrv-tls-cert
-      certSecretSubPath: mdicapsrv.crt
-      certKeySecret: mdicapsrv-tls-cert-key
-      certKeySecretSubPath: mdicapsrv.key
+      https:
+        enabled: false
+        certSecret: mdicapsrv-https-tls-cert
+        certSecretSubPath: mdicapsrv-https.crt
+        certKeySecret: mdicapsrv-https-tls-cert-key
+        certKeySecretSubPath: mdicapsrv-https.key
+        mountPath: /https_cert
+        tlsVersions:
+          - "TLSv1.2"
+      icaps:
+        enabled: false
+        certSecret: mdicapsrv-icaps-tls-cert
+        certSecretSubPath: mdicapsrv-icaps.crt
+        certKeySecret: mdicapsrv-icaps-tls-cert-key
+        certKeySecretSubPath: mdicapsrv-icaps.key
+        mountPath: /icaps_cert
+        tlsVersions:
+          - "TLSv1.2"
+      nginxs:
+        enabled: false
+        certSecret: mdicapsrv-nginxs-tls-cert
+        certSecretSubPath: mdicapsrv-nginxs.crt
+        certKeySecret: mdicapsrv-nginxs-tls-cert-key
+        certKeySecretSubPath: mdicapsrv-nginxs.key
+        mountPath: /nginxs_cert
+        tlsVersions:
+          - "TLSv1.2"
     ports:
-      - port: 8048                                       # REST port to expose for the MD ICAP Server pod
-      - port: 1344                                       # ICAP port to expose for the MD ICAP Server pod
-      - port: 11344                                      # ICAPS port to expose for the MD ICAP Server pod
-      - port: 8043                                       # NGINX port for nginx ingress controller connect
-      - port: 8443                                       # NGINX (SSL) port for nginx ingress controller connect
+      rest: 8048 # REST port to expose for the MD ICAP Server pod
+      icap: 1344 # ICAP port to expose for the MD ICAP Server pod
+      icaps: 11344 # ICAPS port to expose for the MD ICAP Server pod
+      nginx: 8043 # NGINX port for nginx ingress controller connect
+      nginxs: 8443 # NGINX (SSL) port for nginx ingress controller connect
     service_type: ClusterIP                              # Sets the service type for MD ICAP Server service (ClusterIP, NodePort, LoadBalancer)
     sessionAffinity: None
     service_annotations: null
@@ -159,13 +138,16 @@ icap_components:
       aws-type: fargate                                  # If `aws-type` is set to `fargate`, the MD ICAP Server pod will be scheduled on an AWS Fargate virtual node (if a fargate profile is provisioned and configured)
     resources:
       requests:
-        memory: "8Gi"                                    # Minimum reserved memory
-        cpu: "8"                                     # Maximum cpu limit
+        memory: "2Gi"                                    # Minimum reserved memory
+        cpu: "2.0"                                       # Minimum reserved cpu
+      limits:
+        memory: "4Gi"                                    # Maximum memory limit
+        cpu: "4.0"                                       # Maximum cpu limit
     livenessProbe:
       httpGet:
-        path: /readyz                                    # Health check endpoint
-        port: 8048                                       # Health check por        
-        # scheme: HTTPS                         # If enabled TLS, need to uncomment here
+        path: /readyz                                    # Health check endpoint.
+        port: 8048                                       # Health check port. It should be the same with icap_components.md_icapsrv.ports.rest_port
+        # scheme: HTTPS                                  # If enabled TLS, need to uncomment here
       initialDelaySeconds: 30
       periodSeconds: 10
       timeoutSeconds: 10

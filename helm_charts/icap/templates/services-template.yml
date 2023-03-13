@@ -13,11 +13,21 @@ metadata:
   {{- end }}
 spec:
   ports:
-  {{- range $component.ports }}
-    - name: {{ .port | quote }}
-      port: {{ .port }}
-      targetPort: {{ .port }}
-  {{- end }}
+    - name: "rest-port"
+      port: {{ $component.ports.rest }}
+      targetPort: {{ $component.ports.rest }}
+    - name: "icap-port"
+      port: {{ $component.ports.icap }}
+      targetPort: {{ $component.ports.icap }}
+    - name: "icaps-port"
+      port: {{ $component.ports.icaps }}
+      targetPort: {{ $component.ports.icaps }}
+    - name: "nginx-port"
+      port: {{ $component.ports.nginx }}
+      targetPort: {{ $component.ports.nginx }}
+    - name: "nginxs-port"
+      port: {{ $component.ports.nginxs }}
+      targetPort: {{ $component.ports.nginxs }}
   {{- if $component.service_type }}
   type: {{ $component.service_type }}
   {{- end }}

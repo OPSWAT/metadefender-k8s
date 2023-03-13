@@ -193,7 +193,7 @@ mdss_components:
       aws-type: fargate
     resources:
       requests:
-        memory: "0.5Gi"
+        memory: "0.25Gi"
 
   scanningservice:
     name: scanningservice
@@ -213,7 +213,7 @@ mdss_components:
       aws-type: fargate
     resources:
       requests:
-        memory: "0.5Gi"
+        memory: "0.25Gi"
 
   apigateway:
     name: apigateway
@@ -250,7 +250,7 @@ mdss_components:
       aws-type: fargate
     resources:
       requests:
-        memory: "0.5Gi"
+        memory: "0.25Gi"
   
   securitychecklistservice:
     name: securitychecklistservice
@@ -267,7 +267,7 @@ mdss_components:
       aws-type: fargate
     resources:
       requests:
-        memory: "0.5Gi"
+        memory: "0.25Gi"
 
   loggingservice:
     name: loggingservice
@@ -277,7 +277,7 @@ mdss_components:
       aws-type: fargate
     resources:
       requests:
-        memory: "0.5Gi"
+        memory: "0.25Gi"
 
   remediationsservice:
     name: remediationsservice
@@ -312,7 +312,7 @@ mdss_components:
       aws-type: fargate
     resources:
       requests:
-        memory: "0.5Gi"
+        memory: "0.25Gi"
 
   remediationsservice-amazonsdk:
     name: remediationsservice-amazonsdk
@@ -331,7 +331,7 @@ mdss_components:
       aws-type: fargate
     resources:
       requests:
-        memory: "0.5Gi"
+        memory: "0.25Gi"
 
   remediationsservice-azureblob:
     name: remediationsservice-azureblob
@@ -350,7 +350,7 @@ mdss_components:
       aws-type: fargate
     resources:
       requests:
-        memory: "0.5Gi"
+        memory: "0.25Gi"
   
   remediationsservice-alibabacloud:
     name: remediationsservice-alibabacloud
@@ -369,7 +369,7 @@ mdss_components:
       aws-type: fargate
     resources:
       requests:
-        memory: "0.5Gi"
+        memory: "0.25Gi"
   
   remediationsservice-googlecloud:
     name: remediationsservice-googlecloud
@@ -388,7 +388,7 @@ mdss_components:
       aws-type: fargate
     resources:
       requests:
-        memory: "0.5Gi"
+        memory: "0.25Gi"
   
   remediationsservice-box:
     name: remediationsservice-box
@@ -407,7 +407,7 @@ mdss_components:
       aws-type: fargate
     resources:
       requests:
-        memory: "0.5Gi"
+        memory: "0.25Gi"
   
   remediationsservice-azurefiles:
     name: remediationsservice-azurefiles
@@ -426,7 +426,7 @@ mdss_components:
       aws-type: fargate
     resources:
       requests:
-        memory: "0.5Gi"
+        memory: "0.25Gi"
   
   remediationsservice-smb:
     name: remediationsservice-smb
@@ -455,7 +455,7 @@ mdss_components:
       aws-type: fargate
     resources:
       requests:
-        memory: "0.5Gi"
+        memory: "0.25Gi"
   
   remediationsservice-onedrive:
     name: remediationsservice-onedrive

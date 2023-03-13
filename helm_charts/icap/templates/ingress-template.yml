@@ -1,16 +1,19 @@
 {{ if .Values.icap_ingress.enabled }}
-{{ if eq .Values.environment "generic" }}
 ---
 kind: Ingress
 apiVersion: networking.k8s.io/v1
 metadata:
   name: icap-ingress
+  namespace: {{ .Release.Namespace }}
   annotations:
     kubernetes.io/ingress.class: {{ .Values.icap_ingress.class }}
     ingress.kubernetes.io/rewrite-target: /
+  {{- if .Values.icap_components.md_icapsrv.tls.https.enabled }}
+    nginx.ingress.kubernetes.io/backend-protocol: "HTTPS"
+  {{- end }}
 spec:
   rules:
-  - host: {{ .Values.icap_ingress.host | replace "<APP_NAME>" .Values.app_name }} 
+  - host: {{ .Values.icap_ingress.host }} 
     http:
       paths:
         - path: /
@@ -20,32 +23,11 @@ spec:
               name: {{ .Values.icap_ingress.service }}
               port:
                 number: {{ .Values.icap_ingress.rest_port }}
-        - path: /*
-          pathType: Prefix
-          backend:
-            service:
-              name: {{ .Values.icap_ingress.service }}
-              port:
-                number: {{ .Values.icap_ingress.rest_port }}
+{{- if .Values.icap_components.md_icapsrv.tls.https.enabled }}
   tls:
     - hosts:
-        - {{ .Values.icap_ingress.host | replace "<APP_NAME>" .Values.app_name }} 
-      secretName: {{ .Values.icap_components.md_icapsrv.tls.certSecretName }}
+        - {{ .Values.icap_ingress.host }} 
+      secretName: {{ .Values.icap_components.md_icapsrv.tls.https.certSecret }}
+{{ end }}
 {{ end }}
 
-{{ if .Values.mdicapsrv_target_group_arn }}
----
-apiVersion: elbv2.k8s.aws/v1beta1
-kind: TargetGroupBinding
-metadata:
-  name: {{ printf "%s-mdicapsrv-tgb" .Values.app_name }}
-  annotations:
-    "helm.sh/hook": "post-install"
-    "helm.sh/hook-weight": "1"
-spec:
-  serviceRef:
-    name: {{ .Values.icap_ingress.service }}
-    port: {{ .Values.icap_ingress.rest_port }}
-  targetGroupARN: {{ .Values.mdicapsrv_target_group_arn }}
-{{ end }}
-{{ end }}

@@ -8,10 +8,10 @@ function install-python {
     Write-Host "Installing PIP"
     Invoke-WebRequest -UseBasicParsing -Uri "https://bootstrap.pypa.io/get-pip.py" -OutFile '../scripts/Python/get-pip.py'
     .\..\scripts\Python\python.exe ..\scripts\Python\get-pip.py --disable-pip-version-check --no-cache-dir --no-warn-script-location
-    Write-Host "Generating .python_packages"
-    .\..\scripts\Python\Scripts\pip install -r ..\src\requirements.txt -t ..\src\.python_packages\lib\site-packages\
     Remove-Item -Force ..\scripts\python.zip
-    remove-item -force ..\scripts\Python\python39._pth_
+    remove-item -force ..\scripts\Python\python39._pth
+    Write-Host "Generating .python_packages"
+    .\..\scripts\Python\Scripts\pip.exe install -r ..\src\requirements.txt -t ..\src\.python_packages\lib\site-packages\
     }
 
 # check if an ErrorRecord was returned
