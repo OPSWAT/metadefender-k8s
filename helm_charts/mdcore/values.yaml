@@ -185,7 +185,7 @@ core_components:
     resources:
       requests:
         memory: "7Gi"                                    # Minimum reserved memory
-        cpu: "7.0"                                       # Minimum reserved cpu
+        cpu: "4.0"                                       # Minimum reserved cpu
       limits:
         memory: "8Gi"                                    # Maximum memory limit
         cpu: "8.0"                                       # Maximum cpu limit

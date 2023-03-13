@@ -1,7 +1,14 @@
 apiVersion: v2
-name: metadefender_icap_server
-description: This is a Helm chart for deploying MetaDefender ICAP Server (https://www.opswat.com/products/metadefender/icap) in a Kubernetes cluster
-
+name: MetaDefender_ICAP_Server
+type: application
+version: 5.1.1
+appVersion: 5.1.1
+home: https://docs.opswat.com/mdicap/installation
+keywords:
+  - mdicapsrv
+  - icap
+  - MetaDefender ICAP Server
+description: This is a Helm chart for deploying MetaDefender ICAP Server (https://www.opswat.com/products/metadefender/icap) in a Kubernetes cluster.
 long_description: |
   This chart can deploy the following depending on the provided values:
   - One or more MD ICAP Server instances 
@@ -13,15 +20,13 @@ long_description: |
   ```console
   git clone https://github.com/OPSWAT/metadefender-k8s.git metadefender
   cd metadefender/helm_charts
-  helm install my_mdicapsrv ./my_mdicapsrv
+  helm install my_mdicapsrv ./my_mdicapsrv -f my_mdicapsrv-generic-values.yml
   ```
-  
-  ### From the GitHub helm repo
-  The installation can also be done using the helm repo which is updated on each release:
-   ```console
-  helm repo add mdk8s https://opswat.github.io/metadefender-k8s/
-  helm repo update mdk8s
-  helm install my_mdicapsrv mdk8s/metadefender_icap_server
+
+  ### From the latest release
+  The installation can also be done using the latest release from github:
+  ```console
+  helm install my_my_mdicapsrv <MDICAPSRV_RELEASE_URL>.tgz -f my_mdicapsrv-generic-values.yml
   ```
 
   ## Operational Notes
@@ -30,14 +35,3 @@ long_description: |
   - Credentials that are not explicitly set (passwords and the api key) and do not already exist as k8s secrets will be randomly generated, if they are set, the respective k8s secret will be updated or created if it doesn't exist
   - **The license key value is mandatory**, if it's left unset or if it's invalid, the MD ICAP Server instance will report as "unhealthy" and it will be restarted
   - The configured license should have a sufficient number of activations for all pod running MD ICAP Server, each pod counts as 1 activation. Terminating pods will also deactivate the respective MD ICAP Server instance.
-
-  
-type: application
-
-version: 4.13.0
-
-# dependencies:
-# - name: aws-load-balancer-controller
-#   condition: aws-load-balancer-controller.enabled
-#   version: 1.3.2
-#   repository: https://aws.github.io/eks-charts

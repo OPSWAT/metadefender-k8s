@@ -35,7 +35,7 @@ data:
     }
 
     location /callback {
-        proxy_pass http://mdcs_apigateway/callback;
+        proxy_pass http://apigateway/callback;
     }
 
     location /hubs { 
@@ -72,7 +72,7 @@ data:
         }
 
         location /callback {
-            proxy_pass http://mdcs_apigateway/callback;
+            proxy_pass http://apigateway/callback;
         }
 
         location /hubs { 

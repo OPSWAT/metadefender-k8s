@@ -3,19 +3,20 @@ kind: ConfigMap
 apiVersion: v1
 metadata:
   name: mdicapsrv-env
-  namespace: {{ .Values.app_name }}
+  namespace: {{ .Release.Namespace }}
 data:
-  REST_PORT: {{ .Values.MDICAPSRV_REST_PORT | quote }}
-  ICAP_PORT: {{ .Values.MDICAPSRV_ICAP_PORT | quote }}
-  ICAPS_PORT: {{ .Values.MDICAPSRV_ICAPS_PORT | quote }}
-  HTTPS_CERT_PATH : {{ .Values.MDICAPSRV_CERT_PATH   | quote }}
-  ICAPS_CERT_PATH : {{ .Values.MDICAPSRV_CERT_PATH   | quote }}
-  NGINXS_CERT_PATH: {{ .Values.MDICAPSRV_NGINX_CERT_PATH   | quote }}
-  IMPORT_CONF_FILE : {{ .Values.MDICAPSRV_IMPORT_CONF_FILE  | quote }}
+  REST_PORT: {{ .Values.icap_components.md_icapsrv.ports.rest | quote }}
+  ICAP_PORT: {{ .Values.icap_components.md_icapsrv.ports.icap | quote }}
+  ICAPS_PORT: {{ .Values.icap_components.md_icapsrv.ports.icaps | quote }}
+  HTTPS_CERT_PATH : {{ .Values.icap_components.md_icapsrv.tls.https.mountPath | quote }}
+  ICAPS_CERT_PATH : {{ .Values.icap_components.md_icapsrv.tls.icaps.mountPath | quote }}
+  NGINXS_CERT_PATH: {{ .Values.icap_components.md_icapsrv.tls.nginxs.mountPath | quote }}
+  IMPORT_CONF_FILE : {{ printf "%s/%s" .Values.icap_components.md_icapsrv.import_configuration.importConfigPath  .Values.icap_components.md_icapsrv.import_configuration.importConfigMapSubPath  | quote }}
   ACTIVATION_SERVER: {{ .Values.activation_server }}
-  AUDIT_DATA_RETENTION: {{ .Values.MDICAPSRV_AUDIT_DATA_RETENTION | quote}}
-  HISTORY_DATA_RETENTION: {{ .Values.MDICAPSRV_HISTORY_DATA_RETENTION | quote}}
+  AUDIT_DATA_RETENTION: {{ .Values.icap_components.md_icapsrv.data_retention.config_history | quote}}
+  HISTORY_DATA_RETENTION: {{ .Values.icap_components.md_icapsrv.data_retention.processing_history | quote}}
   IMPORT_CONFIG_FILE_PASS: {{ .Values.icap_components.md_icapsrv.import_configuration.importConfigFilePass | quote }}
+  ACCEPT_EULA: {{ .Values.ACCEPT_EULA | quote }}
 {{- if .Values.icap_components.md_icapsrv.nginx_support.enabled }}
 {{- $nginx := .Values.icap_components.md_icapsrv.nginx_support }}
   IGNITION_JSON: '{"nginxsupport/enabled":"{{$nginx.enabled}}", "nginxsupport/port":"{{$nginx.port}}", "nginxsupport/port_s":"{{$nginx.port_s}}"}'
@@ -26,7 +27,7 @@ kind: ConfigMap
 apiVersion: v1
 metadata:
   name: mdicapsrv-import-configuration
-  namespace: {{ $.Values.app_name }}
+  namespace: {{ .Release.Namespace }}
 {{- $file_path := printf "files/%s" .Values.icap_components.md_icapsrv.import_configuration.importConfigMapSubPath}}
 {{- $root := . }}
 {{- if .Values.icap_components.md_icapsrv.import_configuration.enabled }}
@@ -58,7 +59,7 @@ kind: Secret
 apiVersion: v1
 metadata:
   name: mdicapsrv-cred
-  namespace: {{ .Values.app_name }}
+  namespace: {{ .Release.Namespace }}
   annotations:
     "helm.sh/resource-policy": keep
 data:
@@ -81,7 +82,7 @@ kind: Secret
 apiVersion: v1
 metadata:
   name: mdicapsrv-api-key
-  namespace: {{ .Values.app_name }}
+  namespace: {{ .Release.Namespace }}
   annotations:
     "helm.sh/resource-policy": keep
 data:
@@ -102,7 +103,7 @@ kind: Secret
 apiVersion: v1
 metadata:
   name: mdicapsrv-license-key
-  namespace: {{ .Values.app_name }}
+  namespace: {{ .Release.Namespace }}
   annotations:
     "helm.sh/resource-policy": keep
 data:
