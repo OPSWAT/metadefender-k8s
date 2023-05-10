@@ -9,7 +9,7 @@ kind: Deployment
 metadata:
   name: {{ $component.name | quote }}
 spec:
-  replicas: 1
+  replicas: {{ $component.replicas }}
   selector:
     matchLabels:
       app: {{ $component.name | quote }}
@@ -87,6 +87,7 @@ spec:
       imagePullSecrets:
         {{- toYaml $.Values.imagePullSecrets | nindent 8 }}
       {{- end }}
+      imagePullPolicy: {{ $.Values.imagePullPolicy }}
       {{- if $component.nodeSelector }}
       nodeSelector:
         {{- toYaml $component.nodeSelector | nindent 8 }}

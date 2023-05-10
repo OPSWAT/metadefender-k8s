@@ -120,12 +120,14 @@ ONBOARDING_EMAIL: null                  # Email of user that will be created by 
 ONBOARDING_FULL_NAME: null              # Full name of user that will be created by onboarding container
 
 ## Uncomment if you want to use a private repo (it must already be configured in the cluster as a secret)
-#imagePullSecrets:
-#  - name: regcred
+# imagePullSecrets:
+#   - name: regcred
 
 # Docker repo to use, this should be changed when using private images (this string will be prepended to the image name)
 # If a component has "custom_repo: true" then the image name will be formated as "{docker_repo/}image_name{:BRANCH}" otherwise it will remain unaltered
 mdss_docker_repo: opswat
+
+imagePullPolicy: Always
 
 mdss_config_map_env_name: 'mdss-env'
 mdssHostAliases:                              # Custom hosts entries
