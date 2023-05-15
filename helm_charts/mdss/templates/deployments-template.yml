@@ -35,6 +35,7 @@ spec:
           {{- else }}
           image: {{ $component.image | quote }}
           {{- end }}
+          imagePullPolicy: {{ $.Values.imagePullPolicy }}
           name: {{ $component.name | quote }}
           {{- if $component.ports }}
           ports:
