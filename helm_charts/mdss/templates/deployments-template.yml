@@ -88,7 +88,6 @@ spec:
       imagePullSecrets:
         {{- toYaml $.Values.imagePullSecrets | nindent 8 }}
       {{- end }}
-      imagePullPolicy: {{ $.Values.imagePullPolicy }}
       {{- if $component.nodeSelector }}
       nodeSelector:
         {{- toYaml $component.nodeSelector | nindent 8 }}
