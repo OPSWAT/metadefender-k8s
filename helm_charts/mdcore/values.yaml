@@ -91,6 +91,8 @@ core_ingress:
   port: 8008                        # Port where the ingress should route to
   enabled: false                    # Enable or disable the ingress creation
   class: nginx                      # Sets the ingress class
+  tls: false                        # Flag for set up tls section in ingress
+  secret: mdcore-tls                # SecretName of the tls secret created to be used for ingress
 
 ## Uncomment if you want to use a private repo (it must already be configured in the cluster as a secret)
 # imagePullSecrets:
@@ -182,6 +184,7 @@ core_components:
     service_annotations: null
     extra_labels:
       aws-type: fargate                                  # If `aws-type` is set to `fargate`, the MD Core pod will be scheduled on an AWS Fargate virtual node (if a fargate profile is provisioned and configured)
+      name: md-core                                      # Label needed for the ingress to find the service based on the name
     resources:
       requests:
         memory: "7Gi"                                    # Minimum reserved memory
