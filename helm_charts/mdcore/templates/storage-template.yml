@@ -1,6 +1,6 @@
 {{ if $.Values.storage_configs }}
 
-{{ range $sorage_name, $storage_value := .Values.storage_configs }}
+{{ range $storage_name, $storage_value := .Values.storage_configs }}
 ---
 {{- toYaml $storage_value }}
 
