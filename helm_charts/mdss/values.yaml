@@ -1,8 +1,8 @@
 # Default values for mdss. These will also be included in the environment of each mdss container
 
 mdss-common-environment:
-  ENABLED_MODULES: "azureblob,amazonsdk,googlecloud,alibabacloud,azurefiles,box"                                  # Enabled modules by default
-  # ENABLED_MODULES: "azureblob,amazonsdk,googlecloud,alibabacloud,azurefiles,smb,box,onedrive,debug"             # All supported modules
+  ENABLED_MODULES: "mdss,azureblob,amazonsdk,googlecloud,alibabacloud,azurefiles,box"                                  # Enabled modules by default
+  # ENABLED_MODULES: "mdss,azureblob,amazonsdk,googlecloud,alibabacloud,azurefiles,smb,box,onedrive,debug"             # All supported modules
 
   # This defines the connection string to the db ( should be modified when using an external db)
   MONGO_URL: "mongodb://mongodb:27017/MDCS"
@@ -31,6 +31,9 @@ mdss-common-environment:
   LICENSINGSERVICE_PORT: "5000"
   SMBSERVICE_URL: "http://smbservice"
   SMBSERVICE_PORT: "5002"
+  
+  CODE_VERSION: "30a858390ca19fff81f2092f83a32f11c07d4fc8"
+  BUILD_VERSION: "3.2.0.369"
 
   # This can be modified in order to define how many messages can be sent to rabbitmq in parallel.
   RABBITMQ_SCANNING_PREFETCH_COUNT: "20"
@@ -217,33 +220,6 @@ mdss_components:
       requests:
         memory: "0.25Gi"
 
-  apigateway:
-    name: apigateway
-    custom_repo: true
-    image: mdcloudservices_api
-    env:
-      - name: ASPNETCORE_URLS
-        value: http://+
-    ports:
-      - port: 443
-      - port: 80
-    extra_labels:
-      aws-type: fargate
-
-  webclient:
-    name: webclient
-    custom_repo: true
-    image: mdcloudservices_web
-    ports:
-      - port: 443
-      - port: 80
-    mountConfig:
-      configName: webclient-nginx-config
-      mountPath: /etc/nginx/conf.d/default.conf
-      subPath: default.conf
-    extra_labels:
-      aws-type: fargate
-
   jobdispatcher:
     name: jobdispatcher
     custom_repo: true
@@ -287,6 +263,50 @@ mdss_components:
     image: mdcloudservices_remediations
     extra_labels:
       aws-type: fargate
+  
+  storagesservice:
+    name: storagesservice
+    custom_repo: true
+    image: mdcloudservices_storages
+    extra_labels:
+      aws-type: fargate
+      
+  workflowmanagerservice:
+    name: workflowmanagerservice
+    custom_repo: true
+    image: mdcloudservices_workflowmanager
+    extra_labels:
+      aws-type: fargate
+  
+  # ======================================= MDSS MODULE ================================================
+  apigateway:
+    name: apigateway
+    module_name: mdss
+    custom_repo: true
+    image: mdcloudservices_api
+    env:
+      - name: ASPNETCORE_URLS
+        value: http://+
+    ports:
+      - port: 443
+      - port: 80
+    extra_labels:
+      aws-type: fargate
+
+  webclient:
+    name: webclient
+    module_name: mdss
+    custom_repo: true
+    image: mdcloudservices_web
+    ports:
+      - port: 443
+      - port: 80
+    mountConfig:
+      configName: webclient-nginx-config
+      mountPath: /etc/nginx/conf.d/default.conf
+      subPath: default.conf
+    extra_labels:
+      aws-type: fargate
 
   # ======================================= DEBUG MODULE ================================================
   systemchecks:
@@ -323,6 +343,14 @@ mdss_components:
     image: mdcloudservices_remediationsamazonsdk
     extra_labels:
       aws-type: fargate
+  
+  storagesservice-amazonsdk:
+    name: storagesservice-amazonsdk
+    module_name: amazonsdk
+    custom_repo: true
+    image: mdcloudservices_storagesamazonsdk
+    extra_labels:
+      aws-type: fargate
   # ======================================= AZUREBLOB MODULE ================================================
   discoveryazureblobservice:
     name: discoveryazureblobservice
@@ -340,6 +368,14 @@ mdss_components:
     module_name: azureblob
     custom_repo: true
     image: mdcloudservices_remediationsazureblob
+    extra_labels:
+      aws-type: fargate
+      
+  storagesservice-azureblob:
+    name: storagesservice-azureblob
+    module_name: azureblob
+    custom_repo: true
+    image: mdcloudservices_storagesazureblob
     extra_labels:
       aws-type: fargate
   # ======================================= ALIBABACLOUD MODULE ================================================
@@ -361,6 +397,14 @@ mdss_components:
     image: mdcloudservices_remediationsalibabacloud
     extra_labels:
       aws-type: fargate
+  
+  storagesservice-alibabacloud:
+    name: storagesservice-alibabacloud
+    module_name: alibabacloud
+    custom_repo: true
+    image: mdcloudservices_storagesalibabacloud
+    extra_labels:
+      aws-type: fargate
   # ======================================= GOOGLECLOUD MODULE ================================================
   discoverygooglecloudservice:
     name: discoverygooglecloudservice
@@ -378,6 +422,14 @@ mdss_components:
     module_name: googlecloud
     custom_repo: true
     image: mdcloudservices_remediationsgooglecloud
+    extra_labels:
+      aws-type: fargate
+  
+  storagesservice-googlecloud:
+    name: storagesservice-googlecloud
+    module_name: googlecloud
+    custom_repo: true
+    image: mdcloudservices_storagesgooglecloud
     extra_labels:
       aws-type: fargate
   # ======================================= BOX MODULE ================================================
@@ -399,6 +451,14 @@ mdss_components:
     image: mdcloudservices_remediationsbox
     extra_labels:
       aws-type: fargate
+      
+  storagesservice-box:
+    name: storagesservice-box
+    module_name: box
+    custom_repo: true
+    image: mdcloudservices_storagesbox
+    extra_labels:
+      aws-type: fargate
   # ======================================= AZUREFILES MODULE ================================================
   discoveryazurefilesservice:
     name: discoveryazurefilesservice
@@ -418,6 +478,14 @@ mdss_components:
     image: mdcloudservices_remediationsazurefiles
     extra_labels:
       aws-type: fargate
+  
+  storagesservice-azurefiles:
+    name: storagesservice-azurefiles
+    module_name: azurefiles
+    custom_repo: true
+    image: mdcloudservices_storagesazurefiles
+    extra_labels:
+      aws-type: fargate
   # ======================================= SMB MODULE ================================================
   discoverysmbservice:
     name: discoverysmbservice
@@ -435,6 +503,14 @@ mdss_components:
     module_name: smb
     custom_repo: true
     image: mdcloudservices_remediationssmb
+    extra_labels:
+      aws-type: fargate
+  
+  storagesservice-smb:
+    name: storagesservice-smb
+    module_name: smb
+    custom_repo: true
+    image: mdcloudservices_storagessmb
     extra_labels:
       aws-type: fargate
   
@@ -464,6 +540,14 @@ mdss_components:
     module_name: onedrive
     custom_repo: true
     image: mdcloudservices_remediationsonedrive
+    extra_labels:
+      aws-type: fargate
+      
+  storagesservice-onedrive:
+    name: storagesservice-onedrive
+    module_name: onedrive
+    custom_repo: true
+    image: mdcloudservices_storagesonedrive
     extra_labels:
       aws-type: fargate
   
