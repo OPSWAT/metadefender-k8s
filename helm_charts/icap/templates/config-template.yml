@@ -8,21 +8,42 @@ data:
   REST_PORT: {{ .Values.icap_components.md_icapsrv.ports.rest | quote }}
   ICAP_PORT: {{ .Values.icap_components.md_icapsrv.ports.icap | quote }}
   ICAPS_PORT: {{ .Values.icap_components.md_icapsrv.ports.icaps | quote }}
+  NGINX_PORT: {{ .Values.icap_components.md_icapsrv.ports.nginx | quote }}
+  NGINXS_PORT: {{ .Values.icap_components.md_icapsrv.ports.nginxs | quote }}
   HTTPS_CERT_PATH : {{ .Values.icap_components.md_icapsrv.tls.https.mountPath | quote }}
   ICAPS_CERT_PATH : {{ .Values.icap_components.md_icapsrv.tls.icaps.mountPath | quote }}
   NGINXS_CERT_PATH: {{ .Values.icap_components.md_icapsrv.tls.nginxs.mountPath | quote }}
+{{- if .Values.icap_components.md_icapsrv.trustCertificate.enabled }}
+  ICAP_TRUST_CERTS_PATH: {{ .Values.icap_components.md_icapsrv.trustCertificate.mountPath | quote }}
+{{- end }}
   IMPORT_CONF_FILE : {{ printf "%s/%s" .Values.icap_components.md_icapsrv.import_configuration.importConfigPath  .Values.icap_components.md_icapsrv.import_configuration.importConfigMapSubPath  | quote }}
   ACTIVATION_SERVER: {{ .Values.activation_server }}
   AUDIT_DATA_RETENTION: {{ .Values.icap_components.md_icapsrv.data_retention.config_history | quote}}
   HISTORY_DATA_RETENTION: {{ .Values.icap_components.md_icapsrv.data_retention.processing_history | quote}}
   IMPORT_CONFIG_FILE_PASS: {{ .Values.icap_components.md_icapsrv.import_configuration.importConfigFilePass | quote }}
+  DB_MODE: {{ .Values.icap_components.md_icapsrv.database.db_mode | quote }}
+  DB_TYPE: {{ .Values.icap_components.md_icapsrv.database.db_type | quote }}
+  DB_HOST: {{ .Values.icap_components.md_icapsrv.database.db_host | quote }}
+  DB_PORT: {{ .Values.icap_components.md_icapsrv.database.db_port | quote }}
   ACCEPT_EULA: {{ .Values.ACCEPT_EULA | quote }}
-{{- if .Values.icap_components.md_icapsrv.nginx_support.enabled }}
-{{- $nginx := .Values.icap_components.md_icapsrv.nginx_support }}
-  IGNITION_JSON: '{"nginxsupport/enabled":"{{$nginx.enabled}}", "nginxsupport/port":"{{$nginx.port}}", "nginxsupport/port_s":"{{$nginx.port_s}}"}'
+{{- if .Values.olms.enabled }}
+#Integration OLMS
+  OLMS_HOST_URL: {{ .Values.olms.olms_host_url | quote }}
+  OLMS_REST_PORT: {{ .Values.olms.olms_rest_port | quote }}
+  OLMS_SOCKET_PORT: {{ .Values.olms.olms_socket_port | quote }}
+  OLMS_RULE: {{ .Values.olms.olms_rule | quote }}
+  OLMS_COMMENT: {{ .Values.olms.olms_comment | quote }}
 {{- end }}
+{{- if .Values.icap_components.md_icapsrv.nginx_support.enabled }}
+{{- $isEnableNginx := .Values.icap_components.md_icapsrv.nginx_support.enabled }}
+{{- $nginxPorts := .Values.icap_components.md_icapsrv.ports }}
+  ENABLE_NGINX: {{ $isEnableNginx | quote }}
+{{- end }}
+  ENABLE_HEALTHCHECK: {{ .Values.healthcheck.enabled | quote }}
+  LOG_LEVEL: info
 # # Uncomment for make ConfigMap for import configuration
 ---
+{{- if .Values.icap_components.md_icapsrv.import_configuration.enabled }}
 kind: ConfigMap
 apiVersion: v1
 metadata:
@@ -39,6 +60,7 @@ data:
   {{ base $file_path }}: {{ toJson (.Files.Get $file_path )}}
 {{- end }}
 {{- end }}
+{{- end }}
 # Generate, set or keep the MD ICAP Server credentials
 {{- $icapPasswordValue := (randAlphaNum 24) | nospace | b64enc | quote }}
 {{- $icapUserValue := "admin" | b64enc | quote }}
@@ -53,7 +75,6 @@ data:
 {{- if .Values.mdicapsrv_user }}
 {{- $icapUserValue = .Values.mdicapsrv_user | b64enc }}
 {{- end }}
-
 ---
 kind: Secret
 apiVersion: v1
@@ -109,3 +130,229 @@ metadata:
 data:
   value: {{ $icapLicenseKeyValue }}
 ---
+# Generate, set or keep the postgres database credentials
+{{- $postgresPasswordValue := (randAlphaNum 24) | nospace | b64enc | quote }}
+{{- $postgresUserValue := "postgres" | b64enc | quote }}
+{{- $postgresSecret := (lookup "v1" "Secret" .Release.Namespace "mdicapsrv-postgres-cred") }}
+{{- if $postgresSecret }}
+{{- $postgresPasswordValue = index $postgresSecret.data "password" }}
+{{- $postgresUserValue = index $postgresSecret.data "user" }}
+{{- end -}}
+{{- if .Values.db_password }}
+{{- $postgresPasswordValue = .Values.db_password | b64enc }}
+{{- end -}}
+{{- if .Values.db_user }}
+{{- $postgresUserValue = .Values.db_user | b64enc }}
+{{- end }}
+---
+kind: Secret
+apiVersion: v1
+metadata:
+  name: mdicapsrv-postgres-cred
+  annotations:
+    "helm.sh/resource-policy": keep
+data:
+  user: {{ $postgresUserValue }}
+  password: {{ $postgresPasswordValue }}
+---
+{{ if .Values.cleanup_db.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ignition-file
+data:
+
+  # file-like keys
+  main.py: |
+    #!/usr/bin/python3
+    import psycopg2
+    import time
+    import hashlib
+    import os
+    import shutil
+    from psycopg2.extensions import ISOLATION_LEVEL_AUTOCOMMIT
+
+    db_instance_ranges = {"database":{"instance":0}}
+    TIME_LOOP = 1 # minutes
+
+    def GetDatabaseNames():
+      print("1.1 GetDatabaseNames")
+      conn = psycopg2.connect(database="postgres", user = os.getenv("DB_USER"), password = os.getenv("DB_PWD"), host = os.getenv("DB_HOST"), port = os.getenv("DB_PORT"))
+      cur = conn.cursor()
+      cur.execute("""SELECT datname FROM pg_database WHERE datname LIKE 'metadefender_icapsrv%'""")
+      res = cur.fetchall()
+      cur.close()
+      conn.close()
+      return res
+
+    def GetInstanceNames(db_name):
+      print("1.2 GetInstanceNames")
+      conn = psycopg2.connect(database=db_name, user = os.getenv("DB_USER"), password = os.getenv("DB_PWD"), host = os.getenv("DB_HOST"), port = os.getenv("DB_PORT"))
+      cur = conn.cursor()
+      cur.execute("SELECT instance_name FROM register.instance")
+      res = cur.fetchall()
+      cur.close()
+      conn.close()
+      return res
+
+    def CountConnections(db_name, private_user):
+      print("1.3 CountConnections")
+      conn = psycopg2.connect(database=db_name, user = os.getenv("DB_USER"), password = os.getenv("DB_PWD"), host = os.getenv("DB_HOST"), port = os.getenv("DB_PORT"))
+      cur = conn.cursor()
+      cur.execute("select 1 from pg_stat_activity where datname = %s and usename = %s", (db_name, private_user,))
+      res = cur.rowcount
+      cur.close()
+      conn.close()
+      return res
+
+    def CleanupDatabase(db_name, instance_name):
+      print("2.5 CleanupDatabase")
+      # Remove redundant parition on those tables
+      try:
+        conn = psycopg2.connect(database=db_name, user = os.getenv("DB_USER"), password = os.getenv("DB_PWD"), host = os.getenv("DB_HOST"), port = os.getenv("DB_PORT"))
+        cur = conn.cursor()
+
+        # Get instance id
+        cur.execute("SELECT instance_id FROM register.instance WHERE instance_name = %s", (instance_name,))
+        instance = cur.fetchone()[0]
+        print("2.5.1 Get instance id FROM register.instance {}".format(instance))
+
+        # Get all partitioned table names
+        cur.execute("""select oid::regclass::text table_name from pg_class
+          where relkind = 'p' and oid in (select distinct inhparent from pg_inherits)
+          order by table_name""")
+        partitioned_tables = cur.fetchall()
+
+        # Drop partitions
+        for tableVal in partitioned_tables:
+          table = tableVal[0] + "_" + str(instance)
+          print("2.5.3 drop partitions running...")
+          try:
+            cur.execute("DROP TABLE IF EXISTS {} CASCADE".format(table))
+          except Exception as e:
+            print("Could not drop table {}. {}".format(table, e))
+
+        conn.commit()
+        cur.close()
+        conn.close()
+      except Exception as e:
+        print("Could not cleanup database {}. {}".format(db_name, e))
+
+    def CleanupStorage(instance_name):
+      print("2.6 CleanupStorage")
+      path = os.getenv("STORAGE_PATH") + "//" + instance_name
+      try:
+        if os.path.exists(path) and os.path.isdir(path):
+          shutil.rmtree(path)
+      except Exception as e:
+        print("Could not remove path {}. {}".format(path, e))
+
+
+    def DropDatabase(db_name):
+      try:
+        print("2.6.1 DropDatabase {}".format(db_name))
+        conn = psycopg2.connect(database="postgres", user = os.getenv("DB_USER"), password = os.getenv("DB_PWD"), host = os.getenv("DB_HOST"), port = os.getenv("DB_PORT"))
+        conn.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT) # this is to drop database
+        cur = conn.cursor()
+        print("2.6.2 DROP DATABASE IF EXISTS")
+        cur.execute("DROP DATABASE IF EXISTS {}".format(db_name))
+        conn.commit()
+        cur.close()
+        conn.close()
+
+        # Remove from retention dict
+        db_instance_ranges.pop(db_name)
+      except Exception as e:
+        print("Could not drop database {}. {}".format(db_name, e))
+
+    def HandleRetention(db_name, instance_name):
+      print("2.4.4 HandleRetention")
+
+      if os.getenv("database_check") == "true":
+        CleanupDatabase(db_name, instance_name)
+
+      if os.getenv("storage_check") == "true":
+        CleanupStorage(instance_name)
+
+    def Cleanup(db_name, instance_name):
+      print("2.4 Cleanup {} {} {}".format(db_name, instance_name, db_instance_ranges))
+      retention_range = float(os.getenv("range"))
+      if db_name not in db_instance_ranges:
+        print("2.4.1 db_name not in db_instance_ranges")
+        HandleRetention(db_name, instance_name)
+        db_instance_ranges[db_name] = {}
+        db_instance_ranges[db_name][instance_name] = 0
+      elif instance_name not in db_instance_ranges[db_name]:
+        print("2.4.2 instance_name not in db_instance_ranges[db_name]")
+        HandleRetention(db_name, instance_name)
+        db_instance_ranges[db_name][instance_name] = 0
+      else:
+        print("2.4.2.1 {}".format(db_instance_ranges[db_name][instance_name]))
+        if db_instance_ranges[db_name][instance_name] >= retention_range:
+          print("2.4.3 db_instance_ranges[db_name][instance_name] > retention_range")
+          HandleRetention(db_name, instance_name)
+          db_instance_ranges[db_name][instance_name] = 0
+
+      print("2.7 Cleanup done")
+
+    def DataRetention():
+      print("1 DataRetention")
+
+      # Get all database on postgresql server
+      db_names = GetDatabaseNames()
+      print("2 GetDatabaseNames done")
+
+      for dbname_val in db_names:
+        db_name = dbname_val[0]
+        # Connect database to get instance names
+        rows = GetInstanceNames(db_name)
+        all_instances_idle = True
+        print("--------------------------------------------------------------")
+        print("Start cleaning up database {}".format(db_name))
+
+        for instance_name_val in rows:
+          instance_name = instance_name_val[0]
+          # Calculate sha1 hash sum to get correlating private user from instance name
+          print("2.1 Calculate sha1 hash sum {} {}".format(db_name, instance_name))
+          private_user = "usr_" + hashlib.sha1(instance_name.encode()).hexdigest()
+          print("2.2 {}".format(private_user))
+
+          if CountConnections(db_name, private_user) > 0:
+            print("This icap {}:{} is still in use. Skip cleaning up".format(db_name, instance_name))
+            all_instances_idle = False
+            if db_name in db_instance_ranges:
+              db_instance_ranges.pop(db_name)
+            continue
+
+          # If this database doesn't have any connections
+          # Eliminate the partition
+          Cleanup(db_name, instance_name)
+
+          # Append 5 minute
+          db_instance_ranges[db_name][instance_name] += TIME_LOOP
+          print("2.8 DataRetention done {}".format(instance_name))
+
+        if all_instances_idle == True:
+          print("There are no mdicapsrv instances in-use. Drop database {}".format(db_name))
+          DropDatabase(db_name)
+
+      print("3 DataRetention done")
+
+    try:
+      start_time = time.time()
+      print("Data retetion is running...")
+
+      # Start retention
+      if os.getenv("enable_check") == "true":
+        DataRetention()
+
+      # Every 5 minutes, DR checks ignition-file's changes.
+      sleep_time = 60.0 * TIME_LOOP - ((time.time() - start_time) % 60.0)
+      if sleep_time > 0:
+        time.sleep(sleep_time)
+      start_time = time.time()
+      print("4 loop done")
+      print("============================================================================================================================")
+    except Exception as e:
+      print("An exception occurred. {}".format(str(e)))
+{{ end }}

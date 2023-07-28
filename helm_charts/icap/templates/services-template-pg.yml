@@ -1,0 +1,29 @@
+
+# Create a service for each component in MD ICAP Server it has exposed ports
+{{ $component := .Values.postgres_mdicapsrv }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ $component.name | quote }}
+  # {{- if $component.service_annotations }}
+  # annotations:
+  #   {{- toYaml $component.service_annotations | nindent 4 }}
+  # {{- end }}
+spec:
+  ports:
+{{- if $component.ports.rest }}
+    - name: "rest-port"
+      port: {{ $component.ports.rest }}
+      targetPort: {{ $component.ports.rest }}
+{{- end }}
+  {{- if $component.service_type }}
+  type: {{ $component.service_type }}
+  {{- end }}
+  {{- if $component.sessionAffinity }}
+  sessionAffinity: {{ $component.sessionAffinity }}
+  {{- end }}
+  selector:
+      app: {{ $component.name | quote }}
+status:
+  loadBalancer: {}

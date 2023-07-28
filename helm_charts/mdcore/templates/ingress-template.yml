@@ -4,17 +4,15 @@ kind: Ingress
 apiVersion: networking.k8s.io/v1
 metadata:
   name: core-ingress
-  {{- if .Values.core_ingress.ingress_annotations }}
-  annotations:
-    {{- toYaml .Values.core_ingress.ingress_annotations | nindent 4 }}
-  {{ else }}
   annotations:
     kubernetes.io/ingress.class: {{ .Values.core_ingress.class }}
     ingress.kubernetes.io/rewrite-target: /
+    {{- if .Values.core_ingress.ingress_annotations }}
+      {{- toYaml .Values.core_ingress.ingress_annotations | nindent 4 }}
+    {{ end }}
     {{ if and (.Values.core_ingress.tls) (eq .Values.core_ingress.class "nginx") }}
     nginx.ingress.kubernetes.io/backend-protocol: HTTPS
     {{ end }}
-  {{- end }}
 
 spec:
   {{ if .Values.core_ingress.rules }}

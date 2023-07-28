@@ -1,11 +1,10 @@
 # Set the ACCEPT_EULA variable to any value to confirm your acceptance of the End-User Licensing Agreement.
 ACCEPT_EULA: false
 ## Uncomment the following lines to set a fixed user and password for the MD ICAP Server web interface that will overwrite 
-## any secret that already exists for these credentials (the secret will be kept when the chart is deleted)
+## Any secret that already exists for these credentials (the secret will be kept when the chart is deleted)
 ## If left unset the following will apply:
 ## - if no "mdicapsrv-cred" secret exists, it will be created with the user "admin" and a random password
 ## - if the "mdicapsrv-cred" secret exists, the values from the secret are used as credentials
-
 mdicapsrv_user: admin                      # Initial admin user for the MD ICAP Server web interface
 mdicapsrv_password: null                   # Initial admin password for the MD ICAP Server web interface, if not set it will be randomly generated
 
@@ -14,31 +13,34 @@ mdicapsrv_password: null                   # Initial admin password for the MD I
 ## If left unset the following will apply:
 ## - if no "mdicapsrv-api-key" secret exists, it will be created with a random 36 character API key
 ## - if the "mdicapsrv-api-key" secret exists, the value from the secret is used
-
+# URL to the OPSWAT activation server, this value should not be changed
+activation_server: activation.dl.opswat.com
 mdicapsrv_api_key: null                   # 36 character API key used for the MD ICAP Server REST API, if not set it will be randomly generated
-
 ## Set your MD ICAP Server license key here and it will be stored in the "mdicapsrv-license-key" secret that will be created 
 ## if it does not exist. If left unset then a a secret is generated with and empty license key.
 
 mdicapsrv_license_key: <SET_LICENSE_KEY_HERE>    # A valid license key, **this value is mandatory**
+## Uncomment the following lines to set a fixed user and password for the MD ICAP Server PostgreSQL database that will overwrite 
+## any secret that already exists for these credentials (the secret will be kept when the chart is deleted)
+## If left unset the following will apply:
+## - if no "mdicapsrv-postgres-cred" secret exists, it will be created with the user "postgres" and a random password
+## - if the "mdicapsrv-postgres-cred" secret exists, the values from the secret are used as credentials
+db_user: postgres                      # PostgreSQL database username 
+db_password: postgres                  # PostgreSQL database password, if not set it will be randomly generated
 
-activation_server: activation.dl.opswat.com   # URL to the OPSWAT activation server, this value should not be changed
+## Integration OLMS
+olms:
+  enabled: false
+  olms_host_url: "olms"
+  olms_rest_port: 8040
+  olms_socket_port: 3316 # 3316 is the port default of the socket. If you enabled socket secure connection please change it to 13316
+  olms_rule: "Default_Rule"
+  olms_comment: ""
 
-# Set to false to not create any volumes or host paths in the deployment, all storage will be ephemeral
-persistance_enabled: true
-
-# Available storage providers:
-# - minikube-hostpath: Local storage on the current node using the minikube provisioner
-# - no-provisioner: WIP, Local storage using static Volumes
-# - hostPath
-storage_provisioner: hostPath
-storage_name: hostPath
-storage_node: minikube
-hostPathPrefix: mdicapsrv-storage      # This is the absolute path on the node where to keep the data filesystem for persistance
-
-# Ingress setting for MD ICAP Server
+## Ingress setting for MD ICAP Server
 icap_ingress:
-  host: mdicapsrv-ingress.k8s       # Hostname for the publicly accessible ingress
+  name: ingress-mdicapsrv
+  host: mdicapsrv-ingress-dev.k8s   # Hostname for the publicly accessible ingress
   service: md-icapsrv               # Service name where the ingress should route to, this should be left unchanged
   rest_port: 8048                   # Port where the ingress should route to
   enabled: false                    # Enable or disable the ingress creation
@@ -47,17 +49,72 @@ icap_ingress:
 ## Uncomment if you want to use a private repo (it must already be configured in the cluster as a secret)
 # imagePullSecrets:
 #   - name: regcred
-
+# Deployment Postgresql Server for MD ICAP Server
+postgres_mdicapsrv:
+  enabled: true
+  name: postgres-mdicapsrv
+  image: postgres:12.12
+  env:
+    - name: POSTGRES_PASSWORD
+      valueFrom:
+        secretKeyRef:
+          name: mdicapsrv-postgres-cred
+          key: password
+    - name: POSTGRES_USER
+      valueFrom:
+        secretKeyRef:
+          name: mdicapsrv-postgres-cred
+          key: user
+  ports:
+    rest: 5432
+  service_type: ClusterIP
 # Docker repo to use, this should be changed when using private images (this string will be prepended to the image name)
 # If a component has "custom_repo: true" then the image name will be formated as "{docker_repo/}image_name{:BRANCH}" otherwise it will remain unaltered
 icap_docker_repo: opswat
-
+# Example using a PVC with dynamic provisioning from an existing storage class
+storage_configs:                       
+  enabled: false
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 5Gi
+  storageClassName: "nfs-client"
+# Enable feature health check
+healthcheck:
+  enabled: true
+# The feature to support cleanup database of the instance in-active
+cleanup_db:
+  enabled: false
+# At minute 0 past every 12th hour.
+  schedule: "0 */12 * * *"
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 1
 icap_components:
   md_icapsrv:
+  # Init container to check database system is ready to accept connections
+    initContainers:
+      - name: check-db-ready
+        image: postgres:12.12
+        envFrom:
+          - configMapRef:
+              name: mdicapsrv-env
+        command: ['sh', '-c', 
+          'until pg_isready -h $DB_HOST -p $DB_PORT; 
+          do echo waiting for database; sleep 2; done;']
+        resources:
+          requests:
+            memory: "128Mi"   # Minimum reserved memory
+            cpu: "100m"       # Minimum reserved cpu
+          limits:              
+            memory: "128Mi"   # Maximum memory limit
+            cpu: "100m"       # Maximum cpu limit
     name: md-icapsrv
-    image: opswat/metadefendericapsrv-debian:5.1.1                                # Overrides the default docker image for the MD ICAP Server service, this value can be changed if you want to set a different version of MD ICAP Server
+    # Overrides the default docker image for the MD ICAP Server service, this value can be changed if you want to set a different version of MD ICAP Server
+    image: opswat/metadefendericapsrv-debian:5.2.0
     # Warning: When to use this feature!
-    replicas: 1                                                   # Sets the number of replicas if you want to have multiple MD ICAP Server instances
+    # Sets the number of replicas if you want to have multiple MD ICAP Server instances
+    replicas: 1
     env:
       - name: MD_USER
         valueFrom:
@@ -69,6 +126,10 @@ icap_components:
           secretKeyRef:
             name: mdicapsrv-cred
             key: password
+      - name: MDICAPSRV_INSTANCE_NAME
+        valueFrom:
+          fieldRef:
+            fieldPath: metadata.name
       - name: APIKEY
         valueFrom:
           secretKeyRef:
@@ -79,6 +140,16 @@ icap_components:
           secretKeyRef:
             name: mdicapsrv-license-key
             key: value
+      - name: DB_USER
+        valueFrom:
+          secretKeyRef:
+            name: mdicapsrv-postgres-cred
+            key: user
+      - name: DB_PWD
+        valueFrom:
+          secretKeyRef:
+            name: mdicapsrv-postgres-cred
+            key: password
     ## Support set data retention
     data_retention:
       config_history: 168
@@ -106,7 +177,7 @@ icap_components:
         certKeySecretSubPath: mdicapsrv-https.key
         mountPath: /https_cert
         tlsVersions:
-          - "TLSv1.2"
+          - "TLSv1.3"
       icaps:
         enabled: false
         certSecret: mdicapsrv-icaps-tls-cert
@@ -115,7 +186,7 @@ icap_components:
         certKeySecretSubPath: mdicapsrv-icaps.key
         mountPath: /icaps_cert
         tlsVersions:
-          - "TLSv1.2"
+          - "TLSv1.3"
       nginxs:
         enabled: false
         certSecret: mdicapsrv-nginxs-tls-cert
@@ -124,41 +195,64 @@ icap_components:
         certKeySecretSubPath: mdicapsrv-nginxs.key
         mountPath: /nginxs_cert
         tlsVersions:
-          - "TLSv1.2"
+          - "TLSv1.3"
+    # If you want to MD ICAP Server connect to an other server need to validate certificate
+    # Please set trustCertificate.enabled to true and specific the secret name for MD ICAP Server will trust it 
+    trustCertificate:
+      enabled: false
+      mountPath: /trust_certs
+      configs:
+      - certSecret: mdicapsrv-trust-server-cert
+        certSecretSubPath: mdicapsrv-trust.crt
     ports:
-      rest: 8048 # REST port to expose for the MD ICAP Server pod
-      icap: 1344 # ICAP port to expose for the MD ICAP Server pod
+      rest: 8048   # REST port to expose for the MD ICAP Server pod
+      icap: 1344   # ICAP port to expose for the MD ICAP Server pod
       icaps: 11344 # ICAPS port to expose for the MD ICAP Server pod
-      nginx: 8043 # NGINX port for nginx ingress controller connect
+      nginx: 8043  # NGINX port for nginx ingress controller connect
       nginxs: 8443 # NGINX (SSL) port for nginx ingress controller connect
-    service_type: ClusterIP                              # Sets the service type for MD ICAP Server service (ClusterIP, NodePort, LoadBalancer)
+    database:
+      db_mode: "4"                   # Database mode
+      db_type: remote                # Database type
+      db_host: postgres-mdicapsrv    # Hostname / entrypoint of the database, this value should be changed any if using an external database service
+      db_port: "5432"                # Port for the PostgreSQL Database
+    service_type: ClusterIP          # Sets the service type for MD ICAP Server service (ClusterIP, NodePort, LoadBalancer)
     sessionAffinity: None
     service_annotations: null
+# If `aws-type` is set to `fargate`, the MD ICAP Server pod will be scheduled on an AWS Fargate virtual node (if a fargate profile is provisioned and configured)
     extra_labels:
-      aws-type: fargate                                  # If `aws-type` is set to `fargate`, the MD ICAP Server pod will be scheduled on an AWS Fargate virtual node (if a fargate profile is provisioned and configured)
+      aws-type: fargate
     resources:
       requests:
-        memory: "2Gi"                                    # Minimum reserved memory
-        cpu: "2.0"                                       # Minimum reserved cpu
-      limits:
-        memory: "4Gi"                                    # Maximum memory limit
-        cpu: "4.0"                                       # Maximum cpu limit
+        memory: "2Gi"               # Minimum reserved memory
+        cpu: "2.0"                  # Minimum reserved cpu
+      limits:                        
+        memory: "4Gi"               # Maximum memory limit
+        cpu: "4.0"                  # Maximum cpu limit
+    imagePullPolicy: IfNotPresent
     livenessProbe:
-      httpGet:
-        path: /readyz                                    # Health check endpoint.
-        port: 8048                                       # Health check port. It should be the same with icap_components.md_icapsrv.ports.rest_port
-        # scheme: HTTPS                                  # If enabled TLS, need to uncomment here
       initialDelaySeconds: 30
       periodSeconds: 10
       timeoutSeconds: 10
+      failureThreshold: 3
+    readinessProbe:
+      initialDelaySeconds: 10
+      periodSeconds: 3
+      timeoutSeconds: 3
       failureThreshold: 3
     strategy:
       type: RollingUpdate
       rollingUpdate:
         maxSurge: 0
-    sidecars:                                           # Configuration for the activation-manager sidecar
+    sidecars:                  # Configuration for the activation-manager sidecar
       - name: activation-manager
         image: alpine
+        resources:
+          requests:
+            memory: "128Mi"    # Minimum reserved memory
+            cpu: "100m"        # Minimum reserved cpu
+          limits:              
+            memory: "128Mi"    # Maximum memory limit
+            cpu: "100m"        # Maximum cpu limit
         envFrom:
           - configMapRef:
               name: mdicapsrv-env
@@ -174,9 +268,9 @@ icap_components:
                 name: mdicapsrv-license-key
                 key: value
         command: ["/bin/sh", "-c"]
-        args:                                             # Test
+        args:
           - | 
-            apk add curl jq
+            apk add curl jq openssl
             stop() {
               echo 'Deactivating using the MD ICAP Server API'
               curl -H "apikey: $APIKEY" -X POST "https://localhost:$REST_PORT/admin/license/deactivation"
@@ -187,17 +281,63 @@ icap_components:
             trap stop SIGTERM SIGINT SIGQUIT
 
             until [ -n $DEPLOYMENT ] && [ $DEPLOYMENT != null ]; do
-                echo 'Checking...'
-                export DEPLOYMENT=$(curl --silent -H "apikey: $APIKEY" "http://localhost:$REST_PORT/admin/license" | jq -r ".deployment")
-                echo "Deployment ID: $DEPLOYMENT"
-                sleep 1
+              if openssl s_client -connect $MD_BASE_URL:$REST_PORT < /dev/null &> /dev/null; then
+                export PROTOCOL="https"
+              else
+                export PROTOCOL="http"
+              fi
+              echo 'Checking...'
+              export DEPLOYMENT=$(curl --insecure --silent -H "apikey: $APIKEY" "$PROTOCOL://localhost:$REST_PORT/admin/license" | jq -r ".deployment")
+              echo "Deployment ID: $DEPLOYMENT"
+              sleep 1
             done
             echo "Waiting for termination signal..."
             while true; do sleep 1; done
             echo "MD ICAP Server pod finished, exiting"
             exit 0
-
 # nodeSelector is the simplest recommended form of node selection constraint. 
 # You can add the nodeSelector field to your Pod specification and specify the node labels you want the target node to have.
 # Kubernetes only schedules the Pod onto nodes that have each of the labels you specify.
 nodeSelector: {}
+  ## Autoscaling parameters
+  ## @param autoscaling.enabled create an Horizontal Pod Autoscaler
+  ## @param autoscaling.minReplicas minimum number of replicas for the HPA
+  ## @param autoscaling.maxReplicas maximum number of replicas for the HPA
+  ## @param autoscaling.metrics metrics for the HPA to manage the scaling
+  ## @param autoscaling.behavior to configure separate scale-up and scale-down behaviors
+autoscaling:
+  enabled: false
+  minReplicas: 1
+  maxReplicas: 10
+# Can be scaled based on the resource usage of the pods in the scaling target
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 60
+    - type: Resource
+      resource:
+        name: memory
+        target:
+          type: Utilization
+          averageUtilization: 60
+  behavior:
+    scaleDown:
+      stabilizationWindowSeconds: 300
+      policies:
+      - type: Percent
+        value: 100
+        periodSeconds: 15
+      selectPolicy: Max
+    scaleUp:
+      stabilizationWindowSeconds: 60
+      policies:
+      - type: Percent
+        value: 100
+        periodSeconds: 15
+      - type: Pods
+        value: 4
+        periodSeconds: 15
+      selectPolicy: Max

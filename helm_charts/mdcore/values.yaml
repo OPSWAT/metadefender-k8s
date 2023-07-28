@@ -94,9 +94,6 @@ core_ingress:
   tls: false                        # Flag for set up tls section in ingress
   secret: mdcore-tls                # SecretName of the tls secret created to be used for ingress
   ingress_annotations: 
-    kubernetes.io/ingress.class: nginx          # Indicate class for the controller
-    ingress.kubernetes.io/rewrite-target: /
-    nginx.ingress.kubernetes.io/backend-protocol: HTTPS # When MetaDefender Core deployment is running with TLS enabled 
     nginx.ingress.kubernetes.io/affinity: cookie     # To set affinity when having more than one pod running behind the ingress
 
 
@@ -212,13 +209,19 @@ core_components:
       rollingUpdate:
         maxSurge: 0
     extraVolumes:
-      - name: wait-for-hub-services
+      waitForServicesScript:
+        name: wait-for-hub-services
         configMap:
           name:  wait-for-hub-services
           defaultMode: 0777
+      activationManagerScript:
+        name: activation-manager
+        configMap:
+          name:  activation-manager
+          defaultMode: 0777
     sidecars:                                           # Configuration for the activation-manager sidecar
       - name: activation-manager
-        image: opswat/md-activation-manager
+        image: opswat/metadefendercore-debian:5.4.0
         envFrom:
           - configMapRef:
               name: mdcore-env
@@ -235,9 +238,14 @@ core_components:
                 key: value
           - name: MDCORE_BASE_URL
             value: http://localhost
+        command: [ '/monitor-activation.sh' ]
+        volumeMounts:
+          - name:  activation-manager
+            mountPath: /monitor-activation.sh
+            subPath: monitor-activation.sh
     initContainers:
       - name: check-db-ready
-        image: postgres
+        image: opswat/metadefendercore-debian:5.4.0
         envFrom:
           - configMapRef:
               name: mdcore-env
@@ -245,7 +253,7 @@ core_components:
           'until pg_isready -h $DB_HOST -p $DB_PORT; 
           do echo waiting for database; sleep 2; done;']
       - name: wait-for-hub-services
-        image: busybox
+        image: opswat/metadefendercore-debian:5.4.0
         command: [ '/wait-for-hub-services.sh' ]
         volumeMounts:
           - name:  wait-for-hub-services

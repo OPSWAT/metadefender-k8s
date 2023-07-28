@@ -1,0 +1,42 @@
+{{- if .Values.postgres_mdicapsrv.enabled }}
+{{- if (eq .Values.icap_components.md_icapsrv.database.db_mode "4")}}
+{{ $component := .Values.postgres_mdicapsrv }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ $component.name | quote }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: {{ $component.name | quote }}
+  template:
+    metadata:
+      labels:
+        app: {{ $component.name | quote }}
+    spec:
+      containers:
+        - envFrom:
+            - configMapRef:
+                name: mdicapsrv-env
+          image: {{ $component.image | quote }}
+          env:
+            {{- toYaml $component.env | nindent 12 }}
+          name: "postgres-mdicapsrv"
+          ports:
+            - containerPort: {{ $component.ports.rest }}
+          {{- if $.Values.storage_configs.enabled }}
+          volumeMounts:
+            - mountPath: "/var/lib/postgresql/data"
+              name: {{ printf "%s-pvc" .Values.storage_configs.storageClassName }}
+              subPath: {{ $component.name }}
+          {{- end }}
+      restartPolicy: Always
+      {{- if $.Values.storage_configs.enabled }}
+      volumes:
+        - name: {{ printf "%s-pvc" .Values.storage_configs.storageClassName }}
+          persistentVolumeClaim:
+            claimName: {{ printf "%s-pvc" $.Values.storage_configs.storageClassName }}
+      {{- end }}
+{{- end }}
+{{- end }}

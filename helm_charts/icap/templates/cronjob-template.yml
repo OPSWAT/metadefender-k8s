@@ -1,0 +1,69 @@
+{{ if .Values.cleanup_db.enabled }}
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: mdicapsrv-cleanup-db
+  namespace: {{ .Release.Namespace }}
+spec:
+  schedule: {{ .Values.cleanup_db.schedule | quote }}
+  successfulJobsHistoryLimit: {{ .Values.cleanup_db.successfulJobsHistoryLimit  }}
+  failedJobsHistoryLimit: {{ .Values.cleanup_db.failedJobsHistoryLimit }}
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          restartPolicy: OnFailure
+          containers:
+          - name: mdicapsrv-cleanup-db
+            image: python
+            imagePullPolicy: IfNotPresent
+            envFrom:
+              - configMapRef:
+                  name: mdicapsrv-env
+            ports:
+              - name: python
+                containerPort: 80
+                protocol: TCP
+            volumeMounts:
+            - name: config-volume
+              mountPath: /home/opswat/
+            - name: {{ printf "%s-storage" $.Values.icap_components.md_icapsrv.name }}
+              mountPath: /home/storage
+            env:
+            - name: database_check
+              value: 'true'
+            - name: storage_check
+              value: 'true'
+            - name: enable_check
+              value: 'true'
+            - name: STORAGE_PATH
+              value: /home/storage
+            - name: range
+              value: '120'
+            - name: DB_USER
+              valueFrom:
+                secretKeyRef:
+                  name: mdicapsrv-postgres-cred
+                  key: user
+            - name: DB_PWD
+              valueFrom:
+                secretKeyRef:
+                  name: mdicapsrv-postgres-cred
+                  key: password
+            command:
+              - /bin/sh
+              - -c
+              - |
+                pip3 install pycryptodomex
+                pip3 install psycopg2
+                cp -R /home/opswat/ /root/opswat
+                python /root/opswat/main.py
+                #sleep 3600
+          volumes:
+          - name: config-volume
+            configMap:
+              name: ignition-file
+          - name: {{ printf "%s-pvc" $.Values.icap_components.md_icapsrv.name }}
+            persistentVolumeClaim:
+              claimName: {{ printf "%s-pvc" $.Values.icap_components.md_icapsrv.name }}
+{{ end }}
