@@ -3,13 +3,20 @@
 kind: Ingress
 apiVersion: networking.k8s.io/v1
 metadata:
-  name: icap-ingress
+  name: {{ .Values.icap_ingress.name }}
   namespace: {{ .Release.Namespace }}
   annotations:
     kubernetes.io/ingress.class: {{ .Values.icap_ingress.class }}
     ingress.kubernetes.io/rewrite-target: /
+## If you have enabled HPA or scale up more instances please uncomment configuration below
+  {{- if .Values.autoscaling.enabled }}
+    nginx.ingress.kubernetes.io/affinity: cookie
+    nginx.ingress.kubernetes.io/affinity-mode: balanced
+  {{- end }}
   {{- if .Values.icap_components.md_icapsrv.tls.https.enabled }}
     nginx.ingress.kubernetes.io/backend-protocol: "HTTPS"
+    nginx.ingress.kubernetes.io/server-snippet: |
+      proxy_ssl_protocols TLSv1 TLSv1.1 TLSv1.2 TLSv1.3;
   {{- end }}
 spec:
   rules:

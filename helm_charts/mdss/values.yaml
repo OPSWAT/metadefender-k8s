@@ -1,8 +1,8 @@
 # Default values for mdss. These will also be included in the environment of each mdss container
 
 mdss-common-environment:
-  ENABLED_MODULES: "mdss,azureblob,amazonsdk,googlecloud,alibabacloud,azurefiles,box"                                  # Enabled modules by default
-  # ENABLED_MODULES: "mdss,azureblob,amazonsdk,googlecloud,alibabacloud,azurefiles,smb,box,onedrive,debug"             # All supported modules
+  ENABLED_MODULES: "azureblob,amazonsdk"                                  # Enabled modules by default
+  # ENABLED_MODULES: "azureblob,amazonsdk,googlecloud,alibabacloud,azurefiles,smb,box,onedrive,sftp,debug"             # All supported modules
 
   # This defines the connection string to the db ( should be modified when using an external db)
   MONGO_URL: "mongodb://mongodb:27017/MDCS"
@@ -39,7 +39,7 @@ mdss-common-environment:
   RABBITMQ_SCANNING_PREFETCH_COUNT: "20"
 
   HTTPS_ACTIVE: "no"
-  BRANCH: "stable3.0"                                   # Sets a custom MDSS branch for testing/preview versions, this value should be set to stable or stable3.0 for production use
+  BRANCH: "3.3.0"                                   # Sets a custom MDSS branch for testing/preview versions
   # These variables can be changed to reveal debug information in the application
   LOG_LEVEL: "4"
   APP_LOG_LEVEL: "INFORMATION"
@@ -81,6 +81,9 @@ mdss-common-environment:
   # This variable is used to define how much time should pass until we can discover a file that has failed previously, after 24 hours it shall be discovered again.
   DISCOVERY_SERVICE_REPROCESSING_FAILED_TIME_HOURS: "24"
 
+  # This variable is used to define how much time should pass until a stuck file's state is set to failed
+  MARK_STUCK_FILE_AS_FAILED_HOURS: "24"
+
   CACHE_SERVICE_URI: "redis:6379"
   ### Deprecated
   CACHE_SERVICE_URL: "redis"
@@ -89,6 +92,23 @@ mdss-common-environment:
 
   # This retry time is used for other generic operations.
   POLLY_RETRY_TIME: "30"
+
+  # in seconds
+  OBJECT_CONTENT_REDIS_TTL: "30"
+
+  RABBITMQ_RPC_LONG_TIMEOUT: "5" # minutes
+
+  LICENSINGSERVICE_LISTENING_IP: "0.0.0.0"
+  SFTPSERVICE_URL: "http://sftpservice"
+  SFTPSERVICE_PORT: "5003"
+
+
+  SFTP_SHORT_DEADLINE: "5"
+  SFTP_LONG_DEADLINE: "30"
+  SFTP_UPLOAD_CHUNK: "2"
+
+  # This variable is used to force Signature Version 4 for AWS S3/S3 compatible request. 
+  FORCE_AWS_SIGNATURE_V4: "1"
 
 
 # Set to true if the respective database engine should also be deployed
@@ -278,10 +298,8 @@ mdss_components:
     extra_labels:
       aws-type: fargate
   
-  # ======================================= MDSS MODULE ================================================
   apigateway:
     name: apigateway
-    module_name: mdss
     custom_repo: true
     image: mdcloudservices_api
     env:
@@ -295,7 +313,6 @@ mdss_components:
 
   webclient:
     name: webclient
-    module_name: mdss
     custom_repo: true
     image: mdcloudservices_web
     ports:
@@ -551,3 +568,43 @@ mdss_components:
     extra_labels:
       aws-type: fargate
   
+  # ======================================= SFTP MODULE ================================================
+  discoverysftpservice:
+    name: discoverysftpservice
+    module_name: sftp
+    custom_repo: true
+    image: mdcloudservices_discoverysftp
+    extra_labels:
+      aws-type: fargate
+    resources:
+      requests:
+        memory: "0.25Gi"
+  
+  remediationsservice-sftp:
+    name: remediationsservice-sftp
+    module_name: sftp
+    custom_repo: true
+    image: mdcloudservices_remediationssftp
+    extra_labels:
+      aws-type: fargate
+  
+  storagesservice-sftp:
+    name: storagesservice-sftp
+    module_name: sftp
+    custom_repo: true
+    image: mdcloudservices_storagessftp
+    extra_labels:
+      aws-type: fargate
+  
+  sftpservice:
+    name: sftpservice
+    module_name: sftp
+    custom_repo: true
+    image: mdcloudservices_sftpservice
+    ports:
+      - port: 5003
+    extra_labels:
+      aws-type: fargate
+    env:
+      - name: ASPNETCORE_URLS
+        value: http://+
