@@ -16,6 +16,23 @@ entries:
     urls:
     - https://github.com/OPSWAT/metadefender-k8s/releases/download/MetaDefender_Core-5.1.1/MetaDefender_Core-5.1.1.tgz
     version: 5.1.1
+  MetaDefender_ICAP_Server:
+  - apiVersion: v2
+    appVersion: 5.2.0
+    created: "2023-08-02T09:25:37.971529096Z"
+    description: This is a Helm chart for deploying MetaDefender ICAP Server (https://www.opswat.com/products/metadefender/icap)
+      in a Kubernetes cluster.
+    digest: bd3d4fb6a6a44ab5466f04185f5120b64270b277d69c7a2fcabe739dc74a572d
+    home: https://docs.opswat.com/mdicap/installation
+    keywords:
+    - mdicapsrv
+    - icap
+    - MetaDefender ICAP Server
+    name: MetaDefender_ICAP_Server
+    type: application
+    urls:
+    - https://github.com/OPSWAT/metadefender-k8s/releases/download/MetaDefender_ICAP_Server-5.2.0/MetaDefender_ICAP_Server-5.2.0.tgz
+    version: 5.2.0
   MetaDefender_for_Secure_Storage:
   - apiVersion: v2
     created: "2022-08-18T13:22:28.460701579Z"
@@ -83,4 +100,4 @@ entries:
     urls:
     - https://github.com/OPSWAT/metadefender-k8s/releases/download/metadefender_icap_server-4.13.0/metadefender_icap_server-4.13.0.tgz
     version: 4.13.0
-generated: "2022-10-11T08:36:15.386810285Z"
+generated: "2023-08-02T09:25:38.242824723Z"
