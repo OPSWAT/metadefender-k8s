@@ -413,7 +413,7 @@ function provisionAWS() {
 
   askProceed
 
-  terraform apply -auto-approve -var-file="variables/variables.tfvars" \
+  terraform apply -var-file="variables/variables.tfvars" \
   -var="ACCESS_KEY_ID=$ACCESS_KEY_ID" \
   -var="SECRET_ACCESS_KEY=$SECRET_ACCESS_KEY" \
   -var="MD_CLUSTER_NAME=$cluster_name" \
@@ -443,7 +443,7 @@ function provisionAzure() {
 
   askProceed
 
-  terraform apply -auto-approve \
+  terraform apply \
   -var="aks_service_principal_app_id=$ARM_CLIENT_ID" \
   -var="aks_service_principal_client_secret=$ARM_CLIENT_SECRET" \
   -var="cluster_name=$cluster_name" \
@@ -478,7 +478,7 @@ function provisionGCP() {
 
   askProceed
 
-  terraform apply -auto-approve \
+  terraform apply \
   -var="gcloud_json_key_path=$GCP_JSON_CREDENTIALS_PATH" \
   -var="deploy_cloud_sql=$externalDB" \
   -var="cloud_sql_user=$db_user" \

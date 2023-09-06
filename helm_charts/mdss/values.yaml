@@ -150,7 +150,7 @@ ONBOARDING_FULL_NAME: null              # Full name of user that will be created
 # If a component has "custom_repo: true" then the image name will be formated as "{docker_repo/}image_name{:BRANCH}" otherwise it will remain unaltered
 mdss_docker_repo: opswat
 
-imagePullPolicy: Always
+imagePullPolicy: IfNotPresent
 
 mdss_config_map_env_name: 'mdss-env'
 mdssHostAliases:                              # Custom hosts entries
@@ -168,6 +168,10 @@ mdss_components:
       - port: 27017
     persistentDir: /data/db
     is_db: true
+    resources:
+      requests:
+        memory: "2Gi"
+        cpu: "0.5"
 
   mongomigrations:
     name: mongomigrations
@@ -176,6 +180,10 @@ mdss_components:
     ports:
       - port: 27777
     persistentDir: /backup
+    resources:
+      requests:
+        memory: "0.125Gi"
+        cpu: "0.010"
 
   rabbitmq:
     name: rabbitmq
@@ -192,6 +200,10 @@ mdss_components:
         value: /data/rabbitmq/advanced.config
     extra_labels:
       aws-type: fargate
+    resources:
+      requests:
+        memory: "0.5Gi"
+        cpu: "0.5"
   
   redis:
     name: redis
@@ -200,6 +212,10 @@ mdss_components:
       - port: 6379
     extra_labels:
       aws-type: fargate
+    resources:
+      requests:
+        memory: "0.125Gi"
+        cpu: "0.100"
 
   licensingservice:
     name: licensingservice
@@ -209,6 +225,10 @@ mdss_components:
       - port: 5000
     extra_labels:
       aws-type: fargate
+    resources:
+      requests:
+        memory: "0.125Gi"
+        cpu: "0.010"
   
   discoveryservice:
     name: discoveryservice
@@ -218,7 +238,8 @@ mdss_components:
       aws-type: fargate
     resources:
       requests:
-        memory: "0.25Gi"
+        memory: "0.5Gi"
+        cpu: "1.000"
 
   scanningservice:
     name: scanningservice
@@ -229,6 +250,7 @@ mdss_components:
     resources:
       requests:
         memory: "1Gi"
+        cpu: "0.500"
   
   notificationservice:
     name: notificationservice
@@ -239,6 +261,7 @@ mdss_components:
     resources:
       requests:
         memory: "0.25Gi"
+        cpu: "0.010"
 
   jobdispatcher:
     name: jobdispatcher
@@ -249,6 +272,7 @@ mdss_components:
     resources:
       requests:
         memory: "0.25Gi"
+        cpu: "0.050"
   
   securitychecklistservice:
     name: securitychecklistservice
@@ -256,6 +280,10 @@ mdss_components:
     image: "mdcloudservices_security-checklist"
     extra_labels:
       aws-type: fargate
+    resources:
+      requests:
+        memory: "0.125Gi"
+        cpu: "0.010"
 
   loadbalancerservice:
     name: loadbalancerservice
@@ -266,6 +294,7 @@ mdss_components:
     resources:
       requests:
         memory: "0.25Gi"
+        cpu: "0.100"
 
   loggingservice:
     name: loggingservice
@@ -276,6 +305,7 @@ mdss_components:
     resources:
       requests:
         memory: "0.25Gi"
+        cpu: "0.050"
 
   remediationsservice:
     name: remediationsservice
@@ -283,6 +313,10 @@ mdss_components:
     image: mdcloudservices_remediations
     extra_labels:
       aws-type: fargate
+    resources:
+      requests:
+        memory: "0.25Gi"
+        cpu: "0.100"
   
   storagesservice:
     name: storagesservice
@@ -290,6 +324,10 @@ mdss_components:
     image: mdcloudservices_storages
     extra_labels:
       aws-type: fargate
+    resources:
+      requests:
+        memory: "0.25Gi"
+        cpu: "0.010"
       
   workflowmanagerservice:
     name: workflowmanagerservice
@@ -297,6 +335,10 @@ mdss_components:
     image: mdcloudservices_workflowmanager
     extra_labels:
       aws-type: fargate
+    resources:
+      requests:
+        memory: "0.25Gi"
+        cpu: "0.100"
   
   apigateway:
     name: apigateway
@@ -310,6 +352,10 @@ mdss_components:
       - port: 80
     extra_labels:
       aws-type: fargate
+    resources:
+      requests:
+        memory: "0.5Gi"
+        cpu: "0.100"
 
   webclient:
     name: webclient
@@ -324,6 +370,10 @@ mdss_components:
       subPath: default.conf
     extra_labels:
       aws-type: fargate
+    resources:
+      requests:
+        memory: "0.25Gi"
+        cpu: "0.100"
 
   # ======================================= DEBUG MODULE ================================================
   systemchecks:
@@ -352,6 +402,7 @@ mdss_components:
     resources:
       requests:
         memory: "0.25Gi"
+        cpu: "1.000"
 
   remediationsservice-amazonsdk:
     name: remediationsservice-amazonsdk
@@ -360,6 +411,10 @@ mdss_components:
     image: mdcloudservices_remediationsamazonsdk
     extra_labels:
       aws-type: fargate
+    resources:
+      requests:
+        memory: "0.25Gi"
+        cpu: "0.100"
   
   storagesservice-amazonsdk:
     name: storagesservice-amazonsdk
@@ -368,6 +423,10 @@ mdss_components:
     image: mdcloudservices_storagesamazonsdk
     extra_labels:
       aws-type: fargate
+    resources:
+      requests:
+        memory: "0.25Gi"
+        cpu: "0.010"
   # ======================================= AZUREBLOB MODULE ================================================
   discoveryazureblobservice:
     name: discoveryazureblobservice
@@ -379,6 +438,7 @@ mdss_components:
     resources:
       requests:
         memory: "0.25Gi"
+        cpu: "1.000"
 
   remediationsservice-azureblob:
     name: remediationsservice-azureblob
@@ -387,6 +447,10 @@ mdss_components:
     image: mdcloudservices_remediationsazureblob
     extra_labels:
       aws-type: fargate
+    resources:
+      requests:
+        memory: "0.25Gi"
+        cpu: "0.100"
       
   storagesservice-azureblob:
     name: storagesservice-azureblob
@@ -395,6 +459,10 @@ mdss_components:
     image: mdcloudservices_storagesazureblob
     extra_labels:
       aws-type: fargate
+    resources:
+      requests:
+        memory: "0.25Gi"
+        cpu: "0.010"
   # ======================================= ALIBABACLOUD MODULE ================================================
   discoveryalibabacloudservice:
     name: discoveryalibabacloudservice
@@ -406,6 +474,7 @@ mdss_components:
     resources:
       requests:
         memory: "0.25Gi"
+        cpu: "1.000"
   
   remediationsservice-alibabacloud:
     name: remediationsservice-alibabacloud
@@ -414,6 +483,10 @@ mdss_components:
     image: mdcloudservices_remediationsalibabacloud
     extra_labels:
       aws-type: fargate
+    resources:
+      requests:
+        memory: "0.25Gi"
+        cpu: "0.100"
   
   storagesservice-alibabacloud:
     name: storagesservice-alibabacloud
@@ -422,6 +495,10 @@ mdss_components:
     image: mdcloudservices_storagesalibabacloud
     extra_labels:
       aws-type: fargate
+    resources:
+      requests:
+        memory: "0.25Gi"
+        cpu: "0.010"
   # ======================================= GOOGLECLOUD MODULE ================================================
   discoverygooglecloudservice:
     name: discoverygooglecloudservice
@@ -433,6 +510,7 @@ mdss_components:
     resources:
       requests:
         memory: "0.25Gi"
+        cpu: "1.000"
   
   remediationsservice-googlecloud:
     name: remediationsservice-googlecloud
@@ -441,6 +519,10 @@ mdss_components:
     image: mdcloudservices_remediationsgooglecloud
     extra_labels:
       aws-type: fargate
+    resources:
+      requests:
+        memory: "0.25Gi"
+        cpu: "0.100"
   
   storagesservice-googlecloud:
     name: storagesservice-googlecloud
@@ -449,6 +531,10 @@ mdss_components:
     image: mdcloudservices_storagesgooglecloud
     extra_labels:
       aws-type: fargate
+    resources:
+      requests:
+        memory: "0.25Gi"
+        cpu: "0.010"
   # ======================================= BOX MODULE ================================================
   discoveryboxservice:
     name: discoveryboxservice
@@ -460,6 +546,7 @@ mdss_components:
     resources:
       requests:
         memory: "0.25Gi"
+        cpu: "1.000"
   
   remediationsservice-box:
     name: remediationsservice-box
@@ -468,6 +555,10 @@ mdss_components:
     image: mdcloudservices_remediationsbox
     extra_labels:
       aws-type: fargate
+    resources:
+      requests:
+        memory: "0.25Gi"
+        cpu: "0.100"
       
   storagesservice-box:
     name: storagesservice-box
@@ -476,6 +567,10 @@ mdss_components:
     image: mdcloudservices_storagesbox
     extra_labels:
       aws-type: fargate
+    resources:
+      requests:
+        memory: "0.25Gi"
+        cpu: "0.010"
   # ======================================= AZUREFILES MODULE ================================================
   discoveryazurefilesservice:
     name: discoveryazurefilesservice
@@ -487,6 +582,7 @@ mdss_components:
     resources:
       requests:
         memory: "0.25Gi"
+        cpu: "1.000"
   
   remediationsservice-azurefiles:
     name: remediationsservice-azurefiles
@@ -495,6 +591,10 @@ mdss_components:
     image: mdcloudservices_remediationsazurefiles
     extra_labels:
       aws-type: fargate
+    resources:
+      requests:
+        memory: "0.25Gi"
+        cpu: "0.100"
   
   storagesservice-azurefiles:
     name: storagesservice-azurefiles
@@ -503,6 +603,10 @@ mdss_components:
     image: mdcloudservices_storagesazurefiles
     extra_labels:
       aws-type: fargate
+    resources:
+      requests:
+        memory: "0.25Gi"
+        cpu: "0.010"
   # ======================================= SMB MODULE ================================================
   discoverysmbservice:
     name: discoverysmbservice
@@ -514,6 +618,7 @@ mdss_components:
     resources:
       requests:
         memory: "0.25Gi"
+        cpu: "1.000"
   
   remediationsservice-smb:
     name: remediationsservice-smb
@@ -522,6 +627,10 @@ mdss_components:
     image: mdcloudservices_remediationssmb
     extra_labels:
       aws-type: fargate
+    resources:
+      requests:
+        memory: "0.25Gi"
+        cpu: "0.100"
   
   storagesservice-smb:
     name: storagesservice-smb
@@ -530,6 +639,10 @@ mdss_components:
     image: mdcloudservices_storagessmb
     extra_labels:
       aws-type: fargate
+    resources:
+      requests:
+        memory: "0.25Gi"
+        cpu: "0.010"
   
   smbservice:
     name: smbservice
@@ -540,6 +653,10 @@ mdss_components:
       - port: 5002
     extra_labels:
       aws-type: fargate
+    resources:
+      requests:
+        memory: "0.5Gi"
+        cpu: "0.500"
   # ======================================= ONEDRIVE MODULE ================================================
   discoveryonedriveservice:
     name: discoveryonedriveservice
@@ -551,6 +668,7 @@ mdss_components:
     resources:
       requests:
         memory: "0.25Gi"
+        cpu: "1.000"
   
   remediationsservice-onedrive:
     name: remediationsservice-onedrive
@@ -559,6 +677,10 @@ mdss_components:
     image: mdcloudservices_remediationsonedrive
     extra_labels:
       aws-type: fargate
+    resources:
+      requests:
+        memory: "0.25Gi"
+        cpu: "0.100"
       
   storagesservice-onedrive:
     name: storagesservice-onedrive
@@ -567,6 +689,10 @@ mdss_components:
     image: mdcloudservices_storagesonedrive
     extra_labels:
       aws-type: fargate
+    resources:
+      requests:
+        memory: "0.25Gi"
+        cpu: "0.010"
   
   # ======================================= SFTP MODULE ================================================
   discoverysftpservice:
@@ -579,6 +705,7 @@ mdss_components:
     resources:
       requests:
         memory: "0.25Gi"
+        cpu: "1.000"
   
   remediationsservice-sftp:
     name: remediationsservice-sftp
@@ -587,6 +714,10 @@ mdss_components:
     image: mdcloudservices_remediationssftp
     extra_labels:
       aws-type: fargate
+    resources:
+      requests:
+        memory: "0.25Gi"
+        cpu: "0.100"
   
   storagesservice-sftp:
     name: storagesservice-sftp
@@ -595,6 +726,10 @@ mdss_components:
     image: mdcloudservices_storagessftp
     extra_labels:
       aws-type: fargate
+    resources:
+      requests:
+        memory: "0.25Gi"
+        cpu: "0.010"
   
   sftpservice:
     name: sftpservice
@@ -608,3 +743,9 @@ mdss_components:
     env:
       - name: ASPNETCORE_URLS
         value: http://+
+    resources:
+      requests:
+        memory: "0.25Gi"
+        cpu: "0.500"
+      
+    

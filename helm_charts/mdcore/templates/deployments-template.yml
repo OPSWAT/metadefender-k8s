@@ -37,6 +37,7 @@ spec:
           {{- else -}}
           image: {{ $component.image | quote }}
           {{- end }}
+          imagePullPolicy: {{ $.Values.imagePullPolicy }}
           {{- if $component.env }}
           env:
             {{- toYaml $component.env | nindent 12 }}
@@ -51,6 +52,14 @@ spec:
           {{- if $component.livenessProbe }}
           livenessProbe:
             {{- toYaml $component.livenessProbe | nindent 12 }}
+          {{- end }}
+          {{- if $component.startupProbe }}
+          startupProbe:
+            {{- toYaml $component.startupProbe | nindent 12 }}
+          {{- end }}
+          {{- if $component.readinessProbe }}
+          readinessProbe:
+            {{- toYaml $component.readinessProbe | nindent 12 }}
           {{- end }}
           {{- if $component.command }}
           command: 
@@ -136,8 +145,8 @@ spec:
         {{ end }}
         {{- if $component.extraVolumes -}}
           {{- range $volumeLabel, $volume := $component.extraVolumes }}
-      -
-            {{- toYaml $volume | nindent 8 }}
+        -
+            {{- toYaml $volume | nindent 10 }}
           {{- end }}
         {{- end }}
       {{- end }}

@@ -57,24 +57,6 @@ core_components:
     replicas: 1
     initContainers: null
     sidecars:
-      - name: activation-manager
-        image: opswat/md-activation-manager
-        envFrom:
-          - configMapRef:
-              name: mdcore-env
-        env:
-          - name: APIKEY
-            valueFrom:
-              secretKeyRef:
-                name: mdcore-api-key
-                key: value
-          - name: LICENSE_KEY
-            valueFrom:
-              secretKeyRef:
-                name: mdcore-license-key
-                key: value
-          - name: MDCORE_BASE_URL
-            value: http://localhost
       - name: cloud-sql-proxy
         image: gcr.io/cloudsql-docker/gce-proxy:latest
         command:
