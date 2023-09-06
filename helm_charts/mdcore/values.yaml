@@ -101,6 +101,8 @@ core_ingress:
 # imagePullSecrets:
 #   - name: regcred
 
+imagePullPolicy: IfNotPresent
+
 # Docker repo to use, this should be changed when using private images (this string will be prepended to the image name)
 # If a component has "custom_repo: true" then the image name will be formated as "{docker_repo/}image_name{:BRANCH}" otherwise it will remain unaltered
 core_docker_repo: opswat
@@ -132,7 +134,7 @@ core_components:
 
   md-core:
     name: md-core
-    image: opswat/metadefendercore-debian:5.4.0         # Overrides the default docker image for the MD Core service, this value can be changed if you want to set a different version of MD Core
+    image: opswat/metadefendercore-debian:latest         # Overrides the default docker image for the MD Core service, this value can be changed if you want to set a different version of MD Core
     replicas: 1                                         # Sets the number of replicas if you want to have multiple MD Core instances
     env:
       - name: MD_USER
@@ -195,6 +197,14 @@ core_components:
       limits:
         memory: "8Gi"                                    # Maximum memory limit
         cpu: "8.0"                                       # Maximum cpu limit
+    readinessProbe:
+      httpGet:
+        # scheme: HTTPS
+        path: /readyz                                    # Health check endpoint
+        port: 8008
+      initialDelaySeconds: 60                             #  Number of seconds after the container has started before startup, liveness or readiness probes are initiated. Defaults to 0 seconds. Minimum value is 0.
+      periodSeconds: 10                                   # How often (in seconds) to perform the probe. Default to 10 seconds. Minimum value is 1.
+      timeoutSeconds: 10                                  # Number of seconds after which the probe times out. Defaults to 1 second. Minimum value is 1.
     livenessProbe:
       httpGet:
         # scheme: HTTPS
@@ -214,38 +224,9 @@ core_components:
         configMap:
           name:  wait-for-hub-services
           defaultMode: 0777
-      activationManagerScript:
-        name: activation-manager
-        configMap:
-          name:  activation-manager
-          defaultMode: 0777
-    sidecars:                                           # Configuration for the activation-manager sidecar
-      - name: activation-manager
-        image: opswat/metadefendercore-debian:5.4.0
-        envFrom:
-          - configMapRef:
-              name: mdcore-env
-        env:
-          - name: APIKEY
-            valueFrom:
-              secretKeyRef:
-                name: mdcore-api-key
-                key: value
-          - name: LICENSE_KEY
-            valueFrom:
-              secretKeyRef:
-                name: mdcore-license-key
-                key: value
-          - name: MDCORE_BASE_URL
-            value: http://localhost
-        command: [ '/monitor-activation.sh' ]
-        volumeMounts:
-          - name:  activation-manager
-            mountPath: /monitor-activation.sh
-            subPath: monitor-activation.sh
     initContainers:
       - name: check-db-ready
-        image: opswat/metadefendercore-debian:5.4.0
+        image: opswat/metadefendercore-debian:latest
         envFrom:
           - configMapRef:
               name: mdcore-env
@@ -253,7 +234,7 @@ core_components:
           'until pg_isready -h $DB_HOST -p $DB_PORT; 
           do echo waiting for database; sleep 2; done;']
       - name: wait-for-hub-services
-        image: opswat/metadefendercore-debian:5.4.0
+        image: opswat/metadefendercore-debian:latest
         command: [ '/wait-for-hub-services.sh' ]
         volumeMounts:
           - name:  wait-for-hub-services
@@ -261,7 +242,7 @@ core_components:
             subPath: wait-for-hub-services.sh
 #========================================== MDHUB MODULE ==========================================
   md-hub:
-    image: opswat/mdhub-debian:1.1.0
+    image: opswat/mdhub-debian:latest
     name: md-hub
     module_name: mdhub
     ports:
@@ -288,7 +269,7 @@ core_components:
             subPath: wait-for-hub-services.sh
           
   md-nas:
-    image: opswat/mdnas-debian:1.1.0
+    image: opswat/mdnas-debian:latest
     name: md-nas
     module_name: mdhub
     ports:

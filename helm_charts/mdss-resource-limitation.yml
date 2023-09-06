@@ -1,0 +1,429 @@
+
+
+mdss_components:
+  mongodb:
+    resources:
+      requests:
+        memory: "2Gi"
+        cpu: "0.5"
+      limits:
+        memory: "4.0Gi"
+        cpu: "2.000"
+
+  mongomigrations:
+    resources:
+      requests:
+        memory: "0.125Gi"
+        cpu: "0.010"
+      limits:
+        memory: "0.5Gi"
+        cpu: "0.100"
+
+  rabbitmq:
+    resources:
+      requests:
+        memory: "0.5Gi"
+        cpu: "0.5"
+      limits:
+        memory: "1.5Gi"
+        cpu: "1.000"
+  
+  redis:
+    resources:
+      requests:
+        memory: "0.125Gi"
+        cpu: "0.100"
+      limits:
+        memory: "1.5Gi"
+        cpu: "0.500"
+
+  licensingservice:
+    resources:
+      requests:
+        memory: "0.125Gi"
+        cpu: "0.010"
+      limits:
+        memory: "0.5Gi"
+        cpu: "0.100"
+  
+  discoveryservice:
+    resources:
+      requests:
+        memory: "0.5Gi"
+        cpu: "1.000"
+      limits:
+        memory: "1.5Gi"
+        cpu: "2.000"
+
+  scanningservice:
+    resources:
+      requests:
+        memory: "1Gi"
+        cpu: "0.500"
+      limits:
+        memory: "1.5Gi"
+        cpu: "1.000"
+  
+  notificationservice:
+    resources:
+      requests:
+        memory: "0.25Gi"
+        cpu: "0.010"
+      limits:
+        memory: "1.5Gi"
+        cpu: "0.100"
+
+  jobdispatcher:
+    resources:
+      requests:
+        memory: "0.25Gi"
+        cpu: "0.050"
+      limits:
+        memory: "0.5Gi"
+        cpu: "0.100"
+  
+  securitychecklistservice:
+    resources:
+      requests:
+        memory: "0.125Gi"
+        cpu: "0.010"
+      limits:
+        memory: "0.5Gi"
+        cpu: "0.100"
+
+  loadbalancerservice:
+    resources:
+      requests:
+        memory: "0.25Gi"
+        cpu: "0.100"
+      limits:
+        memory: "1.5Gi"
+        cpu: "0.500"
+
+  loggingservice:
+    resources:
+      requests:
+        memory: "0.25Gi"
+        cpu: "0.050"
+      limits:
+        memory: "1.5Gi"
+        cpu: "0.100"
+
+  remediationsservice:
+    resources:
+      requests:
+        memory: "0.25Gi"
+        cpu: "0.100"
+      limits:
+        memory: "1.5Gi"
+        cpu: "0.500"
+  
+  storagesservice:
+    resources:
+      requests:
+        memory: "0.25Gi"
+        cpu: "0.010"
+      limits:
+        memory: "0.5Gi"
+        cpu: "0.100"
+      
+  workflowmanagerservice:
+    resources:
+      requests:
+        memory: "0.25Gi"
+        cpu: "0.100"
+      limits:
+        memory: "1.5Gi"
+        cpu: "0.500"
+  
+  apigateway:
+    resources:
+      requests:
+        memory: "0.5Gi"
+        cpu: "0.100"
+      limits:
+        memory: "1.5Gi"
+        cpu: "0.500"
+
+  webclient:
+    resources:
+      requests:
+        memory: "0.25Gi"
+        cpu: "0.100"
+      limits:
+        memory: "1.5Gi"
+        cpu: "0.500"
+
+  # ======================================= AMAZONSDK MODULE ================================================
+  discoveryamazonsdkservice:
+    resources:
+      requests:
+        memory: "0.25Gi"
+        cpu: "1.000"
+      limits:
+        memory: "1.5Gi"
+        cpu: "2.000"
+
+  remediationsservice-amazonsdk:
+    resources:
+      requests:
+        memory: "0.25Gi"
+        cpu: "0.100"
+      limits:
+        memory: "1.5Gi"
+        cpu: "0.500"
+  
+  storagesservice-amazonsdk:
+    resources:
+      requests:
+        memory: "0.25Gi"
+        cpu: "0.010"
+      limits:
+        memory: "0.5Gi"
+        cpu: "0.100"
+  # ======================================= AZUREBLOB MODULE ================================================
+  discoveryazureblobservice:
+    resources:
+      requests:
+        memory: "0.25Gi"
+        cpu: "1.000"
+      limits:
+        memory: "1.5Gi"
+        cpu: "2.000"
+
+  remediationsservice-azureblob:
+    resources:
+      requests:
+        memory: "0.25Gi"
+        cpu: "0.100"
+      limits:
+        memory: "1.5Gi"
+        cpu: "0.500"
+      
+  storagesservice-azureblob:
+    resources:
+      requests:
+        memory: "0.25Gi"
+        cpu: "0.010"
+      limits:
+        memory: "0.5Gi"
+        cpu: "0.100"
+  # ======================================= ALIBABACLOUD MODULE ================================================
+  discoveryalibabacloudservice:
+    resources:
+      requests:
+        memory: "0.25Gi"
+        cpu: "1.000"
+      limits:
+        memory: "1.5Gi"
+        cpu: "2.000"
+      
+  remediationsservice-alibabacloud:
+    resources:
+      requests:
+        memory: "0.25Gi"
+        cpu: "0.100"
+      limits:
+        memory: "1.5Gi"
+        cpu: "0.500"
+      
+  storagesservice-alibabacloud:
+    resources:
+      requests:
+        memory: "0.25Gi"
+        cpu: "0.010"
+      limits:
+        memory: "1.5Gi"
+        cpu: "0.100"
+      
+  # ======================================= GOOGLECLOUD MODULE ================================================
+  discoverygooglecloudservice:
+    resources:
+      requests:
+        memory: "0.25Gi"
+        cpu: "1.000"
+      limits:
+        memory: "1.5Gi"
+        cpu: "2.000"
+      
+  remediationsservice-googlecloud:
+    resources:
+      requests:
+        memory: "0.25Gi"
+        cpu: "0.100"
+      limits:
+        memory: "1.5Gi"
+        cpu: "0.500"
+      
+  storagesservice-googlecloud:
+    resources:
+      requests:
+        memory: "0.25Gi"
+        cpu: "0.010"
+      limits:
+        memory: "1.5Gi"
+        cpu: "0.100"
+      
+  # ======================================= BOX MODULE ================================================
+  discoveryboxservice:
+    resources:
+      requests:
+        memory: "0.25Gi"
+        cpu: "1.000"
+      limits:
+        memory: "1.5Gi"
+        cpu: "2.000"
+      
+  remediationsservice-box:
+    resources:
+      requests:
+        memory: "0.25Gi"
+        cpu: "0.100"
+      limits:
+        memory: "1.5Gi"
+        cpu: "0.500"
+      
+  storagesservice-box:
+    resources:
+      requests:
+        memory: "0.25Gi"
+        cpu: "0.010"
+      limits:
+        memory: "1.5Gi"
+        cpu: "0.100"
+      
+  # ======================================= AZUREFILES MODULE ================================================
+  discoveryazurefilesservice:
+    resources:
+      requests:
+        memory: "0.25Gi"
+        cpu: "1.000"
+      limits:
+        memory: "1.5Gi"
+        cpu: "0.100"
+      
+  remediationsservice-azurefiles:
+    resources:
+      requests:
+        memory: "0.25Gi"
+        cpu: "0.100"
+      limits:
+        memory: "1.5Gi"
+        cpu: "0.100"
+      
+  storagesservice-azurefiles:
+    resources:
+      requests:
+        memory: "0.25Gi"
+        cpu: "0.010"
+      limits:
+        memory: "1.5Gi"
+        cpu: "0.100"
+      
+  # ======================================= SMB MODULE ================================================
+  discoverysmbservice:
+    resources:
+      requests:
+        memory: "0.25Gi"
+        cpu: "1.000"
+      limits:
+        memory: "1.5Gi"
+        cpu: "0.100"
+      
+  remediationsservice-smb:
+    resources:
+      requests:
+        memory: "0.25Gi"
+        cpu: "0.100"
+      limits:
+        memory: "1.5Gi"
+        cpu: "0.100"
+      
+  storagesservice-smb:
+    resources:
+      requests:
+        memory: "0.25Gi"
+        cpu: "0.010"
+      limits:
+        memory: "1.5Gi"
+        cpu: "0.100"
+      
+  smbservice:
+    resources:
+      requests:
+        memory: "0.5Gi"
+        cpu: "0.500"
+      limits:
+        memory: "1.5Gi"
+        cpu: "0.100"
+      
+  # ======================================= ONEDRIVE MODULE ================================================
+  discoveryonedriveservice:
+    resources:
+      requests:
+        memory: "0.25Gi"
+        cpu: "1.000"
+      limits:
+        memory: "1.5Gi"
+        cpu: "0.100"
+      
+  remediationsservice-onedrive:
+    resources:
+      requests:
+        memory: "0.25Gi"
+        cpu: "0.100"
+      limits:
+        memory: "1.5Gi"
+        cpu: "0.100"
+      
+      
+  storagesservice-onedrive:
+    resources:
+      requests:
+        memory: "0.25Gi"
+        cpu: "0.010"
+      limits:
+        memory: "1.5Gi"
+        cpu: "0.100"
+      
+  
+  # ======================================= SFTP MODULE ================================================
+  discoverysftpservice:
+    resources:
+      requests:
+        memory: "0.25Gi"
+        cpu: "1.000"
+      limits:
+        memory: "1.5Gi"
+        cpu: "2.000"
+      
+  
+  remediationsservice-sftp:
+    resources:
+      requests:
+        memory: "0.25Gi"
+        cpu: "0.100"
+      limits:
+        memory: "1.5Gi"
+        cpu: "0.500"
+      
+  
+  storagesservice-sftp:
+    resources:
+      requests:
+        memory: "0.25Gi"
+        cpu: "0.010"
+      limits:
+        memory: "1.5Gi"
+        cpu: "0.100"
+      
+  
+  sftpservice:
+    resources:
+      requests:
+        memory: "0.25Gi"
+        cpu: "0.500"
+      limits:
+        memory: "1.5Gi"
+        cpu: "1.000"
+      

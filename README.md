@@ -10,6 +10,7 @@
       <ul>
         <li><a href="#prerequisites">Prerequisites</a></li>
         <li><a href="#installation">Installation</a></li>
+        <li><a href="#relese-notes">Release Notes</a></li>
       </ul>
     </li>
     <li><a href="#contributing">Contributing</a></li>
@@ -66,6 +67,19 @@ To get a local copy up and running follow these simple example steps.
 
  For provision in AWS follow this [doc](https://docs.opswat.com/mdcore/cloud-deployment/metadefender-core-provisioned-in-aws-eks)
  For install MD Core in an already created cluster follow this [doc](https://docs.opswat.com/mdcore/kubernetes-configuration/metadefender-core-in-your-already-created-k8s)
+
+### Release Notes
+
+*Sep 6, 2023*
+
+##### New
+
+- Resource requests and limits for each pod of MetaDefender for Secure Storage
+- Readiness Probe using health check for MetaDefender Core
+  
+##### Fixed
+- Azure PostgreSQL set up when using MetaDefender K8S script
+- Deployment template when enabling TLS of MetaDefender Core
 
 <p align="right">(<a href="#top">back to top</a>)</p>
 

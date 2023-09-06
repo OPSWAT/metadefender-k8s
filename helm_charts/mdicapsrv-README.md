@@ -144,6 +144,8 @@ The following table lists the configurable parameters of the Metadefender ICAP c
 - To have a file "mdicapsrv-config.json" correctly, please install a MD ICAP Server, do configuration setting then use export feature to get the json config file.
 - Please specific value of the secret template file for enable HTTPS, ICAPS or NGINXs. Need to mapping the key of the secret HTTPS, ICAPS and NGINXS with `*.certSecretSubPath` and `*.certKeySecretSubPath`
 ## Release note
+### v5.2.1
+- Integration with My OPSWAT portal.
 ### v5.2.0
 - Feature upload certificates
 - Remove import targets: certs, ssl
