@@ -2,7 +2,7 @@
 Metadefender core
 ===========
 
-This is a Helm chart for deploying MetaDefender Core (https://www.opswat.com/products/metadefender/core) in a Kubernetes cluster
+This is a Helm chart for deploying MetaDefender Core (https://docs.opswat.com/mdcore/kubernetes-configuration) in a Kubernetes cluster
 
 This chart can deploy the following depending on the provided values:
 - One or more MD Core instances 
