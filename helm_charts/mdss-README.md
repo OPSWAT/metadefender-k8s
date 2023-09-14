@@ -2,7 +2,7 @@
 Metadefender for secure storage
 ===========
 
-This is a Helm chart for deploying MetaDefender for Secure Storage (https://www.opswat.com/products/metadefender/metadefender-for-secure-storage) in a Kubernetes cluster
+This is a Helm chart for deploying MetaDefender for Secure Storage (https://docs.opswat.com/mdss/installation/kubernetes-deployment) in a Kubernetes cluster
 
 This chart can deploy the following depending on the provided values:
 - All MDSS services in separate pods 
@@ -37,7 +37,7 @@ ENABLED_MODULES: azureblob,azurefiles,amazonsdk,googlecloud
 ```
 Currently supported modules:
 
-`azureblob,amazonsdk,googlecloud,alibabacloud,azurefiles,smb,box,onedrive,debug`
+`azureblob,amazonsdk,googlecloud,alibabacloud,azurefiles,smb,box,onedrive,sftp,debug`
 
 The `debug` module is reserved for deploying debug and maintenance pods.
 

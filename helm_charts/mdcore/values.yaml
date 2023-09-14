@@ -109,6 +109,18 @@ core_docker_repo: opswat
 
 env:                                                            # Set additional environment variables for the MD Core container
   CORE_CONF_JSON: '\{\"global/restaddress\": \"0.0.0.0\"\}'     # This sets MD Core to listen only on ipv4 addresses by default, remove this setting to listen also on ipv6 
+  # MD Core health-check settings
+  MDCORE_HEALTH_CHECK: true         # Enable the MD Core health-check
+  MDCORE_QUEUE_THRESHOLD: 100       # Maximum number of files in the queue 
+  MDCORE_MINIMUM_NUMBER_AV: 0       # Minimum number of AV engines that should be available
+  MDCORE_REQUIRED_ENGINES: null     # List of AV engines that should be available (ex: Bitdefender,clamav,eset), defaults to all engines available if not set and MDCORE_CORE_HEALTH_CHECK=true
+  # MD Core proxy settings
+  PROXY: false                # Enable the proxy settings in MD Core 
+  PROXY_HOST: null            # Proxy server host address
+  PROXY_PORT: 8080            # Proxy server port
+  PROXY_USER: null            # (optional) Username for proxy authentication
+  PROXY_PWD: null             # (optional) Password for proxy authentication
+  PROXY_EXCLUSION: null       # Not use the proxy server for the addresses starting with the following entries
 
 core_components:
   postgres-core:

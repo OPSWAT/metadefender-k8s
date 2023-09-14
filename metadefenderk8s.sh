@@ -14,6 +14,8 @@ namespace="default"
 replicas=1
 db_user="postgres"
 db_password=null
+mdcore_user="postgres"
+mdcore_password=null
 db_host=postgres-core
 project_id=""
 privateconnection=true
@@ -67,7 +69,7 @@ cloudOptions[gcpdb]="Cloud SQL"
 
 # Ask user for confirmation to proceed
 function askProceed () {
-  read -p "Continue? [Y/n] " ans
+  read -p "\nContinue? [Y/n] " ans
   case "$ans" in
     y|Y|"" )
       echo "proceeding ..."
@@ -148,7 +150,7 @@ function askAccess () {
 }
 
 function askPrivateConnection () {
-  read -p "Do you want to create a private connection for the external database? [Yes/No] " ans
+  read -p "\nDo you want to create a private connection for the external database? [Yes/No] " ans
   case "$ans" in
     Yes | yes )
         echo "Create a private IP address for the Cloud SQL instance (requires the servicenetworking.services.addPeering permission)"
@@ -185,7 +187,7 @@ function askDBExternal () {
             externalDB=true
             k8s_db=false
             read -p "USERNAME for PostgreSQL DB $LOCATION $cloudOptDB: " db_user
-            read -p "PASSWORD for PostgreSQL DB $LOCATION $cloudOptDB: " db_password
+            read -p "PASSWORD for PostgreSQL DB $LOCATION $cloudOptDB: " -s db_password
             if [ "$LOCATION_PARAM" == "gcp" ];then
               askPrivateConnection
             fi
@@ -203,7 +205,7 @@ function askOwnDB () {
   case "$ans" in
     Yes | yes )
       read -p "USERNAME for PostgreSQL DB: " db_user
-      read -p "PASSWORD for PostgreSQL DB: " db_password
+      read -p "PASSWORD for PostgreSQL DB: " -s db_password
       read -p "Host url for PostgreSQL DB: " db_host
     ;;
     No | no )
@@ -327,6 +329,11 @@ function installMDCore() {
     else
         echo "MDCORE_LICENSE_KEY found in the environment variables"
     fi
+
+    echo "Setting up the MetaDefender Core UI credentials"
+    read -p "Username MetaDefender Core UI: " mdcore_user
+    read -p "Password MetaDefender Core UI: " -s mdcore_password
+
     askProceed
 
     if [ "$LOCATION_PARAM" == "local" ];then
@@ -336,6 +343,8 @@ function installMDCore() {
         --set mdcore_license_key=$MDCORE_LICENSE_KEY \
         --set deploy_with_core_db=$k8s_db \
         --set core_components.md-core.replicas=$replicas \
+        --set mdcore_password=$mdcore_password \
+        --set mdcore_user=$mdcore_user \
         --set db_user=$db_user \
         --set db_password=$db_password \
         --set MDCORE_DB_HOST=$db_host \
@@ -362,6 +371,8 @@ function installMDCore() {
       --set mdcore_license_key=$MDCORE_LICENSE_KEY \
       --set deploy_with_core_db=$k8s_db \
       --set core_components.md-core.replicas=$replicas \
+      --set mdcore_password=$mdcore_password \
+      --set mdcore_user=$mdcore_user \
       --set db_user=$db_user \
       --set db_password=$db_password \
       --set MDCORE_DB_HOST=$db_host \

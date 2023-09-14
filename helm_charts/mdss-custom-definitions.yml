@@ -1,0 +1,11 @@
+
+# Example of custom pod definitions that can be used to set node selectors, tolerations etc.
+mdss_components:
+  mongodb:
+    customPodDefinitions:
+      nodeSelector:
+        labelName: labelValue         # For example we can fix the DB pod to run on a single node
+      tolerations:
+        - key: "example-key"
+          operator: "Exists"
+          effect: "NoSchedule"
