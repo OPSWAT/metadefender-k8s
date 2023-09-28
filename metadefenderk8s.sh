@@ -1,8 +1,9 @@
 #!/bin/bash
 
+SCRIPT_PATH=$(pwd)
+
 # Default Image version of MD Core to be installed
 MD_CORE_IMAGE="latest"
-region="eu-central-1"
 cluster_name="md-k8s"
 externalDB=false
 # Obtain the OS and Architecture string that will be used to select the correct
@@ -56,20 +57,23 @@ cloudOptions[aws1]="EC2"
 cloudOptions[aws2]="Fargate"
 cloudOptions[awslb]="Network Load Balancer (LB)"
 cloudOptions[awsdb]="RDS"
+cloudOptions[awsregion]="eu-central-1"
 cloudOptions[azurecluster]="AKS"
 cloudOptions[azure1]="VMS"
 cloudOptions[azurelb]="Private Load Balancer"
 cloudOptions[azuredb]="PostgreSQL"
+cloudOptions[azureregion]="centralus"
 cloudOptions[gcpcluster]="GKE"
 cloudOptions[gcp1]="VMS"
 cloudOptions[gcplb]="Private Load Balancer"
 cloudOptions[gcpdb]="Cloud SQL"
+cloudOptions[gcpregion]="us-central1"
 
 
 
 # Ask user for confirmation to proceed
 function askProceed () {
-  read -p "\nContinue? [Y/n] " ans
+  read -p "Continue? [Y/n] " ans
   case "$ans" in
     y|Y|"" )
       echo "proceeding ..."
@@ -113,7 +117,21 @@ function askCluster () {
   esac
 }
 
-
+function askIPType () {
+  read -p "Do you want the load balancer have attached an private or public IP? [Private/Public] " ans
+  case "$ans" in
+    Private | PRIVATE )
+      ipInternal="true"
+    ;;
+    Public | PUBLIC )
+      ipInternal="false"
+    ;;
+    * )
+      echo "invalid response"
+      askIPType
+    ;;
+  esac
+}
 function askAccess () {
 
   read -p "Do you have your own access point or want to create an ingress to access? [Own/Ingress] " ans
@@ -124,15 +142,13 @@ function askAccess () {
         echo "Disabling variables for Ingress, service type ClusterIp"
       else
         echo "Disabling variables for Ingress but it will create a LoadBalancer service type"
+        askIPType
       fi
       optAccessSelec="Own"
       ingress_enabled=false
-
     ;;
     ingress | Ingress )
 
-        optlb="${LOCATION_PARAM}lb"
-        cloudOptlb=${cloudOptions[$optlb]}
         if [ "$LOCATION_PARAM" == "local" ];then
           echo "Enabling variables for Ingress, service type ClusterIp"
         else
@@ -150,14 +166,15 @@ function askAccess () {
 }
 
 function askPrivateConnection () {
-  read -p "\nDo you want to create a private connection for the external database? [Yes/No] " ans
+  read -p "Do you want to create a private connection for the external database? [Yes/No] " ans
   case "$ans" in
     Yes | yes )
         echo "Create a private IP address for the Cloud SQL instance (requires the servicenetworking.services.addPeering permission)"
+        echo "When using private connection it can take some minutes for GCP to allow connections from GKE to Cloud SQL"
         privateconnection=true
     ;;
     No | no )
-        echo "Private connection won't be created"
+        echo "Private connection won't be created and Cloud SQL Auth Proxy pod will be generated when installing"
         privateconnection=false
     ;;
     * )
@@ -180,6 +197,7 @@ function askDBExternal () {
             persistent=true
             externalDB=false
             k8s_db=true
+            privateconnection=false
         ;;
         external | External )
             echo "Creating $LOCATION $cloudOptDB and setting db variables"
@@ -188,6 +206,7 @@ function askDBExternal () {
             k8s_db=false
             read -p "USERNAME for PostgreSQL DB $LOCATION $cloudOptDB: " db_user
             read -p "PASSWORD for PostgreSQL DB $LOCATION $cloudOptDB: " -s db_password
+            echo
             if [ "$LOCATION_PARAM" == "gcp" ];then
               askPrivateConnection
             fi
@@ -206,6 +225,7 @@ function askOwnDB () {
     Yes | yes )
       read -p "USERNAME for PostgreSQL DB: " db_user
       read -p "PASSWORD for PostgreSQL DB: " -s db_password
+      echo
       read -p "Host url for PostgreSQL DB: " db_host
     ;;
     No | no )
@@ -292,7 +312,7 @@ function install(){
 
     setClusterContext
 
-    cd helm_charts/
+    
     
     askAccess
     if [ "${MDCORE}" == "true" ];then
@@ -308,15 +328,24 @@ function install(){
     askProceed
 
     if [ "${MDCORE}" == "true" ];then
+      cd $SCRIPT_PATH
+      cd helm_charts/
       installMDCore
+      cd $SCRIPT_PATH
     fi
 
     if [ "${MDSS}" == "true" ];then
+      cd $SCRIPT_PATH
+      cd helm_charts/
       installMDSS
+      cd $SCRIPT_PATH
     fi
     
     if [ "${ICAP}" == "true" ];then
+      cd $SCRIPT_PATH
+      cd helm_charts/
       installICAP
+      cd $SCRIPT_PATH
     fi
 }
 
@@ -333,6 +362,7 @@ function installMDCore() {
     echo "Setting up the MetaDefender Core UI credentials"
     read -p "Username MetaDefender Core UI: " mdcore_user
     read -p "Password MetaDefender Core UI: " -s mdcore_password
+    echo
 
     askProceed
 
@@ -354,29 +384,106 @@ function installMDCore() {
 
       if [ "$LOCATION_PARAM" == "aws" ];then
           helm_file="mdcore-aws-eks-values.yml"
+          if [ "$ipInternal" == "true" ];then
+            ipInternal="nlb-ip"
+          else
+            ipInternal="external"
+          fi
+          helm install mdcore mdcore/ --namespace $namespace --create-namespace -f $helm_file \
+          --set core_ingress.enabled=$ingress_enabled \
+          --set mdcore_license_key=$MDCORE_LICENSE_KEY \
+          --set deploy_with_core_db=$k8s_db \
+          --set core_components.md-core.replicas=$replicas \
+          --set mdcore_password=$mdcore_password \
+          --set mdcore_user=$mdcore_user \
+          --set db_user=$db_user \
+          --set db_password=$db_password \
+          --set MDCORE_DB_HOST=$db_host \
+          --set core_components.md-core.service_annotations."service\.beta\.kubernetes\.io/aws-load-balancer-type"=$ipInternal \
+          --set md-core.image="opswat/metadefendercore-debian:"$MD_CORE_IMAGE
 
       elif [ "$LOCATION_PARAM" == "azure" ]; then
           helm_file="mdcore-azure-aks-values.yml"
 
+          helm install mdcore mdcore/ --namespace $namespace --create-namespace -f $helm_file \
+          --set core_ingress.enabled=$ingress_enabled \
+          --set mdcore_license_key=$MDCORE_LICENSE_KEY \
+          --set deploy_with_core_db=$k8s_db \
+          --set core_components.md-core.replicas=$replicas \
+          --set mdcore_password=$mdcore_password \
+          --set mdcore_user=$mdcore_user \
+          --set db_user=$db_user \
+          --set db_password=$db_password \
+          --set MDCORE_DB_HOST=$db_host \
+          --set core_components.md-core.service_annotations."service\.beta\.kubernetes\.io/azure-load-balancer-internal"="'"$ipInternal"'" \
+          --set md-core.image="opswat/metadefendercore-debian:"$MD_CORE_IMAGE 
+
+
       elif [ "$LOCATION_PARAM" == "gcp" ]; then
-          if [ "$privateconnection" == "true" ];then
+          if [ "$privateconnection" == "true" ] || [ "$optExtDBSelec" == "K8S" ];then
             helm_file="mdcore-gcloud-values.yml"
           else
             helm_file="mdcore-gcloud-sqlproxy-values.yml"
+            echo "Configuring variables for connecting to the database through the SQL proxy provided by GCP"
+            sed -i "s/<CLOUDSQL_CONNECTION_NAME>/$db_host/g" mdcore-gcloud-sqlproxy-values.yml
+            db_host="cloud-sql-proxy"
+          fi
+
+          if [ "$ipInternal" == "true" ];then
+
+            helm install mdcore mdcore/ --namespace $namespace --create-namespace -f $helm_file \
+            --set core_ingress.enabled=$ingress_enabled \
+            --set mdcore_license_key=$MDCORE_LICENSE_KEY \
+            --set deploy_with_core_db=$k8s_db \
+            --set core_components.md-core.replicas=$replicas \
+            --set mdcore_password=$mdcore_password \
+            --set mdcore_user=$mdcore_user \
+            --set db_user=$db_user \
+            --set db_password=$db_password \
+            --set MDCORE_DB_HOST=$db_host \
+            --set core_components.md-core.service_annotations."networking\.gke\.io/load-balancer-type"="Internal" \
+            --set md-core.image="opswat/metadefendercore-debian:"$MD_CORE_IMAGE
+
+          else
+
+            helm install mdcore mdcore/ --namespace $namespace --create-namespace -f $helm_file \
+            --set core_ingress.enabled=$ingress_enabled \
+            --set mdcore_license_key=$MDCORE_LICENSE_KEY \
+            --set deploy_with_core_db=$k8s_db \
+            --set core_components.md-core.replicas=$replicas \
+            --set mdcore_password=$mdcore_password \
+            --set mdcore_user=$mdcore_user \
+            --set db_user=$db_user \
+            --set db_password=$db_password \
+            --set MDCORE_DB_HOST=$db_host \
+            --set md-core.image="opswat/metadefendercore-debian:"$MD_CORE_IMAGE
+
           fi
       fi
 
-      helm install mdcore mdcore/ --namespace $namespace --create-namespace -f $helm_file \
-      --set core_ingress.enabled=$ingress_enabled \
-      --set mdcore_license_key=$MDCORE_LICENSE_KEY \
-      --set deploy_with_core_db=$k8s_db \
-      --set core_components.md-core.replicas=$replicas \
-      --set mdcore_password=$mdcore_password \
-      --set mdcore_user=$mdcore_user \
-      --set db_user=$db_user \
-      --set db_password=$db_password \
-      --set MDCORE_DB_HOST=$db_host \
-      --set md-core.image="opswat/metadefendercore-debian:"$MD_CORE_IMAGE
+      ## Install Load Balancer Controller for creating LB in the AWS Account
+      if [ "$LOCATION_PARAM" == "aws" ];then
+          cd $SCRIPT_PATH
+          cd "example_scripts/"
+          echo "Configuring variables for creating load balancer controller for AWS LB"
+          sed -i "s/<K8S_CLUSTER_NAME>/$cluster_name/g" eks_install_lb_controller.sh
+          sed -i "s/<K8S_REGION>/$cluster_region/g" eks_install_lb_controller.sh
+          sed -i "s/<K8S_VPC_ID>/$vpc_id/g" eks_install_lb_controller.sh
+          read -p "AWS Account ID (without '-'): " -s account_id
+          echo
+          sed -i "s/<AWS_ACCOUNT_NR>/$account_id/g" eks_install_lb_controller.sh
+          echo "Go to https://docs.aws.amazon.com/eks/latest/userguide/add-ons-images.html and pick up the image for your region ($cluster_region)"
+          read -p "IMAGE LB CONTROLLER PER REGION (No spaces): " image
+          echo
+          image_controller=$image"/amazon/aws-load-balancer-controller"
+          echo "Image Controller: "$image_controller
+          sed -i "s:<IMAGE_LB_CONTROLLER_REGION>:$image_controller:g" eks_install_lb_controller.sh
+          echo "Running script to install AWS Load Balancer Controller"
+          askProceed
+          chmod +x eks_install_lb_controller.sh
+          sed -i -e 's/\r$//' eks_install_lb_controller.sh
+          ./eks_install_lb_controller.sh
+      fi
 
     fi
 
@@ -437,7 +544,10 @@ function provisionAWS() {
 
   cluster_name=$(terraform output -raw MD_CLUSTER_NAME)
   echo $cluster_name
-
+  vpc_id=$(terraform output -raw VPC_ID)
+  echo $vpc_id
+  cluster_region=$(terraform output -raw MD_CLUSTER_REGION)
+  echo $cluster_region
   
   #DB Endpoint
   if [ "${externalDB}" == "true" ];then
@@ -459,6 +569,7 @@ function provisionAzure() {
   -var="aks_service_principal_client_secret=$ARM_CLIENT_SECRET" \
   -var="cluster_name=$cluster_name" \
   -var="deploy_postgres_db=$externalDB" \
+  -var="resource_group_location=$region" \
   -var="postgres_admin=$db_user" \
   -var="postgres_password=$db_password"
 
@@ -584,20 +695,23 @@ function provision() {
     fi
 
     if [ "${MDCORE}" == "true" ];then
-      cd ../../helm_charts/
+      cd $SCRIPT_PATH
+      cd helm_charts/
       installMDCore
-      cd -
+      cd $SCRIPT_PATH
     fi
 
     if [ "${MDSS}" == "true" ];then
-      cd ../../helm_charts/
+      cd $SCRIPT_PATH
+      cd helm_charts/
       installMDSS
-      cd -
+      cd $SCRIPT_PATH
     fi
     if [ "${ICAP}" == "true" ];then
-      cd ../../helm_charts/
+      cd $SCRIPT_PATH
+      cd helm_charts/
       installICAP
-      cd -
+      cd $SCRIPT_PATH
     fi
 
 }
@@ -679,6 +793,8 @@ function checkLocation() {
         cluster=${LOCATION_PARAM}"cluster"
         clusterType=${cloudOptions[$cluster]}
         message=${EXPMODE}" "${LOCATION}" "${clusterType}
+        locationregion=${LOCATION_PARAM}"region"
+        region=${cloudOptions[$locationregion]}
   else
       if [ "${MODE}" == "provision" ];then
         # Location command is required
@@ -712,7 +828,7 @@ if [ "${MODE}" == "provision" ];then
   if [ "${MDSS}" == "true" ];then
         message=${message}" with MDSS";
   fi
-   if [ "${ICAP}" == "true" ];then
+  if [ "${ICAP}" == "true" ];then
         message=${message}" with ICAP";
   fi
   echo $message
@@ -728,7 +844,7 @@ if [ "${MODE}" == "provision" ]; then ## Generate Artifacts
       exit 0
   fi
   provision
-elif [ "${MODE}" == "install" ]; then ## Upgrade the network from v1.0.x to v1.1
+elif [ "${MODE}" == "install" ]; then
   install
 elif [ "${MODE}" == "upgrade" ]; then ## Upgrade the network from v1.0.x to v1.1
   upgradeCluster

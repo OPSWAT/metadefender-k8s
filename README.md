@@ -68,32 +68,48 @@ To get a local copy up and running follow these simple example steps.
  For provision in AWS follow this [doc](https://docs.opswat.com/mdcore/cloud-deployment/metadefender-core-provisioned-in-aws-eks)
  For install MD Core in an already created cluster follow this [doc](https://docs.opswat.com/mdcore/kubernetes-configuration/metadefender-core-in-your-already-created-k8s)
 
-### Release Notes
+### Release Notes September
 
-*Sep 14, 2023*
+> *Sep 28, 2023*
+> 
+> ##### New
+> 
+> - Configure AWS Load Balancer Controller from metadefenderk8s script
+> - Configure GCP SQL Proxy from metadefenderk8s script
+> - Configure Region for all the CSPs from metedefenderk8s script
+> - Configure LBs to have attached a Private or Public IP from metedefenderk8s script
+> 
+> ##### Fixed
+> 
+> - Minor issues fixed in MetaDefender K8S script
+> - Set default terraform.tfvars for Azure provision
+> - EKS cluster not being able to AddTags for creating AWS Load Balancer
 
-##### New
 
-- Removed activation manager sidecar container as it is not needed anymore, application container handle the activation/deactivation
-- Health check set up from environment variables
-- Proxy configuration from environment variables 
+> *Sep 14, 2023*
+> 
+> ##### New
+> 
+> - Removed activation manager sidecar container as it is not needed anymore, application container handle the activation/deactivation
+> - Health check set up from environment variables
+> - Proxy configuration from environment variables 
+> 
+> ##### Fixed
+> 
+> - Minor fixed in MetaDefender K8S script
+> - Broken links in readme file
 
-##### Fixed
 
-- Minor fixed in MetaDefender K8S script
-- Broken links in readme file
-
-
-*Sep 6, 2023*
-
-##### New
-
-- Resource requests and limits for each pod of MetaDefender for Secure Storage
-- Readiness Probe using health check for MetaDefender Core
-  
-##### Fixed
-- Azure PostgreSQL set up when using MetaDefender K8S script
-- Deployment template when enabling TLS of MetaDefender Core
+> *Sep 6, 2023*
+> 
+> ##### New
+> 
+> - Resource requests and limits for each pod of MetaDefender for Secure Storage
+> - Readiness Probe using health check for MetaDefender Core
+>   
+> ##### Fixed
+> - Azure PostgreSQL set up when using MetaDefender K8S script
+> - Deployment template when enabling TLS of MetaDefender Core
 
 <p align="right">(<a href="#top">back to top</a>)</p>
 
