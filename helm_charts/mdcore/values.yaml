@@ -113,19 +113,19 @@ env:                                                            # Set additional
   MDCORE_HEALTH_CHECK: true         # Enable the MD Core health-check
   MDCORE_QUEUE_THRESHOLD: 100       # Maximum number of files in the queue 
   MDCORE_MINIMUM_NUMBER_AV: 0       # Minimum number of AV engines that should be available
-  MDCORE_REQUIRED_ENGINES: null     # List of AV engines that should be available (ex: Bitdefender,clamav,eset), defaults to all engines available if not set and MDCORE_CORE_HEALTH_CHECK=true
+  MDCORE_REQUIRED_ENGINES: ""     # List of AV engines that should be available (ex: Bitdefender,clamav,eset), defaults to all engines available if not set and MDCORE_CORE_HEALTH_CHECK=true
   # MD Core proxy settings
   PROXY: false                # Enable the proxy settings in MD Core 
-  PROXY_HOST: null            # Proxy server host address
+  PROXY_HOST: ""            # Proxy server host address
   PROXY_PORT: 8080            # Proxy server port
-  PROXY_USER: null            # (optional) Username for proxy authentication
-  PROXY_PWD: null             # (optional) Password for proxy authentication
-  PROXY_EXCLUSION: null       # Not use the proxy server for the addresses starting with the following entries
+  PROXY_USER: ""            # (optional) Username for proxy authentication
+  PROXY_PWD: ""             # (optional) Password for proxy authentication
+  PROXY_EXCLUSION: ""       # Not use the proxy server for the addresses starting with the following entries
 
 core_components:
   postgres-core:
     name: postgres-core
-    image: postgres
+    image: postgres:14.8
     env:
       - name: POSTGRES_PASSWORD
         valueFrom:
@@ -239,6 +239,7 @@ core_components:
     initContainers:
       - name: check-db-ready
         image: opswat/metadefendercore-debian:latest
+        imagePullPolicy: IfNotPresent
         envFrom:
           - configMapRef:
               name: mdcore-env
@@ -247,6 +248,7 @@ core_components:
           do echo waiting for database; sleep 2; done;']
       - name: wait-for-hub-services
         image: opswat/metadefendercore-debian:latest
+        imagePullPolicy: IfNotPresent
         command: [ '/wait-for-hub-services.sh' ]
         volumeMounts:
           - name:  wait-for-hub-services
@@ -273,7 +275,8 @@ core_components:
           defaultMode: 0777
     initContainers:
       - name: wait-for-hub-services
-        image: busybox
+        image: opswat/metadefendercore-debian:latest
+        imagePullPolicy: IfNotPresent
         command: [ '/wait-for-hub-services.sh' ]
         volumeMounts:
           - name:  wait-for-hub-services

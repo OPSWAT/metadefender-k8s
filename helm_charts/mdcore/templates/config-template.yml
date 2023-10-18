@@ -69,8 +69,6 @@ data:
   user: {{ $coreUserValue }}
   password: {{ $corePasswordValue }}
 
-
-
 # Generate, set or keep the MD Core API key
 {{- $coreApiKeyValue := (randNumeric 36) | b64enc | quote }}
 {{- $coreApiSecret := (lookup "v1" "Secret" .Release.Namespace "mdcore-api-key") }}
@@ -150,7 +148,7 @@ data:
 {{- if $mdcoreConfigSecret }}
   {{- if and (index $mdcoreConfigSecret.data "RABBITMQ_DEFAULT_PASS") (index $mdcoreConfigSecret.data "RABBITMQ_DEFAULT_USER") }}
     {{- $rabbitmqPasswordValue = index $mdcoreConfigSecret.data "RABBITMQ_DEFAULT_PASS" | b64dec }}
-    {{- $rabbitmqUserValue = index $mdcoreConfigSecret.data "RABBITMQ_DEFAULT_USER" | b64enc }}
+    {{- $rabbitmqUserValue = index $mdcoreConfigSecret.data "RABBITMQ_DEFAULT_USER" | b64dec }}
   {{- end -}}
 {{- end -}}
 {{- if .Values.RABBITMQ_DEFAULT_PASS }}
@@ -159,6 +157,26 @@ data:
 {{- if .Values.RABBITMQ_DEFAULT_USER }}
 {{- $rabbitmqUserValue = .Values.RABBITMQ_DEFAULT_USER }}
 {{- end }}
+
+# Generate new config for nas
+{{- $nas_connection_key_value := (randAlphaNum 10) | nospace | b64enc | quote }}
+{{- $nasSecret := (lookup "v1" "Secret" .Release.Namespace "nas-cred") }}
+{{- if $nasSecret }}
+{{- $nas_connection_key_value = index $nasSecret.data "nas_connection_key" }}
+{{- end -}}
+{{- if .Values.NAS_CONNECTION_KEY }}
+{{- $nas_connection_key_value = .Values.NAS_CONNECTION_KEY | b64enc }}
+{{- end -}}
+
+---
+kind: Secret
+apiVersion: v1
+metadata:
+  name: nas-cred
+  annotations:
+    "helm.sh/resource-policy": keep
+data:
+  nas_connection_key: {{ $nas_connection_key_value }}
 
 ---
 kind: Secret
@@ -218,12 +236,14 @@ stringData:
         "technology": "h2",
         "config": {
           "host": "{{ (index .Values.core_components "md-nas").name }}",
-          "port": {{ (index (index .Values.core_components "md-nas").ports 0).port }}
+          "port": {{ (index (index .Values.core_components "md-nas").ports 0).port }},
+          "connection_key": {{ $nas_connection_key_value | replace "\"" "" | b64dec | quote }}
         }
       }
     }
   ometascan_nas.conf: |
     {
+      "connection_key": {{ $nas_connection_key_value | replace "\"" "" | b64dec | quote }},
       "log": {
         "streams": [
           {
@@ -273,6 +293,7 @@ stringData:
     "nas/host": "{{ (index .Values.core_components "md-nas").name }}",
     "nas/port": "{{ (index (index .Values.core_components "md-nas").ports 0).port }}",
     "nas/worker_count": "4",
+    "nas/connection_key": {{ $nas_connection_key_value | replace "\"" "" | b64dec | quote }},
     "broker/host": "{{ (index .Values.core_components "rabbitmq").name }}",
     "broker/port": "{{ (index (index .Values.core_components "rabbitmq").ports 0).port }}",
     "broker/user": {{ $rabbitmqUserValue | quote }},

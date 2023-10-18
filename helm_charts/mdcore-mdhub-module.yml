@@ -26,3 +26,9 @@ core_components:
     ports:
       - port: 8889
     service_type: ClusterIP
+
+# DB_MODE of Central Hub
+MDCORE_DB_MODE: 2
+
+# New config of NAS, randomly generated if set to null
+NAS_CONNECTION_KEY: null
