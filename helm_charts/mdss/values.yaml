@@ -39,7 +39,7 @@ mdss-common-environment:
   RABBITMQ_SCANNING_PREFETCH_COUNT: "20"
 
   HTTPS_ACTIVE: "no"
-  BRANCH: "3.3.1"                                   # Sets a custom MDSS branch for testing/preview versions
+  BRANCH: "3.3.0"                                   # Sets a custom MDSS branch for testing/preview versions
   # These variables can be changed to reveal debug information in the application
   LOG_LEVEL: "4"
   APP_LOG_LEVEL: "INFORMATION"
