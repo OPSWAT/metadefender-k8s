@@ -140,7 +140,7 @@ data:
   {{- end }}
 {{- end }}
 
-
+---
 # Generate, set or keep the rabbitmq credentials
 {{- $rabbitmqPasswordValue := (randAlphaNum 24) | nospace }}
 {{- $rabbitmqUserValue := "rabbitmq" }}
