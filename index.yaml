@@ -18,6 +18,22 @@ entries:
     version: 5.1.1
   MetaDefender_ICAP_Server:
   - apiVersion: v2
+    appVersion: 5.3.0
+    created: "2023-11-03T12:02:49.563820775Z"
+    description: This is a Helm chart for deploying MetaDefender ICAP Server (https://www.opswat.com/products/metadefender/icap)
+      in a Kubernetes cluster.
+    digest: f59a9a013a681cce2852313d82a6feb939298ba29199715f966c23d958b4fa47
+    home: https://docs.opswat.com/mdicap/installation
+    keywords:
+    - mdicapsrv
+    - icap
+    - MetaDefender ICAP Server
+    name: MetaDefender_ICAP_Server
+    type: application
+    urls:
+    - https://github.com/OPSWAT/metadefender-k8s/releases/download/MetaDefender_ICAP_Server-5.3.0/MetaDefender_ICAP_Server-5.3.0.tgz
+    version: 5.3.0
+  - apiVersion: v2
     appVersion: 5.2.1
     created: "2023-09-06T12:57:27.610248412Z"
     description: This is a Helm chart for deploying MetaDefender ICAP Server (https://www.opswat.com/products/metadefender/icap)
@@ -88,6 +104,16 @@ entries:
     description: This is a Helm chart for deploying MetaDefender Core (https://www.opswat.com/products/metadefender/core)
       in a Kubernetes cluster
     digest: c5ff24689882d3f1d4618908ab9000f04c9d504b7937979e41b9b956b4bc6b0c
+    name: metadefender_core
+    type: application
+    urls:
+    - https://github.com/OPSWAT/metadefender-k8s/releases/download/metadefender_core-5.6.1-1/metadefender_core-5.6.1-1.tgz
+    version: 5.6.1-1
+  - apiVersion: v2
+    created: "2023-11-03T12:02:49.779916218Z"
+    description: This is a Helm chart for deploying MetaDefender Core (https://www.opswat.com/products/metadefender/core)
+      in a Kubernetes cluster
+    digest: 1f6c28beb76fb6e61e4176f518a2c1a1649ce9b0dccacb2a0b4649fb00d0af65
     name: metadefender_core
     type: application
     urls:
@@ -179,4 +205,4 @@ entries:
     urls:
     - https://github.com/OPSWAT/metadefender-k8s/releases/download/metadefender_icap_server-4.13.0/metadefender_icap_server-4.13.0.tgz
     version: 4.13.0
-generated: "2023-09-14T13:37:16.04024027Z"
+generated: "2023-11-03T12:02:49.779965491Z"
