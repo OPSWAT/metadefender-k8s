@@ -32,11 +32,42 @@ variable "DEPLOY_RDS_POSTGRES_DB" {
   type    = bool
   default = false
 }
+variable "DEPLOY_MONGO_DB" {
+  type    = bool
+  default = false
+}
+variable "DEPLOY_REDIS" {
+  type    = bool
+  default = false
+}
+variable "DEPLOY_RABBITMQ" {
+  type    = bool
+  default = false
+}
 
 variable "POSTGRES_USERNAME" {
   type = string
 }
 
 variable "POSTGRES_PASSWORD" {
+  type = string
+}
+
+variable "MONGO_USERNAME" {
+  type = string
+}
+
+variable "MONGO_PASSWORD" {
+  type = string
+}
+variable "TLS_MONGO_ENABLED" {
+  type = string
+  default = "disabled"
+}
+variable "MQ_USERNAME" {
+  type = string
+}
+
+variable "MQ_PASSWORD" {
   type = string
 }

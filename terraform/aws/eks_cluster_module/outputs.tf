@@ -14,6 +14,10 @@ output "private_subnets" {
   value = [for subnet in aws_subnet.priv_subnet : subnet.id]
 }
 
+output "subnet_group_id" {
+  value = aws_db_subnet_group.private_subnet_group.id
+}
+
 output "eks_cluster_oicd_url" {
   value = aws_eks_cluster.eks_cluster.identity.0.oidc.0.issuer
 }

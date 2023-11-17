@@ -7,3 +7,12 @@ DEPLOY_FARGATE_NODES   = true
 DEPLOY_RDS_POSTGRES_DB = true
 POSTGRES_USERNAME      = "<POSTGRES_USERNAME>"
 POSTGRES_PASSWORD      = "<POSTGRES_PASSWORD>"
+
+DEPLOY_REDIS           = false
+DEPLOY_RABBITMQ        = false
+DEPLOY_MONGO_DB        = true
+MONGO_USERNAME         = "<MONGO_USERNAME>"
+MONGO_PASSWORD         = "<MONGO_PASSWORD>"
+TLS_MONGO_ENABLED      = "disabled"   ## "disabled" or "enabled"
+MQ_PASSWORD            = "<MQ_USERNAME>"
+MQ_USERNAME            = "<MQ_PASSWORD>"
