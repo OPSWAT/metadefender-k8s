@@ -32,7 +32,7 @@ metadata:
   name: {{ printf "%s-%s-pv" .Release.Namespace .Values.storage_name }}
 spec:
   accessModes:
-    - ReadWriteOnce
+    - ReadWriteMany
   capacity:
     storage: 15Gi
   storageClassName: {{ printf "%s-%s" .Release.Namespace $.Values.storage_name }}
