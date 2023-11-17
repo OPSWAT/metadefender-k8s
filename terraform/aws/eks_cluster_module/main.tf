@@ -694,3 +694,11 @@ resource "aws_eks_node_group" "node_group" {
     aws_eks_cluster.eks_cluster
   ]
 }
+
+
+### Group Subnet for other resources
+
+resource "aws_db_subnet_group" "private_subnet_group" {
+  name       = "${var.MD_CLUSTER_NAME}-private-subnet-group"
+  subnet_ids = [for subnet in aws_subnet.priv_subnet : subnet.id]
+}

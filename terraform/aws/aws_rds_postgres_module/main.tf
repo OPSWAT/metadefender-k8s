@@ -19,16 +19,11 @@ resource "aws_security_group" "postgres_db_security_group" {
   }
 }
 
-resource "aws_db_subnet_group" "public_subnet_group" {
-  name       = "${var.MD_CLUSTER_NAME}-public-subnet-group"
-  subnet_ids = var.PUBLIC_SUBNETS
-}
-
 resource "aws_db_instance" "postgres_db" {
   allocated_storage      = 100
-  db_subnet_group_name   = "${var.MD_CLUSTER_NAME}-public-subnet-group"
+  db_subnet_group_name   = var.SUBNET_GROUP_ID
   engine                 = "postgres"
-  engine_version         = "14.2"
+  engine_version         = "14.8"
   identifier             = "${var.MD_CLUSTER_NAME}-postgres-db"
   instance_class         = "db.r6g.xlarge"
   multi_az               = false
@@ -40,8 +35,4 @@ resource "aws_db_instance" "postgres_db" {
   username               = var.POSTGRES_USERNAME
   vpc_security_group_ids = [aws_security_group.postgres_db_security_group.id]
   skip_final_snapshot    = true
-
-  depends_on = [
-    aws_db_subnet_group.public_subnet_group
-  ]
 }

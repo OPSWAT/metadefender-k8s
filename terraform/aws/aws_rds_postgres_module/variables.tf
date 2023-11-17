@@ -10,9 +10,8 @@ variable "VPC_ID" {
 variable "VPC_CIDR" {
   type = string
 }
-
-variable "PUBLIC_SUBNETS" {
-  type = list(string)
+variable "SUBNET_GROUP_ID" {
+  type = string
 }
 
 variable "POSTGRES_USERNAME" {
