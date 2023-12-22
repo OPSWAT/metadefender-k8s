@@ -2,7 +2,7 @@
 deploy_with_mdss_db: true
 
 storage_provisioner: hostPath
-hostPathPrefix: /opswat
+hostPathPrefix: mdss-storage-<APP_NAMESPACE>
 
 # Deploy on an azure cluster
 environment: generic

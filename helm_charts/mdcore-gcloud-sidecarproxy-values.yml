@@ -44,7 +44,7 @@ MDCORE_CERT_PATH: "/cert"
 deploy_with_core_db: false
 storage_provisioner: hostPath
 ## The host path on gcloud nodes has to be somewhere with read/write permissions
-hostPathPrefix: /mnt/stateful_partition/opswat
+hostPathPrefix: /mnt/stateful_partition/opswat-<APP_NAMESPACE>
 
 # Set to false to not create any volumes or host paths in the deployment, all storage will be ephemeral
 persistance_enabled: true

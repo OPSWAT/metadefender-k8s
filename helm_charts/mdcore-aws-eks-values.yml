@@ -43,7 +43,7 @@ MDCORE_CERT_PATH: "/cert"
 
 deploy_with_core_db: true
 storage_provisioner: hostPath
-hostPathPrefix: /opswat
+hostPathPrefix: mdcore-storage-<APP_NAMESPACE>
 
 # Set to false to not create any volumes or host paths in the deployment, all storage will be ephemeral
 persistance_enabled: true

@@ -111,7 +111,7 @@ env:                                                            # Set additional
   CORE_CONF_JSON: '\{\"global/restaddress\": \"0.0.0.0\"\}'     # This sets MD Core to listen only on ipv4 addresses by default, remove this setting to listen also on ipv6 
   # MD Core health-check settings
   MDCORE_HEALTH_CHECK: true         # Enable the MD Core health-check
-  MDCORE_QUEUE_THRESHOLD: 100       # Maximum number of files in the queue 
+  MDCORE_QUEUE_THRESHOLD: 0       # Maximum number of files in the queue
   MDCORE_MINIMUM_NUMBER_AV: 0       # Minimum number of AV engines that should be available
   MDCORE_REQUIRED_ENGINES: ""     # List of AV engines that should be available (ex: Bitdefender,clamav,eset), defaults to all engines available if not set and MDCORE_CORE_HEALTH_CHECK=true
   # MD Core proxy settings
@@ -146,7 +146,7 @@ core_components:
 
   md-core:
     name: md-core
-    image: opswat/metadefendercore-debian:5.7.0         # Overrides the default docker image for the MD Core service, this value can be changed if you want to set a different version of MD Core
+    image: opswat/metadefendercore-debian:5.8.0         # Overrides the default docker image for the MD Core service, this value can be changed if you want to set a different version of MD Core
     replicas: 1                                         # Sets the number of replicas if you want to have multiple MD Core instances
     env:
       - name: MD_USER
@@ -188,6 +188,9 @@ core_components:
           secretKeyRef:
             name: mdcore-stack-configs
             key: IGNITION_JSON
+      - name: LOG_PATH
+        value: /home/metascan/$(MD_INSTANCE_NAME)
+    persistentDir: /home/metascan
     tls:
       enabled: false
       certSecret: mdcore-tls-cert
@@ -238,7 +241,7 @@ core_components:
           defaultMode: 0777
     initContainers:
       - name: check-db-ready
-        image: opswat/metadefendercore-debian:5.7.0
+        image: opswat/metadefendercore-debian:5.8.0
         imagePullPolicy: IfNotPresent
         envFrom:
           - configMapRef:
@@ -247,7 +250,7 @@ core_components:
           'until pg_isready -h $DB_HOST -p $DB_PORT; 
           do echo waiting for database; sleep 2; done;']
       - name: wait-for-hub-services
-        image: opswat/metadefendercore-debian:5.7.0
+        image: opswat/metadefendercore-debian:5.8.0
         imagePullPolicy: IfNotPresent
         command: [ '/wait-for-hub-services.sh' ]
         volumeMounts:
@@ -275,7 +278,7 @@ core_components:
           defaultMode: 0777
     initContainers:
       - name: wait-for-hub-services
-        image: opswat/metadefendercore-debian:latest
+        image: opswat/metadefendercore-debian:5.8.0
         imagePullPolicy: IfNotPresent
         command: [ '/wait-for-hub-services.sh' ]
         volumeMounts:

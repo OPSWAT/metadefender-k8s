@@ -2,7 +2,7 @@
 deploy_with_mdss_db: true
 
 storage_provisioner: hostPath
-hostPathPrefix: /opswat
+hostPathPrefix: mdss-storage-<APP_NAMESPACE>
 
 # # Set the service_type to LoadBalancer in order to create an AWS load balancer routing traffic directly to the web interface
 mdss_components:
