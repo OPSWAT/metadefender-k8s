@@ -70,46 +70,22 @@ To get a local copy up and running follow these simple example steps.
 
 ### Release Notes September
 
-> *Sep 28, 2023*
+> *December 22, 2023* - *RELEASE_24*
 > 
 > ##### New
 > 
-> - Configure AWS Load Balancer Controller from metadefenderk8s script
-> - Configure GCP SQL Proxy from metadefenderk8s script
-> - Configure Region for all the CSPs from metedefenderk8s script
-> - Configure LBs to have attached a Private or Public IP from metedefenderk8s script
+> - Scan Queue size disabled by default on health check
+> - Core support LOG_PATH for log persistence of the pods
+> - Troubleshooting script improved for better support
+> - MetaDefender Core 5.8.0 
 > 
 > ##### Fixed
 > 
-> - Minor issues fixed in MetaDefender K8S script
-> - Set default terraform.tfvars for Azure provision
-> - EKS cluster not being able to AddTags for creating AWS Load Balancer
-
-
-> *Sep 14, 2023*
+> - RDS tier changed to gp3 for better performance
+> - Hostpath prefix changed to be based on namespace in all the supplementary yaml files
+> - Minimum nodes for AWS EKS changed to 2
+> - Minor fixes metadefenderk8s.sh script
 > 
-> ##### New
-> 
-> - Removed activation manager sidecar container as it is not needed anymore, application container handle the activation/deactivation
-> - Health check set up from environment variables
-> - Proxy configuration from environment variables 
-> 
-> ##### Fixed
-> 
-> - Minor fixed in MetaDefender K8S script
-> - Broken links in readme file
-
-
-> *Sep 6, 2023*
-> 
-> ##### New
-> 
-> - Resource requests and limits for each pod of MetaDefender for Secure Storage
-> - Readiness Probe using health check for MetaDefender Core
->   
-> ##### Fixed
-> - Azure PostgreSQL set up when using MetaDefender K8S script
-> - Deployment template when enabling TLS of MetaDefender Core
 
 <p align="right">(<a href="#top">back to top</a>)</p>
 

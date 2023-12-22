@@ -31,7 +31,7 @@ resource "aws_db_instance" "postgres_db" {
   port                   = 5432
   publicly_accessible    = false
   storage_encrypted      = true
-  storage_type           = "gp2"
+  storage_type           = "gp3"
   username               = var.POSTGRES_USERNAME
   vpc_security_group_ids = [aws_security_group.postgres_db_security_group.id]
   skip_final_snapshot    = true

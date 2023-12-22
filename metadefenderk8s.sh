@@ -776,6 +776,7 @@ function installMDSS () {
       fi
       if $externalRabbit_mdss ;then
         rabbit_replicas=0
+        rabbit_mq_port=5671
       else
         rabbit_replicas=1
       fi
@@ -791,6 +792,7 @@ function installMDSS () {
       --set mdss_ingress.enabled=$ingress_enabled \
       --set mdss-common-environment.MONGO_URL=$db_url_mdss \
       --set mdss-common-environment.RABBITMQ_URI=$rabbit_url_mdss \
+      --set mdss-common-environment.RABBITMQ_HOST=$rabbit_Host_mdss \
       --set mdss-common-environment.CACHE_SERVICE_URI=$redis_uri_mdss \
       --set mdss-common-environment.CACHE_SERVICE_URL=$redis_host_mdss \
       --set mdss_components.rabbitmq.replicas=$rabbit_replicas \
@@ -872,6 +874,7 @@ function provisionAWS() {
   fi 
   if [ "${externalRabbit_mdss}" == "true" ];then
     rabbit_URI_mdss=$(terraform output -raw RABBITMQ_ENDPOINT | awk '{split($0,x,"/"); print x[3]}')
+    rabbit_Host_mdss=$(echo $rabbit_URI_mdss | awk '{split($0,x,":"); print x[1]}' )
     echo $rabbit_URI_mdss
     rabbit_url_mdss="amqps://"$rabbit_user_mdss":"$rabbit_password_mdss"@"$rabbit_URI_mdss
     
