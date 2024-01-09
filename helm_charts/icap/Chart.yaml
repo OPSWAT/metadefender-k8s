@@ -1,8 +1,8 @@
 apiVersion: v2
 name: MetaDefender_ICAP_Server
 type: application
-version: 5.3.0
-appVersion: 5.3.0
+version: 5.4.0
+appVersion: 5.4.0
 home: https://docs.opswat.com/mdicap/installation
 keywords:
   - mdicapsrv

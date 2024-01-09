@@ -53,7 +53,7 @@ icap_ingress:
 postgres_mdicapsrv:
   enabled: true
   name: postgres-mdicapsrv
-  image: postgres:12.12
+  image: postgres:12.14
   env:
     - name: POSTGRES_PASSWORD
       valueFrom:
@@ -71,15 +71,34 @@ postgres_mdicapsrv:
 # Docker repo to use, this should be changed when using private images (this string will be prepended to the image name)
 # If a component has "custom_repo: true" then the image name will be formated as "{docker_repo/}image_name{:BRANCH}" otherwise it will remain unaltered
 icap_docker_repo: opswat
-# Example using a PVC with dynamic provisioning from an existing storage class
+
+icap_container_persistent: false     # To enable for mounting icap path /opt/mdicapsrv/icap_data/var/lib/mdicapsrv using below storage_configs pvc
+
+# Example using a PVC with dynamic provisioning from an existing storage class for postgres_mdicapsrv container
 storage_configs:                       
   enabled: false
   accessModes:
-    - ReadWriteMany
+    - ReadWriteOnce
   resources:
     requests:
       storage: 5Gi
-  storageClassName: "nfs-client"
+  storageClassName: "default" # to change to you existing storage class allocated by your CSP
+
+
+extra_storage_configs:              # Example for creating PVC for ICAP container. Use extraVolumeMounts and extraVolumes in icap container definition together with this PVC
+#  extra_pvc:
+#    apiVersion: v1
+#    kind: PersistentVolumeClaim
+#    metadata:
+#      name: icap-disk-pvc
+#    spec:
+#      accessModes:
+#        - ReadWriteMany
+#      resources:
+#        requests:
+#          storage: 5Gi
+#      storageClassName: azurefile
+
 # Enable feature health check
 healthcheck:
   enabled: true
@@ -95,7 +114,7 @@ icap_components:
   # Init container to check database system is ready to accept connections
     initContainers:
       - name: check-db-ready
-        image: postgres:12.12
+        image: postgres:12.14
         envFrom:
           - configMapRef:
               name: mdicapsrv-env
@@ -111,7 +130,7 @@ icap_components:
             cpu: "100m"       # Maximum cpu limit
     name: md-icapsrv
     # Overrides the default docker image for the MD ICAP Server service, this value can be changed if you want to set a different version of MD ICAP Server
-    image: opswat/metadefendericapsrv-debian:5.3.0
+    image: opswat/metadefendericapsrv-debian:5.4.0
     # Warning: When to use this feature!
     # Sets the number of replicas if you want to have multiple MD ICAP Server instances
     replicas: 1
@@ -221,6 +240,14 @@ icap_components:
 # If `aws-type` is set to `fargate`, the MD ICAP Server pod will be scheduled on an AWS Fargate virtual node (if a fargate profile is provisioned and configured)
     extra_labels:
       aws-type: fargate
+    extraVolumeMounts:
+    #  - mountPath: <path_to_mount> # for icap migration from sqlite to postgresql needed to mount -> "/opt/mdicapsrv/icap_data/var/lib/mdicapsrv". From version 5.2.0
+    #    subPath: md_icapsrv        # subpath with the mounted point
+    #    name: icap-disk-pvc        # name for the mounting point
+    extraVolumes:
+    #  - name: icap-disk-pvc
+    #    persistentVolumeClaim:
+    #      claimName: icap-disk-pvc
     resources:
       requests:
         memory: "2Gi"               # Minimum reserved memory
