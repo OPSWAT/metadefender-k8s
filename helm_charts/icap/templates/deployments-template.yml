@@ -133,10 +133,15 @@ spec:
               subPath: {{ .certSecretSubPath }}
             {{- end }}
             {{- end }}
-            {{- if $.Values.storage_configs.enabled }}
+            {{- if (and $.Values.storage_configs.enabled (and $.Values.icap_container_persistent (not $.Values.extra_storage_configs) ) ) }}
             - mountPath: "/opt/mdicapsrv/icap_data/var/lib/mdicapsrv"
               subPath: {{ $component.name }}
               name: {{ printf "%s-pvc" .Values.storage_configs.storageClassName }}
+            {{- end }}
+            {{- if $.Values.extra_storage_configs }}
+            {{- if $component.extraVolumeMounts }}
+              {{- toYaml $component.extraVolumeMounts | nindent 12 }}
+            {{- end }}
             {{- end }}
           {{- end }}
           {{- if $component.resources }}
@@ -195,9 +200,17 @@ spec:
             secretName: {{ .certSecret }}
         {{- end }}
         {{- end }}
-        {{- if $.Values.storage_configs.enabled }}
+        {{- if (and $.Values.storage_configs.enabled (and $.Values.icap_container_persistent (not $.Values.extra_storage_configs) ) ) }}
         - name: {{ printf "%s-pvc" .Values.storage_configs.storageClassName }}
           persistentVolumeClaim:
             claimName: {{ printf "%s-pvc" .Values.storage_configs.storageClassName }}
         {{- end }}
+        {{- if $.Values.extra_storage_configs }}
+        {{- if $component.extraVolumes -}}
+          {{- range $volumeLabel, $volume := $component.extraVolumes }}
+        -
+            {{- toYaml $volume | nindent 10 }}
+          {{- end }}
+        {{- end }}
+        {{- end }}        
       {{- end }}
