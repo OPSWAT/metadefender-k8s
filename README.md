@@ -10,6 +10,7 @@
       <ul>
         <li><a href="#prerequisites">Prerequisites</a></li>
         <li><a href="#installation">Installation</a></li>
+        <li><a href="#relese-notes">Release Notes</a></li>
       </ul>
     </li>
     <li><a href="#contributing">Contributing</a></li>
@@ -23,16 +24,16 @@
 <!-- ABOUT THE PROJECT -->
 ## About The Project
 
-OPSWAT MetaDefender products are adapting year over year for our customers to get advantage of the new technologies that are comming. With this project you will be able to deploy some of our MetaDefender products to a Kubernetes Cluster. We provide you with some architecture recommendations for the main cloud providers to host the Kubernetes cluster together with an script to provision such recommended architecture. Also we provide you with all the information of the components that will be installed inside the cluster to run our products and a script to install it depending on the different configuration options.
+OPSWAT MetaDefender products are adapting year over year for our customers to get advantage of the new technologies that are coming. With this project you will be able to deploy some of our MetaDefender products to a Kubernetes Cluster. We provide you with some architecture recommendations for the main cloud providers to host the Kubernetes cluster together with an script to provision such recommended architecture. Also we provide you with all the information of the components that will be installed inside the cluster to run our products and a script to install it depending on the different configuration options.
 
 
 Main Metadefender documentation pages:
 
-* AWS Cloud Deployment Architectures Recommended [Doc](https://docs.opswat.com/mdcore/cloud-deployment/architecture-solutions-in-aws)
-* MetaDefender Core Provisioned in AWS EKS [Doc](https://docs.opswat.com/mdcore/cloud-deployment/metadefender-core-provisioned-in-aws-eks)
+* AWS Cloud Deployment Architectures Recommended [Doc](https://docs.opswat.com/mdcore/cloud-deployment/recommended-architectures-in-aws)
+* MetaDefender Core Provisioned in AWS EKS [Doc](https://docs.opswat.com/mdcore/cloud-deployment/eks-cluster-architecture)
 * MetaDefender Core Kubernetes Components [Doc](https://docs.opswat.com/mdcore/kubernetes-configuration/kubernetes-components)
 * MetaDefender Core In Your Already Created Kubernetes Cluster [Doc](https://docs.opswat.com/mdcore/kubernetes-configuration/metadefender-core-in-your-already-created-k8s)
-
+* MetaDefender for Secure Storage Kubernetes deployment [Doc](https://docs.opswat.com/mdss/installation/kubernetes-deployment)
 
 <p align="right">(<a href="#top">back to top</a>)</p>
 
@@ -60,12 +61,55 @@ To get a local copy up and running follow these simple example steps.
 ### Installation
 
  OPSWAT has prepared a recommended architecture for having Metadefender products deployed in a Kubernetes Cluster in the main CSP. 
- Depending on the architecture prefered the installation process is different as each product has its own conifguration options. To facilitate the deployment of the product we have created what we call MetaDefender K8S script that will guide you through the different options and configure the enviroment for you. 
+ Depending on the architecture prefered the installation process is different as each product has its own configuration options. To facilitate the deployment of the product we have created what we call MetaDefender K8S script that will guide you through the different options and configure the enviroment for you. 
 
  There are two modes for using the script provision and install. 
 
- For provision in AWS follow this [doc](https://app.developerhub.io/metadefender-core/v5.1.1/cloud-deployment/metadefender-core-provisioned-in-aws-eks)
- For install MD Core in an already created cluster follow this [doc](https://app.developerhub.io/metadefender-core/v5.1.1/kubernetes-configuration/metadefender-core-in-your-already-created-k8s)
+ For provision in AWS follow this [doc](https://docs.opswat.com/mdcore/cloud-deployment/metadefender-core-provisioned-in-aws-eks)
+ For install MD Core in an already created cluster follow this [doc](https://docs.opswat.com/mdcore/kubernetes-configuration/metadefender-core-in-your-already-created-k8s)
+
+### Release Notes September
+
+> *Sep 28, 2023*
+> 
+> ##### New
+> 
+> - Configure AWS Load Balancer Controller from metadefenderk8s script
+> - Configure GCP SQL Proxy from metadefenderk8s script
+> - Configure Region for all the CSPs from metedefenderk8s script
+> - Configure LBs to have attached a Private or Public IP from metedefenderk8s script
+> 
+> ##### Fixed
+> 
+> - Minor issues fixed in MetaDefender K8S script
+> - Set default terraform.tfvars for Azure provision
+> - EKS cluster not being able to AddTags for creating AWS Load Balancer
+
+
+> *Sep 14, 2023*
+> 
+> ##### New
+> 
+> - Removed activation manager sidecar container as it is not needed anymore, application container handle the activation/deactivation
+> - Health check set up from environment variables
+> - Proxy configuration from environment variables 
+> 
+> ##### Fixed
+> 
+> - Minor fixed in MetaDefender K8S script
+> - Broken links in readme file
+
+
+> *Sep 6, 2023*
+> 
+> ##### New
+> 
+> - Resource requests and limits for each pod of MetaDefender for Secure Storage
+> - Readiness Probe using health check for MetaDefender Core
+>   
+> ##### Fixed
+> - Azure PostgreSQL set up when using MetaDefender K8S script
+> - Deployment template when enabling TLS of MetaDefender Core
 
 <p align="right">(<a href="#top">back to top</a>)</p>
 
@@ -91,7 +135,7 @@ Don't forget to give the project a star! Thanks again!
 <!-- LICENSE -->
 ## Licensing
 
-For running MetaDefender products you will need to set up the license needed for each of the products, in case of not having such license key please contact Sales:sales-inquiry@opswat.com. 
+For running MetaDefender products you will need to set up the license needed for each of the products, in case of not having such license key please contact Sales: sales-inquiry@opswat.com. 
 
 In case of having any issue with your license please contact [Support](https://www.opswat.com/support)
 
