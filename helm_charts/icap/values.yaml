@@ -229,6 +229,12 @@ icap_components:
       icaps: 11344 # ICAPS port to expose for the MD ICAP Server pod
       nginx: 8043  # NGINX port for nginx ingress controller connect
       nginxs: 8443 # NGINX (SSL) port for nginx ingress controller connect
+    # nodePorts:
+    #   rest: 38048   # REST nodePort to expose for the MD ICAP Server pod
+    #   icap: 31344   # ICAP nodePort to expose for the MD ICAP Server pod
+    #   icaps: 31344  # ICAPS nodePort to expose for the MD ICAP Server pod
+    #   nginx: 38043  # NGINX nodePort for nginx ingress controller connect
+    #   nginxs: 38443 # NGINX (SSL) nodePort for nginx ingress controller connect
     database:
       db_mode: "4"                   # Database mode
       db_type: remote                # Database type
