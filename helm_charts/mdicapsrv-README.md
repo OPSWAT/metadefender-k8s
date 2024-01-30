@@ -59,6 +59,8 @@ The following table lists the configurable parameters of the Metadefender ICAP c
 | `postgres_mdicapsrv.name` | Name of the Postgres instance | `"postgres-mdicapsrv"` |
 | `postgres_mdicapsrv.image` | Default image repository for postgres instance | `"postgres:12.12"` |
 | `postgres_mdicapsrv.env.name` | List of envs <ul><li>`POSTGRES_PASSWORD: ` This environment variable is required for you to use the PostgreSQL image. It must not be empty or undefined. This environment variable sets the superuser password for PostgreSQL</li><li>`POSTGRES_USER: ` This variable will create the specified user with superuser power and a database with the same name. If it is not specified, then the default user of postgres will be used</li></ul>  | `"postgres"` |
+| `postgres_mdicapsrv.containerSecurityContext` | Sets securityContext for the postgres container | `""` |
+| `postgres_mdicapsrv.podSecurityContext` | Sets securityContext for the postgres pod | `""` |
 | `icap_docker_repo` | Name of MD ICAP Server image repository | `"opswat"` |
 | `storage_configs.enabled` | Enable or disable for storage data Postgresql | `"false"` |
 | `storage_configs.accessModes` | Set permission for access to the resource storage | `"ReadWriteMany"` |
@@ -132,6 +134,8 @@ The following table lists the configurable parameters of the Metadefender ICAP c
 | `icap_components.md_icapsrv.strategy.type` | Rolling updates allow Deployments' update to take place with zero downtime by incrementally updating Pods instances with new ones | `"RollingUpdate"` |
 | `icap_components.md_icapsrv.strategy.rollingUpdate.maxSurge` | The field is an optional field that specifies the maximum number of Pods that can be created over the desired number of Pods | `0` |
 | `icap_components.md_icapsrv.sidecars` | Configuration for the activation-manager sidecar | `[{"name": "activation-manager", "image": "alpine", "envFrom": [{"configMapRef": {"name": "mdicapsrv-env"}}], "env": [{"name": "APIKEY", "valueFrom": {"secretKeyRef": {"name": "mdicapsrv-api-key", "key": "value"}}}, {"name": "LICENSE_KEY", "valueFrom": {"secretKeyRef": {"name": "mdicapsrv-license-key", "key": "value"}}}], "command": ["/bin/sh", "-c"], "args": ["apk add curl jq\nstop() {\n  echo 'Deactivating using the MD ICAP Server API'\n  curl -H \"apikey: $APIKEY\" -X POST \"https://localhost:$REST_PORT/admin/license/deactivation\"\n  echo 'Deactivating using activation server API'\n  curl -X GET \"https://$ACTIVATION_SERVER/deactivation?key=$LICENSE_KEY&deployment=$DEPLOYMENT\"\n  exit 0\n}\ntrap stop SIGTERM SIGINT SIGQUIT\n\nuntil [ -n $DEPLOYMENT ] && [ $DEPLOYMENT != null ]; do\n    echo 'Checking...'\n    export DEPLOYMENT=$(curl --silent -H \"apikey: $APIKEY\" \"http://localhost:$REST_PORT/admin/license\" | jq -r \".deployment\")\n    echo \"Deployment ID: $DEPLOYMENT\"\n    sleep 1\ndone\necho \"Waiting for termination signal...\"\nwhile true; do sleep 1; done\necho \"MD ICAP Server pod finished, exiting\"\nexit 0\n"]}]` |
+| `icap_components.md_icapsrv.containerSecurityContext` | Sets securityContext for the icap container | `""` |
+| `icap_components.md_icapsrv.podSecurityContext` | Sets securityContext for the icap pod | `""` |
 | `nodeSelector` | `nodeSelector` is the simplest recommended form of node selection constraint | `{}` |
 | `autoscaling.enabled` | Enable feature HPA (Horizontal Pod Autoscaler) for MD ICAP Server | `false` |
 | `autoscaling.minReplicas` | This field indicates the number minimum of the pods | `1` |

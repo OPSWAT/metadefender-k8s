@@ -148,6 +148,9 @@ spec:
           resources:
             {{- toYaml $component.resources | nindent 12 }}
           {{- end }}
+          {{- if $component.containerSecurityContext }}
+          securityContext: {{ toYaml $component.containerSecurityContext | nindent 12 }}
+          {{- end }}
           {{- if $component.sidecars }}
             {{- toYaml $component.sidecars | nindent 8 }}
           {{- end }}
@@ -213,4 +216,7 @@ spec:
           {{- end }}
         {{- end }}
         {{- end }}        
+      {{- end }}
+      {{- if $component.podSecurityContext }}
+      securityContext: {{ toYaml $component.podSecurityContext | nindent 8 }}
       {{- end }}

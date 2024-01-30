@@ -31,7 +31,13 @@ spec:
               name: {{ printf "%s-pvc" .Values.storage_configs.storageClassName }}
               subPath: {{ $component.name }}
           {{- end }}
+          {{- if $component.containerSecurityContext }}
+          securityContext: {{ toYaml $component.containerSecurityContext | nindent 12 }}
+          {{- end }}
       restartPolicy: Always
+      {{- if $component.podSecurityContext }}
+      securityContext: {{ toYaml $component.podSecurityContext | nindent 8 }}
+      {{- end }}
       {{- if $.Values.storage_configs.enabled }}
       volumes:
         - name: {{ printf "%s-pvc" .Values.storage_configs.storageClassName }}
