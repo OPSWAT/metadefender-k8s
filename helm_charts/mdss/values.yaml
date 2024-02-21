@@ -1,7 +1,7 @@
 # Default values for mdss. These will also be included in the environment of each mdss container
 
 mdss-common-environment:
-  ENABLED_MODULES: "azureblob,amazonsdk"                                  # Enabled modules by default
+  ENABLED_MODULES: "azureblob,amazonsdk,nfs"                                  # Enabled modules by default
   # ENABLED_MODULES: "azureblob,amazonsdk,googlecloud,alibabacloud,azurefiles,smb,box,onedrive,sftp,debug"             # All supported modules
 
   # This defines the connection string to the db ( should be modified when using an external db)
@@ -39,7 +39,7 @@ mdss-common-environment:
   RABBITMQ_SCANNING_PREFETCH_COUNT: "20"
 
   HTTPS_ACTIVE: "no"
-  BRANCH: "3.3.0"                                   # Sets a custom MDSS branch for testing/preview versions
+  BRANCH: "3.3.3"                                   # Sets a custom MDSS branch for testing/preview versions
   # These variables can be changed to reveal debug information in the application
   LOG_LEVEL: "4"
   APP_LOG_LEVEL: "INFORMATION"
@@ -109,6 +109,42 @@ mdss-common-environment:
 
   # This variable is used to force Signature Version 4 for AWS S3/S3 compatible request. 
   FORCE_AWS_SIGNATURE_V4: "1"
+
+  NFSSERVICE_URL: "http://nfsservice"
+  NFSSERVICE_PORT: "5004"
+
+  NFS_SHORT_DEADLINE: "5"
+  NFS_LONG_DEADLINE: "30"
+
+  NFS_UPLOAD_CHUNK: "2"
+
+  # This value is used to determine how MDSS consider that a file from a smb share is ready to be processed (Default 1-FILEOPEN_CHECK, 0-DEBOUNCE_CHECK)
+  SMBSERVICE_FILE_READY_CHECK_MODE: "1"
+  # This can be modified in order to define how many threads can be processed in parallel.
+  SMBSERVICE_PREFETCH_COUNT: "10"
+
+  DISCOVERY_SERVICE_SFTP_RTP_HANDLING: "0"
+  DISCOVERY_SERVICE_NFS_RTP_HANDLING: "0"
+
+  # Default number of hours for token expiration, maximum 24 hours
+  TOKEN_EXPIRY_TIME_HOURS: "1"
+
+  # Discovery debounce time used in order to check if a file is uploaded or not, we check if the file has not been modified between a 5 seconds interval
+  SFTP_DISCOVERY_DEBOUNCE_TIME_SECONDS: "5"
+  NFS_DISCOVERY_DEBOUNCE_TIME_SECONDS: "5"
+
+  # time to wait (in minutes) before retrying the register session method in SMB
+  SMBSERVICE_SESSION_RETRY_WAIT_TIME: "5"
+
+  # maximum amount of retries for the register session method in SMB
+  SMBSERVICE_SESSION_MAX_RETRIES: "3"
+
+  # number of active connections per smb storage; default is 10, maximum is 100
+  SMBSERVICE_SESSIONS_ON_STORAGE: "10"
+
+  # time interval between two consecutive job runs for the discovery completed job
+  DISCOVERY_COMPLETED_CHECK_SECONDS: "10"
+
 
 
 # Set to true if the respective database engine should also be deployed
@@ -748,4 +784,53 @@ mdss_components:
         memory: "0.25Gi"
         cpu: "0.500"
       
-    
+  # ======================================= NFS MODULE ================================================
+  discoverynfsservice:
+    name: discoverynfsservice
+    module_name: nfs
+    custom_repo: true
+    image: mdcloudservices_discoverynfs
+    extra_labels:
+      aws-type: fargate
+    resources:
+      requests:
+        memory: "0.25Gi"
+        cpu: "1.000"
+  
+  remediationsservice-nfs:
+    name: remediationsservice-nfs
+    module_name: nfs
+    custom_repo: true
+    image: mdcloudservices_remediationsnfs
+    extra_labels:
+      aws-type: fargate
+    resources:
+      requests:
+        memory: "0.25Gi"
+        cpu: "0.100"
+  
+  storagesservice-nfs:
+    name: storagesservice-nfs
+    module_name: nfs
+    custom_repo: true
+    image: mdcloudservices_storagesnfs
+    extra_labels:
+      aws-type: fargate
+    resources:
+      requests:
+        memory: "0.25Gi"
+        cpu: "0.010"
+  
+  nfsservice:
+    name: nfsservice
+    module_name: nfs
+    custom_repo: true
+    image: mdcloudservices_nfsservice
+    ports:
+      - port: 5004
+    extra_labels:
+      aws-type: fargate
+    resources:
+      requests:
+        memory: "0.5Gi"
+        cpu: "0.500"
