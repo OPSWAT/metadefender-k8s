@@ -177,6 +177,17 @@ entries:
     version: 5.2.1
   metadefender_for_secure_storage:
   - apiVersion: v2
+    created: "2024-02-21T10:26:18.541731894Z"
+    description: This is a Helm chart for deploying MetaDefender for Secure Storage
+      (https://www.opswat.com/products/metadefender/metadefender-for-secure-storage)
+      in a Kubernetes cluster
+    digest: 8b92e1b926ca37a528c69a4884751fd09d7b4262bc72e1bb396ee227797651cc
+    name: metadefender_for_secure_storage
+    type: application
+    urls:
+    - https://github.com/OPSWAT/metadefender-k8s/releases/download/metadefender_for_secure_storage-3.3.3-0/metadefender_for_secure_storage-3.3.3-0.tgz
+    version: 3.3.3-0
+  - apiVersion: v2
     created: "2023-12-22T14:22:42.618669372Z"
     description: This is a Helm chart for deploying MetaDefender for Secure Storage
       (https://www.opswat.com/products/metadefender/metadefender-for-secure-storage)
@@ -242,4 +253,4 @@ entries:
     urls:
     - https://github.com/OPSWAT/metadefender-k8s/releases/download/metadefender_icap_server-4.13.0/metadefender_icap_server-4.13.0.tgz
     version: 4.13.0
-generated: "2024-01-09T14:20:52.094002163Z"
+generated: "2024-02-21T10:26:18.541781937Z"
