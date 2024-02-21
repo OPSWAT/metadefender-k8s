@@ -183,6 +183,9 @@ resource "azurerm_eventgrid_system_topic_event_subscription" "eventgrid" {
   system_topic = azurerm_eventgrid_system_topic.topic.name
   resource_group_name = var.STORAGE_RG
   event_delivery_schema = "EventGridSchema"
+  included_event_types = [
+    "Microsoft.Storage.BlobCreated"
+  ]
   subject_filter {
     subject_begins_with = "/blobServices/default/containers/${var.STORAGE_CONTAINERNAME}"
   }

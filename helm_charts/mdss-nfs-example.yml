@@ -1,0 +1,15 @@
+
+
+mdss_components:
+  nfsservice:
+    extraVolumes:
+      nfsTest:
+        name: nfs-storage-unit
+        nfs:
+          server: <NFS_SERVER_IP>
+          path: <PATH_EXPORTED_ON_SERVER>
+          readOnly: no
+    extraVolumeMounts:
+      - name: nfs-storage-unit
+        mountPath: /opt/mdss/nfs/<MOUNT_DIRECTORY>
+        subPath: <SUBPATH_TO_SCAN>

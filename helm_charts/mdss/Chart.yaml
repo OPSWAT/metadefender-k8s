@@ -7,10 +7,6 @@ long_description: |
   - All MDSS services in separate pods 
   - A MongoDB database instance pre-configured to be used by MDSS
 
-  In addition to the chart, we also provide a number of values files for specific scenarios:
-  - mdss-aws-eks-values.yml - for deploying in an AWS environment using Amazon EKS
-  - mdss-azure-aks-values.yml - for deploying in an Azure environment using AKS
-
   ## Installation
   
   ### From source
@@ -36,4 +32,4 @@ long_description: |
 
 type: application
 
-version: 3.3.2-0
+version: 3.3.3-0
