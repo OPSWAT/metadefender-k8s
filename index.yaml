@@ -116,6 +116,16 @@ entries:
     version: 2.2.3
   metadefender_core:
   - apiVersion: v2
+    created: "2024-03-06T12:44:48.403133982Z"
+    description: This is a Helm chart for deploying MetaDefender Core (https://www.opswat.com/products/metadefender/core)
+      in a Kubernetes cluster
+    digest: d9370cf926090a4948d44caf0e9c6b9f6d462adfbade6c08b066366417740e7d
+    name: metadefender_core
+    type: application
+    urls:
+    - https://github.com/OPSWAT/metadefender-k8s/releases/download/metadefender_core-5.8.0/metadefender_core-5.8.0.tgz
+    version: 5.8.0
+  - apiVersion: v2
     appVersion: 5.8.0
     created: "2024-03-06T12:40:18.145516743Z"
     description: This is a Helm chart for deploying MetaDefender Core (https://www.opswat.com/products/metadefender/core)
@@ -264,4 +274,4 @@ entries:
     urls:
     - https://github.com/OPSWAT/metadefender-k8s/releases/download/metadefender_icap_server-4.13.0/metadefender_icap_server-4.13.0.tgz
     version: 4.13.0
-generated: "2024-03-06T12:40:18.145573248Z"
+generated: "2024-03-06T12:44:48.403214832Z"
