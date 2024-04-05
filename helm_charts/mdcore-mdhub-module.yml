@@ -22,6 +22,31 @@ CERT: |                           # Certificate contents (as text) for the MD Na
 ENABLED_MODULES: "mdhub"          # Enabling the MD Hub module will configure and start the redis, rabbitmq, md hub and md nas pods
 
 core_components:
+  md-core:
+    extraVolumes:
+      waitForServicesScript:
+        name: wait-for-hub-services
+        configMap:
+          name:  wait-for-hub-services
+          defaultMode: 0777
+    initContainers:
+      - name: check-db-ready
+        image: opswat/metadefendercore-debian:5.9.0
+        imagePullPolicy: IfNotPresent
+        envFrom:
+          - configMapRef:
+              name: mdcore-env
+        command: ['sh', '-c', 
+          'until pg_isready -h $DB_HOST -p $DB_PORT; 
+          do echo waiting for database; sleep 2; done;']
+      - name: wait-for-hub-services
+        image: opswat/metadefendercore-debian:5.9.0
+        imagePullPolicy: IfNotPresent
+        command: [ '/wait-for-hub-services.sh' ]
+        volumeMounts:
+          - name:  wait-for-hub-services
+            mountPath: /wait-for-hub-services.sh
+            subPath: wait-for-hub-services.sh
   md-hub:
     ports:
       - port: 8889

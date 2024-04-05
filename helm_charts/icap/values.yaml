@@ -27,13 +27,19 @@ mdicapsrv_license_key: <SET_LICENSE_KEY_HERE>    # A valid license key, **this v
 ## - if the "mdicapsrv-postgres-cred" secret exists, the values from the secret are used as credentials
 db_user: postgres                      # PostgreSQL database username 
 db_password: postgres                  # PostgreSQL database password, if not set it will be randomly generated
-
+# Support customize the database name. Default is `metadefender_icapsrv`
+db_name: metadefender_icapsrv
+# Support customize privavte user, if not set it will be randomly generated as prefix usr_***
+# mdicapsrv_private_user: postgres
+# mdicapsrv_private_password: postgres
 ## Integration OLMS
+# Required environment variables when enabled set is true: olms_host_url, olms_token, olms_rest_port, olms_socket_port
 olms:
   enabled: false
   olms_host_url: "olms"
-  olms_rest_port: 8040
-  olms_socket_port: 3316 # 3316 is the port default of the socket. If you enabled socket secure connection please change it to 13316
+  olms_token: ""
+  olms_rest_port: ""
+  olms_socket_port: ""
   olms_rule: "Default_Rule"
   olms_comment: ""
 
@@ -114,7 +120,7 @@ icap_components:
   # Init container to check database system is ready to accept connections
     initContainers:
       - name: check-db-ready
-        image: postgres:12.14
+        image: postgres:12.18
         envFrom:
           - configMapRef:
               name: mdicapsrv-env
@@ -130,7 +136,7 @@ icap_components:
             cpu: "100m"       # Maximum cpu limit
     name: md-icapsrv
     # Overrides the default docker image for the MD ICAP Server service, this value can be changed if you want to set a different version of MD ICAP Server
-    image: opswat/metadefendericapsrv-debian:5.4.0
+    image: opswat/metadefendericapsrv-debian:5.5.0
     # Warning: When to use this feature!
     # Sets the number of replicas if you want to have multiple MD ICAP Server instances
     replicas: 1
@@ -169,6 +175,18 @@ icap_components:
           secretKeyRef:
             name: mdicapsrv-postgres-cred
             key: password
+      - name: LICENSING_CLEANUP
+        value: "true"
+      - name: MY_POD_NAME
+        valueFrom:
+          fieldRef:
+            fieldPath: metadata.name
+      - name: MY_POD_NAMESPACE
+        valueFrom:
+          fieldRef:
+            fieldPath: metadata.namespace
+    service_account_name: mdicapsrv-service-account
+    custom_secret: mdicap-licensing
     ## Support set data retention
     data_retention:
       config_history: 168
@@ -176,8 +194,7 @@ icap_components:
     import_configuration:
       enabled: false
       targets: 
-        - schema
-        - servers
+        - settings
       ## Support password to encrypt/decrypt exported JSON
       importConfigMap: mdicapsrv-import-configuration
       importConfigPath: /opt/opswat
@@ -270,58 +287,7 @@ icap_components:
       type: RollingUpdate
       rollingUpdate:
         maxSurge: 0
-    sidecars:                  # Configuration for the activation-manager sidecar
-      - name: activation-manager
-        image: alpine
-        resources:
-          requests:
-            memory: "128Mi"    # Minimum reserved memory
-            cpu: "100m"        # Minimum reserved cpu
-          limits:              
-            memory: "128Mi"    # Maximum memory limit
-            cpu: "100m"        # Maximum cpu limit
-        envFrom:
-          - configMapRef:
-              name: mdicapsrv-env
-        env:
-          - name: APIKEY
-            valueFrom:
-              secretKeyRef:
-                name: mdicapsrv-api-key
-                key: value
-          - name: LICENSE_KEY
-            valueFrom:
-              secretKeyRef:
-                name: mdicapsrv-license-key
-                key: value
-        command: ["/bin/sh", "-c"]
-        args:
-          - | 
-            apk add curl jq openssl
-            stop() {
-              echo 'Deactivating using the MD ICAP Server API'
-              curl -H "apikey: $APIKEY" -X POST "https://localhost:$REST_PORT/admin/license/deactivation"
-              echo 'Deactivating using activation server API'
-              curl -X GET "https://$ACTIVATION_SERVER/deactivation?key=$LICENSE_KEY&deployment=$DEPLOYMENT"
-              exit 0
-            }
-            trap stop SIGTERM SIGINT SIGQUIT
 
-            until [ -n $DEPLOYMENT ] && [ $DEPLOYMENT != null ]; do
-              if openssl s_client -connect $MD_BASE_URL:$REST_PORT < /dev/null &> /dev/null; then
-                export PROTOCOL="https"
-              else
-                export PROTOCOL="http"
-              fi
-              echo 'Checking...'
-              export DEPLOYMENT=$(curl --insecure --silent -H "apikey: $APIKEY" "$PROTOCOL://localhost:$REST_PORT/admin/license" | jq -r ".deployment")
-              echo "Deployment ID: $DEPLOYMENT"
-              sleep 1
-            done
-            echo "Waiting for termination signal..."
-            while true; do sleep 1; done
-            echo "MD ICAP Server pod finished, exiting"
-            exit 0
 # nodeSelector is the simplest recommended form of node selection constraint. 
 # You can add the nodeSelector field to your Pod specification and specify the node labels you want the target node to have.
 # Kubernetes only schedules the Pod onto nodes that have each of the labels you specify.

@@ -33,6 +33,7 @@ spec:
           {{- toYaml $component.extra_labels | nindent 8 }}
         {{- end }}
     spec:
+      serviceAccountName: {{ .Values.icap_components.md_icapsrv.service_account_name }}
       {{- if $.Values.nodeSelector }}
       nodeSelector:
         {{- toYaml $.Values.nodeSelector | nindent 8 }}

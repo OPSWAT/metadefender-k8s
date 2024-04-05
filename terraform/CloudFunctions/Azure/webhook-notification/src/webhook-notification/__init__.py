@@ -12,6 +12,6 @@ def main(event: func.EventGridEvent):
     name = "/".join(tolist[3:])
     for key, value in list(data.items()):
         if key == "url":
-            data.update({'Name': name})
+            data.update({'name': name})
     logging.info('Python EventGrid trigger processed an event: %s', name)
     requests.post(os.getenv('APIENDPOINT', ""), headers={'ApiKey':os.getenv('APIKEY', "")}, json ={'Metadata': json.dumps(data), 'storageClientId': os.getenv('STORAGECLIENTID', "") })

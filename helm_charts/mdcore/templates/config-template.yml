@@ -41,7 +41,17 @@ data:
   user: {{ $postgresUserValue }}
   password: {{ $postgresPasswordValue }}
 
-
+# add config-map for mdcore-import-zip-config
+{{- if and ($.Values.CONFIG_IMPORT_FILE) ($.Values.CONFIG_IMPORT_PASSWORD) }}
+---
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: mdcore-import-zip-config
+data:
+  CONFIG_IMPORT_FILE: {{ .Values.CONFIG_IMPORT_FILE | quote }}
+  CONFIG_IMPORT_PASSWORD: {{ .Values.CONFIG_IMPORT_PASSWORD | quote }}
+{{- end }}
 
 # Generate, set or keep the MD Core credentials
 {{- $corePasswordValue := (randAlphaNum 24) | nospace | b64enc | quote }}
@@ -287,6 +297,10 @@ stringData:
     "dbserver/password": {{ $postgresPasswordValue | replace "\"" "" | b64dec | quote }},
     "user/name": {{ $coreUserValue | replace "\"" "" | b64dec | quote }}, 
     "user/password": {{ $corePasswordValue | replace "\"" "" | b64dec | quote }},
+{{- if and ($.Values.CONFIG_IMPORT_FILE) ($.Values.CONFIG_IMPORT_PASSWORD) }}
+    "config/import": {{ printf "/opt/ometascan/system/export_config/%s" .Values.CONFIG_IMPORT_FILE | quote }},
+    "config/import_password": {{ $.Values.CONFIG_IMPORT_PASSWORD | quote }},
+{{- end }}
 {{- if contains "mdhub" $.Values.ENABLED_MODULES }}
     "cache/host": "{{ (index .Values.core_components "redis").name }}",
     "cache/port": "{{ (index (index .Values.core_components "redis").ports 0).port }}",
