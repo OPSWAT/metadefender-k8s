@@ -39,7 +39,7 @@ mdss-common-environment:
   RABBITMQ_SCANNING_PREFETCH_COUNT: "20"
 
   HTTPS_ACTIVE: "no"
-  BRANCH: "3.3.3"                                   # Sets a custom MDSS branch for testing/preview versions
+  BRANCH: "3.3.4"          # Set MDSS version (image tag)
   # These variables can be changed to reveal debug information in the application
   LOG_LEVEL: "4"
   APP_LOG_LEVEL: "INFORMATION"
@@ -152,6 +152,14 @@ deploy_with_mdss_db: true                 # Enable or disable the local in-clust
 
 # Set to false to not create any volumes or host paths in the deployment, all storage will be ephemeral
 persistance_enabled: true
+
+# Set to true to deploy with HorizontalPodAutoscaling
+
+hpa:
+  enabled: false
+  minReplicas: 2
+  maxReplicas: 3
+  cpuTargetUtilization: 85
 
 # Available storage providers:
 # - minikube-hostpath: Local storage on the current node using the minikube provisioner

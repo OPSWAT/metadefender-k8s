@@ -1,0 +1,65 @@
+CONFIG_IMPORT_FILE: settings_export_package.zip  # config/import_file in IGNITION_JSON
+CONFIG_IMPORT_PASSWORD: <CONFIG_IMPORT_PASSWORD> # config/import_password  in IGNITION_JSON
+
+
+# For using a non-peristent local database uncomment the following variables and change the deploy_with_core_db to false
+#MDCORE_DB_MODE: "1"                 # Database mode
+#MDCORE_DB_TYPE: local              # Database type
+#MDCORE_DB_HOST: localhost       # Hostname / entrypoint of the database, this value should be changed any if using an external database service
+
+# Set to true if the respective database engine should also be deployed
+deploy_with_core_db: true           # Enable or disable the local in-cluster PostgreSQL database
+
+core_components:
+  postgres-core:
+    is_db: true
+#   persistentDir: /var/lib/postgresql/data
+    persistentDir: null
+  md-core:
+    persistentDir: /home/metascan
+    extraVolumeMounts:
+      - name: md-core-store-config
+        mountPath: /opt/ometascan/system/export_config
+    extraVolumes:
+      - nfsShare:
+          name: nfs-store-volume
+          nfs:
+            server: <NFS_SERVER_IP>    # A central NFS server IP to store the configuration zip file
+            path: /
+            readOnly: yes
+      - name: md-core-store-config
+        emptyDir:
+          sizeLimit: 500Mi
+    initContainers:
+      - name: check-db-ready
+        image: opswat/metadefendercore-debian:5.9.0
+        imagePullPolicy: IfNotPresent
+        envFrom:
+          - configMapRef:
+              name: mdcore-env
+        command: [ 'sh', '-c',
+          'until pg_isready -h $DB_HOST -p $DB_PORT; 
+          do echo waiting for database; sleep 2; done;' ]
+      - name: copy-config-zip-file
+        image: opswat/metadefendercore-debian:5.9.0
+        imagePullPolicy: IfNotPresent
+        envFrom:
+          - configMapRef:
+              name: mdcore-import-zip-config
+        command:
+          - /bin/bash
+          - -exc
+          - |
+            cp -f /nfs-store-volume/${CONFIG_IMPORT_FILE} /opt/ometascan/system/export_config/${CONFIG_IMPORT_FILE}
+            ls -la /opt/ometascan/system/export_config
+        volumeMounts:
+          - name: nfs-store-volume
+            mountPath: /nfs-store-volume
+          - name: md-core-store-config
+            mountPath: /opt/ometascan/system/export_config
+      - name: md-core-set-permission
+        image: busybox:latest
+        command: [ "sh","-c","chmod 777 /home/metascan" ]
+        volumeMounts:
+          - name: md-core
+            mountPath: /home/metascan

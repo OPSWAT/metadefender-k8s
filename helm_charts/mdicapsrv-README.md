@@ -44,12 +44,13 @@ The following table lists the configurable parameters of the Metadefender ICAP c
 | `mdicapsrv_license_key` | A valid license key, **this value is mandatory** | `"<SET_LICENSE_KEY_HERE>"` |
 | `db_user` | PostgreSQL database username  | `"postgres"` |
 | `db_password` | PostgreSQL database password, if not set it will be randomly generated | `"postgres"` |
-| `olms.enabled` | Enable active license with the On-Prem License Manager Server | `"false"` |
-| `olms.olms_host_url` | URL to On-Prem License Manager Server | `"olms.<name-space>"` |
-| `olms.olms_rest_port` | Default REST port for the On-Prem License Manager Server | `"8040"` |
-| `olms.olms_socket_port` | Default Socket port for the On-Prem License Manager Server | `"3316"` |
-| `olms.olms_rule` | Default rule for active license on the On-Prem License Manager Server | `"Default_Rule"` |
-| `olms.olms_comment` | Set the comment for the On-Prem License Manager Server | `""` |
+| `olms.enabled` | Enable active license with the Opswat License Manager Server | `"false"` |
+| `olms.olms_host_url` | URL to Opswat License Manager Server | `"olms.<name-space>"` |
+| `olms.olms_token` | URL to Opswat License Manager Server | `"olms.<name-space>"` |
+| `olms.olms_rest_port` | Default REST port for the Opswat License Manager Server | `"8040"` |
+| `olms.olms_socket_port` | Default Socket port for the Opswat License Manager Server | `"3316"` |
+| `olms.olms_rule` | Default rule for active license on the Opswat License Manager Server | `"Default_Rule"` |
+| `olms.olms_comment` | Set the comment for the Opswat License Manager Server | `""` |
 | `icap_ingress.host` | Hostname for the publicly accessible ingress, the `<APP_NAME>` string will be replaced with the `app_name` value | `"<APP_NAME>-mdicapsrv.k8s"` |
 | `icap_ingress.service` | Service name where the ingress should route to, this should be left unchanged | `"md-icapsrv"` |
 | `icap_ingress.rest_port` | Port where the ingress should route to | `8048` |
@@ -79,7 +80,7 @@ The following table lists the configurable parameters of the Metadefender ICAP c
 | `icap_components.md_icapsrv.data_retention.config_history` | Set the time of the data retention config history | `"168"` |
 | `icap_components.md_icapsrv.data_retention.processing_history` | Set the time of the data retention processing history | `"168"` |
 | `icap_components.md_icapsrv.import_configuration.enabled` | Enable import config from file. <br> **Notes:** The mdicapsrv-import-configuration ConfigMap will create if you put the import config file on the `files/<icap_components.md_icapsrv.import_configuration.importConfigMapSubPath>` when install chart.| `"false"` |
-| `icap_components.md_icapsrv.import_configuration.targets` | List of import target <ul><li>`all` : Import all target</li><li>`schema` : Configuration for Security rules</li><li>`servers` : Configuration for Server profiles</li><li>`global` : Configuration for Global setting</li><li>`history` : Configuration for ICAP history</li><li>`auditlog` : Configuration for Config history</li><li>`session` : Configuration for Security -> Session</li><li>`password-policy` : Configuration for Password policy</li><li>`certs` : Configuration for Certificates. **Notes: Make sure the path in the config file is valid in the container**</li><li>`ssl` : Configuration for Security. It is used to enable/disable HTTPS/ICAPS</li><li>`user-management` : Configuration for User management</li><li>`email` : Configuration for Email Server</li><li>`nginxsupport` : Configuration for NGINX Communication</li></ul> **Note:** The `all`, `user-management` target will override HTTPS_CERT_PATH, ICAPS_CERT_PATH, MD_USER, MD_PWD, MD_EMAIL only use it if you know what are you doing. e.g: "[schema, servers]" | `"[schema, servers]"` |
+| `icap_components.md_icapsrv.import_configuration.targets` | List of import target <ul><li>`all`: Importall configuration, including auditlog, email, filemod, global, history, nginx, password-policy, schema, servers, session, and user-management.</li><li>`user`: Import configuration, including user-management</li><li>`settings`: Import configuration, including auditlog, email, filemod, global, history, nginx, password-policy, schema, servers, and session</li></ul> **Note:** The `all`, `user` target will override HTTPS_CERT_PATH, ICAPS_CERT_PATH, MD_USER, MD_PWD, MD_EMAIL only use it if you know what are you doing. |
 | `icap_components.md_icapsrv.import_configuration.importConfigMap` | The name of the ConfigMap contains import config file <br> (This can export from [Import/Export configuration](https://docs.opswat.com/mdicap/operating/import-export-configuration)) | `"mdicapsrv-import-configuration"` |
 | `icap_components.md_icapsrv.import_configuration.importConfigPath` |  | `"/opt/opswat"` |
 | `icap_components.md_icapsrv.import_configuration.importConfigMapSubPath` | The key in the ConfigMap has the value containing the import config file | `"settings_export_package.zip"` |
@@ -131,7 +132,6 @@ The following table lists the configurable parameters of the Metadefender ICAP c
 | `icap_components.md_icapsrv.livenessProbe.failureThreshold` | The trick is to set up a startup probe with the same command, HTTP or TCP check, with a failureThreshold * periodSeconds long enough to cover the worse case startup time | `3` |
 | `icap_components.md_icapsrv.strategy.type` | Rolling updates allow Deployments' update to take place with zero downtime by incrementally updating Pods instances with new ones | `"RollingUpdate"` |
 | `icap_components.md_icapsrv.strategy.rollingUpdate.maxSurge` | The field is an optional field that specifies the maximum number of Pods that can be created over the desired number of Pods | `0` |
-| `icap_components.md_icapsrv.sidecars` | Configuration for the activation-manager sidecar | `[{"name": "activation-manager", "image": "alpine", "envFrom": [{"configMapRef": {"name": "mdicapsrv-env"}}], "env": [{"name": "APIKEY", "valueFrom": {"secretKeyRef": {"name": "mdicapsrv-api-key", "key": "value"}}}, {"name": "LICENSE_KEY", "valueFrom": {"secretKeyRef": {"name": "mdicapsrv-license-key", "key": "value"}}}], "command": ["/bin/sh", "-c"], "args": ["apk add curl jq\nstop() {\n  echo 'Deactivating using the MD ICAP Server API'\n  curl -H \"apikey: $APIKEY\" -X POST \"https://localhost:$REST_PORT/admin/license/deactivation\"\n  echo 'Deactivating using activation server API'\n  curl -X GET \"https://$ACTIVATION_SERVER/deactivation?key=$LICENSE_KEY&deployment=$DEPLOYMENT\"\n  exit 0\n}\ntrap stop SIGTERM SIGINT SIGQUIT\n\nuntil [ -n $DEPLOYMENT ] && [ $DEPLOYMENT != null ]; do\n    echo 'Checking...'\n    export DEPLOYMENT=$(curl --silent -H \"apikey: $APIKEY\" \"http://localhost:$REST_PORT/admin/license\" | jq -r \".deployment\")\n    echo \"Deployment ID: $DEPLOYMENT\"\n    sleep 1\ndone\necho \"Waiting for termination signal...\"\nwhile true; do sleep 1; done\necho \"MD ICAP Server pod finished, exiting\"\nexit 0\n"]}]` |
 | `nodeSelector` | `nodeSelector` is the simplest recommended form of node selection constraint | `{}` |
 | `autoscaling.enabled` | Enable feature HPA (Horizontal Pod Autoscaler) for MD ICAP Server | `false` |
 | `autoscaling.minReplicas` | This field indicates the number minimum of the pods | `1` |
@@ -144,6 +144,10 @@ The following table lists the configurable parameters of the Metadefender ICAP c
 - To have a file "mdicapsrv-config.json" correctly, please install a MD ICAP Server, do configuration setting then use export feature to get the json config file.
 - Please specific value of the secret template file for enable HTTPS, ICAPS or NGINXs. Need to mapping the key of the secret HTTPS, ICAPS and NGINXS with `*.certSecretSubPath` and `*.certKeySecretSubPath`
 ## Release note
+### v5.5.0
+- Support customize database name through variable `db_name` in values.yaml or environment variable: `MDICAPSRV_DB_NAME`
+- Support active license with Opswat License Manager Server added config for Opswat License Manager Server via: `olms.olms_server` `olms.olms_rest_port` `olms.olms_socket_port` `olms.olms_sockets_port` `olms.olms_rule` `olms.olms_token`
+- Support licensing cleanup through configures <ul><li>Environment variable: `LICENSING_CLEANUP`</li><li>Service Account Name: `icap_components.md-icapsrv.service_account_name`</li><li>Secret name to stored: `icap_components.md-icapsrv.custom_secret` </li></ul>
 ### v5.4.0
 - Support Transfer-Encoding for HTTP parser
 - Enhance ICAP collect support package
@@ -162,7 +166,7 @@ The following table lists the configurable parameters of the Metadefender ICAP c
 - Feature upload certificates
 - Remove import targets: certs, ssl
 - Added annotation for ingress when enable auto scaling with HPA
-- Support active license with On-Prem License Manager Server added config for On-Prem License Manager Server via: `olms_server` `olms_rest_port` `olms_socket_port` `olms_sockets_port` `olms_rule`
+- Support active license with Opswat License Manager Server added config for Opswat License Manager Server via: `olms_server` `olms_rest_port` `olms_socket_port` `olms_sockets_port` `olms_rule`
 - Support Postgres Server added config for database server via: `db_mode` `db_type` `db_host` `db_port`
 - Added configurations for trust certificate server from the secrets via: `trustCertificate.certSecret` `trustCertificate.certSecretSubPath`
 - Support HPA on Kubernetes via: `autoscaling` (Notice: Require installed metrics server before enable HPA https://github.com/kubernetes-sigs/metrics-server)

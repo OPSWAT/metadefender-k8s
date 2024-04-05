@@ -26,9 +26,11 @@ data:
   DB_HOST: {{ .Values.icap_components.md_icapsrv.database.db_host | quote }}
   DB_PORT: {{ .Values.icap_components.md_icapsrv.database.db_port | quote }}
   ACCEPT_EULA: {{ .Values.ACCEPT_EULA | quote }}
+  MDICAPSRV_DB_NAME: {{ .Values.db_name | quote }}
 {{- if .Values.olms.enabled }}
 #Integration OLMS
   OLMS_HOST_URL: {{ .Values.olms.olms_host_url | quote }}
+  OLMS_TOKEN: {{ .Values.olms.olms_token | quote }}
   OLMS_REST_PORT: {{ .Values.olms.olms_rest_port | quote }}
   OLMS_SOCKET_PORT: {{ .Values.olms.olms_socket_port | quote }}
   OLMS_RULE: {{ .Values.olms.olms_rule | quote }}
@@ -41,6 +43,10 @@ data:
 {{- end }}
   ENABLE_HEALTHCHECK: {{ .Values.healthcheck.enabled | quote }}
   LOG_LEVEL: info
+  CUSTOM_SECRET: {{ .Values.icap_components.md_icapsrv.custom_secret | quote }}
+# Support customize privavte user
+  IGNITION_JSON: |
+    {"dbserver/private_username":"{{ .Values.mdicapsrv_private_user }}","dbserver/private_password":"{{ .Values.mdicapsrv_private_password }}"}
 # # Uncomment for make ConfigMap for import configuration
 ---
 {{- if .Values.icap_components.md_icapsrv.import_configuration.enabled }}

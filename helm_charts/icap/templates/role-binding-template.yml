@@ -1,0 +1,12 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: mdicapsrv-worker-global
+subjects:
+  - kind: ServiceAccount
+    name: {{ .Values.icap_components.md_icapsrv.service_account_name }}
+    namespace: {{ .Release.Namespace }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: mdicapsrv-worker-role

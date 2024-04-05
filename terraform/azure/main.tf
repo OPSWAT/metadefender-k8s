@@ -2,7 +2,7 @@ terraform {
   required_providers {
     azurerm = {
       source  = "hashicorp/azurerm"
-      version = "=2.99.0"
+      version = "3.94.0"
     }
   }
 }
@@ -113,17 +113,16 @@ resource "azurerm_kubernetes_cluster" "k8s" {
   }
 
   network_profile {
-    load_balancer_sku = "Standard"
+    load_balancer_sku = "standard"
     network_plugin    = "kubenet"
   }
   
 
-  addon_profile {
-    oms_agent {
-      enabled                    = true
-      log_analytics_workspace_id = azurerm_log_analytics_workspace.md.id
-    }
+
+  oms_agent {
+    log_analytics_workspace_id = azurerm_log_analytics_workspace.md.id
   }
+
 
   tags = {
     Environment = "Development"
