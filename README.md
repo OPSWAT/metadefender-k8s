@@ -68,24 +68,6 @@ To get a local copy up and running follow these simple example steps.
  For provision in AWS follow this [doc](https://docs.opswat.com/mdcore/cloud-deployment/metadefender-core-provisioned-in-aws-eks)
  For install MD Core in an already created cluster follow this [doc](https://docs.opswat.com/mdcore/kubernetes-configuration/metadefender-core-in-your-already-created-k8s)
 
-### Release Notes September
-
-> *December 22, 2023* - *RELEASE_24*
-> 
-> ##### New
-> 
-> - Scan Queue size disabled by default on health check
-> - Core support LOG_PATH for log persistence of the pods
-> - Troubleshooting script improved for better support
-> - MetaDefender Core 5.8.0 
-> 
-> ##### Fixed
-> 
-> - RDS tier changed to gp3 for better performance
-> - Hostpath prefix changed to be based on namespace in all the supplementary yaml files
-> - Minimum nodes for AWS EKS changed to 2
-> - Minor fixes metadefenderk8s.sh script
-> 
 
 <p align="right">(<a href="#top">back to top</a>)</p>
 

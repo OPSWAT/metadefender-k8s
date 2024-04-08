@@ -21,13 +21,14 @@ core_components:
       - name: md-core-store-config
         mountPath: /opt/ometascan/system/export_config
     extraVolumes:
-      - nfsShare:
-          name: nfs-store-volume
-          nfs:
-            server: <NFS_SERVER_IP>    # A central NFS server IP to store the configuration zip file
-            path: /
-            readOnly: yes
-      - name: md-core-store-config
+      nfsShare:
+        name: nfs-store-volume
+        nfs:
+          server: <NFS_SERVER_IP>    # A central NFS server IP to store the configuration zip file
+          path: /
+          readOnly: yes
+      configStore:
+        name: md-core-store-config
         emptyDir:
           sizeLimit: 500Mi
     initContainers:
