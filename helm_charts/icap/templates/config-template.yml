@@ -47,6 +47,12 @@ data:
 # Support customize privavte user
   IGNITION_JSON: |
     {"dbserver/private_username":"{{ .Values.mdicapsrv_private_user }}","dbserver/private_password":"{{ .Values.mdicapsrv_private_password }}"}
+# Support proxy for ICAP
+{{- if .Values.proxy.enabled }}
+  http_proxy: "{{ .Values.proxy.http_proxy }}"
+  https_proxy: "{{ .Values.proxy.https_proxy }}"
+  NO_PROXY: "{{ .Values.proxy.no_proxy }}"
+{{- end }}
 # # Uncomment for make ConfigMap for import configuration
 ---
 {{- if .Values.icap_components.md_icapsrv.import_configuration.enabled }}

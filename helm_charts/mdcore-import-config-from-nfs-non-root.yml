@@ -1,5 +1,6 @@
-CONFIG_IMPORT_FILE: settings_export_package.zip  # config/import_file in IGNITION_JSON
+CONFIG_IMPORT_FILE: settings_export_package.zip  # config/import in IGNITION_JSON
 CONFIG_IMPORT_PASSWORD: <CONFIG_IMPORT_PASSWORD> # config/import_password  in IGNITION_JSON
+IMPORT_FORCE_UPDATE_YARA: true # config/import_force_update_yara  in IGNITION_JSON
 
 
 # For using a non-peristent local database uncomment the following variables and change the deploy_with_core_db to false

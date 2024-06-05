@@ -70,8 +70,10 @@ spec:
           securityContext:
             {{- toYaml $component.securityContext | nindent 12 }}
           {{- end }}
-          {{- if (or $component.mountConfig (and $component.persistentDir $.Values.persistance_enabled) $component.extraVolumeMounts)}}
           volumeMounts:
+            - name: appsettings
+              mountPath: /app/appsettings.json
+              subPath: appsettings.json
             {{- if $component.mountConfig }}
             - name: {{ $component.mountConfig.configName }}
               mountPath: {{ $component.mountConfig.mountPath }}
@@ -87,7 +89,6 @@ spec:
             {{- if $component.extraVolumeMounts }}
               {{- toYaml $component.extraVolumeMounts | nindent 12 }}
             {{- end }}
-          {{- end }}
           {{- if $component.resources }}
           resources:
             {{- toYaml $component.resources | nindent 12 }}
@@ -113,8 +114,10 @@ spec:
       {{- if $component.customPodDefinitions }}
         {{- toYaml $component.customPodDefinitions | nindent 6 }}
       {{- end }}
-      {{- if (or $component.mountConfig (and $component.persistentDir $.Values.persistance_enabled) $component.extraVolumes)}}
       volumes:
+        - name: appsettings
+          configMap:
+            name: appsettings
         {{- if $component.mountConfig }}
         - name: {{ $component.mountConfig.configName }}
           configMap:
@@ -138,7 +141,6 @@ spec:
             {{- toYaml $volume | nindent 10 }}
         {{- end }}
         {{- end }}
-      {{- end }}
       hostAliases:
         {{- toYaml $.Values.mdssHostAliases | nindent 8 }}
       

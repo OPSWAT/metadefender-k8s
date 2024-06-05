@@ -51,6 +51,10 @@ The following table lists the configurable parameters of the Metadefender ICAP c
 | `olms.olms_socket_port` | Default Socket port for the Opswat License Manager Server | `"3316"` |
 | `olms.olms_rule` | Default rule for active license on the Opswat License Manager Server | `"Default_Rule"` |
 | `olms.olms_comment` | Set the comment for the Opswat License Manager Server | `""` |
+| `proxy.enabled` | Set the value to `true` to use the proxy feature | `"false"` |
+| `proxy.http_proxy` | This environment variable defines the proxy server to be used for HTTP requests | `""` |
+| `proxy.https_proxy` | This environment variable specifies the proxy server for HTTPS requests | `""` |
+| `proxy.no_proxy` | The no_proxy environment variable specifies a comma-separated list of domain names or IP addresses that should be excluded from proxying | `"localhost"` |
 | `icap_ingress.host` | Hostname for the publicly accessible ingress, the `<APP_NAME>` string will be replaced with the `app_name` value | `"<APP_NAME>-mdicapsrv.k8s"` |
 | `icap_ingress.service` | Service name where the ingress should route to, this should be left unchanged | `"md-icapsrv"` |
 | `icap_ingress.rest_port` | Port where the ingress should route to | `8048` |
@@ -144,6 +148,8 @@ The following table lists the configurable parameters of the Metadefender ICAP c
 - To have a file "mdicapsrv-config.json" correctly, please install a MD ICAP Server, do configuration setting then use export feature to get the json config file.
 - Please specific value of the secret template file for enable HTTPS, ICAPS or NGINXs. Need to mapping the key of the secret HTTPS, ICAPS and NGINXS with `*.certSecretSubPath` and `*.certKeySecretSubPath`
 ## Release note
+### v5.5.1
+- Support proxy through environment: `proxy.enabled` `proxy.http_proxy` `proxy.https_proxy` `proxy.no_proxy` 
 ### v5.5.0
 - Support customize database name through variable `db_name` in values.yaml or environment variable: `MDICAPSRV_DB_NAME`
 - Support active license with Opswat License Manager Server added config for Opswat License Manager Server via: `olms.olms_server` `olms.olms_rest_port` `olms.olms_socket_port` `olms.olms_sockets_port` `olms.olms_rule` `olms.olms_token`
