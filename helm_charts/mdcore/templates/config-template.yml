@@ -300,6 +300,9 @@ stringData:
 {{- if and ($.Values.CONFIG_IMPORT_FILE) ($.Values.CONFIG_IMPORT_PASSWORD) }}
     "config/import": {{ printf "/opt/ometascan/system/export_config/%s" .Values.CONFIG_IMPORT_FILE | quote }},
     "config/import_password": {{ $.Values.CONFIG_IMPORT_PASSWORD | quote }},
+    {{- if $.Values.IMPORT_FORCE_UPDATE_YARA }}
+    "config/import_force_update_yara": {{ $.Values.IMPORT_FORCE_UPDATE_YARA | quote }},
+    {{- end }}
 {{- end }}
 {{- if contains "mdhub" $.Values.ENABLED_MODULES }}
     "cache/host": "{{ (index .Values.core_components "redis").name }}",
@@ -342,5 +345,4 @@ data:
     until nc -vz {{ (index .Values.core_components "md-nas").name }} {{ (index (index .Values.core_components "md-nas").ports 0).port }}; do echo "Waiting for md-nas service"; sleep 2; done;
     {{- else}}
     echo "MD HUB not loaded, skipping..."
-
     {{- end }}

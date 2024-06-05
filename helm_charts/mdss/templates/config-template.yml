@@ -181,3 +181,45 @@ data:
         {consumer_timeout, undefined}
       ]}
     ].
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: appsettings
+data:
+  appsettings.json: |
+    {
+      "Serilog": {
+        "Using": [],
+        "MinimumLevel": {
+          "Default": "Information",
+          "Override": {
+            "Microsoft": "Warning",
+            "System": "Warning",
+            "Microsoft.Hosting.Lifetime": "Warning"
+          }
+        },
+        "Enrich": [ "FromLogContext", "WithMachineName", "WithProcessId", "WithProcessName", "WithThreadId" ],
+        "WriteTo": [
+          {
+            "Name": "File",
+            "Args": {
+              "buffered": false,
+              "fileSizeLimitBytes": 500000000,
+              "outputTemplate": "[{Timestamp:u}] [{Level}] {Namespace}: {Message:lj}{NewLine}{Exception}",
+              "path": "logs/log.txt",
+              "retainedFileCountLimit": "10",
+              "rollingInterval": "Day",
+              "rollOnFileSizeLimit": true
+            }
+          },
+          {
+            "Name": "Console",
+            "Args": {
+              "outputTemplate": "[{Timestamp:u}] [{Level}] {Namespace}: {Message:lj}{NewLine}{Exception}"
+            }
+          }
+        ]
+      }
+    }
