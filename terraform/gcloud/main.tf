@@ -2,7 +2,7 @@ terraform {
   required_providers {
     google = {
       source = "hashicorp/google"
-      version = "4.44.1"
+      version = "5.19.0"
     }
   }
 }
@@ -16,21 +16,34 @@ provider "google" {
 
 # MDK8S VPC
 resource "google_compute_network" "vpc_network" {
-  name = "mdk8s-${var.project_id}-vpc"
+  name = "mdk8s-${var.cluster_name}-vpc"
   auto_create_subnetworks = "false"
 }
 
 # Subnet
 resource "google_compute_subnetwork" "subnet" {
-  name          = "mdk8s-${var.project_id}-subnet"
+  name          = "mdk8s-${var.cluster_name}-subnet"
   region        = var.region
   network       = google_compute_network.vpc_network.name
   ip_cidr_range = "10.10.0.0/24"
 }
 
+# GKE cluster AutoPilot
+resource "google_container_cluster" "primary-autopilot" {
+  count    = var.AUTOPILOT_GKE ? 1 : 0
+  name     = "mdk8s-${var.cluster_name}-gke"
+  location = var.cluster_location
+
+  network    = google_compute_network.vpc_network.name
+  subnetwork = google_compute_subnetwork.subnet.name
+
+  enable_autopilot = true
+}
+
 # GKE cluster
 resource "google_container_cluster" "primary" {
-  name     = "mdk8s-${var.project_id}-gke"
+  count    = var.AUTOPILOT_GKE ? 0 : 1
+  name     = "mdk8s-${var.cluster_name}-gke"
   location = var.cluster_location
   
   remove_default_node_pool = true
@@ -42,9 +55,10 @@ resource "google_container_cluster" "primary" {
 
 # Separately Managed Node Pool
 resource "google_container_node_pool" "primary_nodes" {
-  name       = "${google_container_cluster.primary.name}-node-pool"
+  count      = var.AUTOPILOT_GKE ? 0 : 1
+  name       = "${google_container_cluster.primary[0].name}-node-pool"
   location   = var.cluster_location
-  cluster    = google_container_cluster.primary.name
+  cluster    = google_container_cluster.primary[0].name
   node_count = var.node_count
 
   node_config {
@@ -58,7 +72,7 @@ resource "google_container_node_pool" "primary_nodes" {
 
     preemptible  = true
     machine_type = var.machine_type
-    tags         = ["gke-node", "${var.project_id}-gke"]
+    tags         = ["gke-node", "${var.cluster_name}-gke"]
   }
 }
 
