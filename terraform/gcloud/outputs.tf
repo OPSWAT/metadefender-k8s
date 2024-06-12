@@ -4,7 +4,7 @@ output "region" {
 }
 
 output "cluster_location" {
-  value       = var.cluster_location
+  value       = var.region
   description = "Cluster region or zone"
 }
 
@@ -14,14 +14,15 @@ output "project_id" {
 }
 
 output "kubernetes_cluster_name" {
-  value       = google_container_cluster.primary.name
+  value       = var.AUTOPILOT_GKE ? google_container_cluster.primary-autopilot[0].name : google_container_cluster.primary[0].name
   description = "GKE Cluster Name"
 }
 
 output "kubernetes_cluster_host" {
-  value       = google_container_cluster.primary.endpoint
+  value       = var.AUTOPILOT_GKE ? null : google_container_cluster.primary[0].endpoint
   description = "GKE Cluster Host"
 }
+
 
 output "cloud_sql_db_name" {
   value       = var.deploy_cloud_sql ? google_sql_database_instance.metadefender-db[0].name : null

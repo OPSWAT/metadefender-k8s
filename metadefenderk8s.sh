@@ -23,6 +23,7 @@ db_host=postgres-core
 project_id=""
 externalRabbit_mdss=false
 externalRedis_mdss=false
+externalDB_mdss=false
 db_url_mdss="mongodb://mongodb:27017/MDCS"
 rabbit_URI_mdss="amqp://rabbitmq:5672"
 rabbit_ip_mdss="rabbitmq"
@@ -84,6 +85,7 @@ cloudOptions[azureredismdss]="Azure Cache for Redis"
 cloudOptions[azureregion]="centralus"
 cloudOptions[gcpcluster]="GKE"
 cloudOptions[gcp1]="VMS"
+cloudOptions[gcp2]="Autopilot"
 cloudOptions[gcplb]="Private Load Balancer"
 cloudOptions[gcpdb]="Cloud SQL"
 cloudOptions[gcpdbmdss]="Mongo DB Atlas"
@@ -928,15 +930,20 @@ function provisionGCP() {
   terraform apply \
   -var="gcloud_json_key_path=$GCP_JSON_CREDENTIALS_PATH" \
   -var="deploy_cloud_sql=$externalDB" \
+  -var="cluster_name=$cluster_name" \
   -var="cloud_sql_user=$db_user" \
   -var="cloud_sql_password=$db_password" \
   -var="private_ip_cloud_sql=$privateconnection" \
+  -var="AUTOPILOT_GKE=$serverless" \
   -var="project_id=$project_id"
 
   cluster_name=$(terraform output -raw kubernetes_cluster_name)
   echo $cluster_name
   cluster_location=$(terraform output -raw cluster_location)
   echo $cluster_location
+
+  
+
 
   
   #DB Endpoint
@@ -984,6 +991,8 @@ function provision () {
           echo $GCP_JSON_CREDENTIALS_PATH
           echo "For accesing to the cluster we will use the following public key '~/.ssh/id_rsa.pub'"
           cd terraform/gcloud/
+          ## Ask for K8S cluster type in GCP
+          askCluster
       fi
     else
       echo "To be developed"

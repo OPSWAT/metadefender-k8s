@@ -10,7 +10,7 @@ variable "region" {
 
 variable "cluster_location" {
   description = "GKE cluster location that can be either a region or a specific zone"
-  default = "us-central1-a"
+  default = "us-central1"
 }
 
 variable "deletion_protection" {
@@ -38,6 +38,10 @@ variable "deploy_cloud_sql" {
   description = "Enable the deployment of a Cloud SQL instance for MD Core"
   default = false
 }
+variable "AUTOPILOT_GKE" {
+  description = "Enable the deployment of GKE Autopilot"
+  default = false
+}
 
 variable "private_ip_cloud_sql" {
   description = "Create a private IP address for the Cloud SQL instance (requires the servicenetworking.services.addPeering permission)"
@@ -57,4 +61,8 @@ resource "random_password" "random_pass" {
 variable "cloud_sql_password" {
   description = "Password for the Cloud SQL instance"
   default = null
+}
+
+variable cluster_name {
+    default = "md-k8s"
 }
