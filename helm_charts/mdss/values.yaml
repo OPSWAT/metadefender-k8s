@@ -419,21 +419,16 @@ mdss_components:
         memory: "0.25Gi"
         cpu: "0.100"
 
-  # ======================================= DEBUG MODULE ================================================
-  systemchecks:
-    name: systemchecks
-    module_name: debug
-    image: mdcloudservices_systemchecks
+  usermanagementservice:
+    name: usermanagementservice
     custom_repo: true
-    ports:
-      - port: 443
-      - port: 80
-    mountConfig:
-      configName: systemchecks-nginx-config
-      mountPath: /etc/nginx/conf.d/default.conf
-      subPath: default.conf
+    image: mdcloudservices_usermanagement
     extra_labels:
       aws-type: fargate
+    resources:
+      requests:
+        memory: "0.25Gi"
+        cpu: "0.010"
 
   # ======================================= AMAZONSDK MODULE ================================================
   discoveryamazonsdkservice:
