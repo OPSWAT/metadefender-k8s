@@ -1,5 +1,6 @@
 apiVersion: v1
 entries:
+  MetaDefender_Core:
   - apiVersion: v2
     appVersion: 5.10.0
     created: "2024-06-12T15:58:40.562610929Z"
@@ -22,6 +23,7 @@ entries:
     urls:
     - https://github.com/OPSWAT/metadefender-k8s/releases/download/metadefender_core-0.0.28/metadefender_core-0.0.28.tgz
     version: 0.0.28
+  metadefender_storage_security:
   - apiVersion: v2
     appVersion: 3.4.1
     created: "2024-06-17T15:39:34.377103129Z"
