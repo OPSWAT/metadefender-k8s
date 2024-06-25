@@ -12,13 +12,6 @@ spec:
   - host: {{ .Values.mdss_ingress.host | replace "<APP_NAMESPACE>" .Release.Namespace }}
     http:
       paths:
-        - path: /status
-          pathType: Prefix
-          backend:
-            service:
-              name: {{.Values.mdss_components.systemchecks.name }}
-              port:
-                number: {{ .Values.mdss_ingress.port }}
         - path: /
           pathType: Prefix
           backend:
