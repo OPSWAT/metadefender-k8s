@@ -40,7 +40,35 @@ entries:
     urls:
     - https://github.com/OPSWAT/metadefender-k8s/releases/download/MetaDefender_ICAP_Server-0.0.29/MetaDefender_ICAP_Server-0.0.29.tgz
     version: 0.0.29
+  metadefender_core:
+  - apiVersion: v2
+    appVersion: 5.10.1
+    created: "2024-07-03T15:50:31.536248829Z"
+    description: 'This is a Helm chart for deploying MetaDefender Core (https://www.opswat.com/products/metadefender/core)
+      in a Kubernetes cluster.   Release Notes - MetaDefender Core version 5.10.1
+      - Environment variables to migrate processing history (Pre-steps needed) - Environment
+      variables to enable Licensing Cleanup and examples for Role/Rolebinding - Fixed
+      warning of kubernetes.io/ingress.class annotation for AWS and Azure. Added control
+      flag to still use it for GCP '
+    digest: b50f32ea3933d326f2a04c081f71b3e6229d55363c86c8518c0c87c0d88494c8
+    name: metadefender_core
+    type: application
+    urls:
+    - https://github.com/OPSWAT/metadefender-k8s/releases/download/metadefender_core-0.0.30/metadefender_core-0.0.30.tgz
+    version: 0.0.30
   metadefender_storage_security:
+  - apiVersion: v2
+    appVersion: 3.4.1
+    created: "2024-07-03T15:50:31.748216466Z"
+    description: This is a Helm chart for deploying MetaDefender for Secure Storage
+      (https://www.opswat.com/products/metadefender/storage-security) in a Kubernetes
+      cluster
+    digest: f2ccc1f14c2ac7776d2c339a15091bdb734ba8a91df4913c779033033961851d
+    name: metadefender_storage_security
+    type: application
+    urls:
+    - https://github.com/OPSWAT/metadefender-k8s/releases/download/metadefender_storage_security-0.0.31/metadefender_storage_security-0.0.31.tgz
+    version: 0.0.31
   - apiVersion: v2
     appVersion: 3.4.1
     created: "2024-06-21T12:27:55.835349906Z"
@@ -77,4 +105,4 @@ entries:
     urls:
     - https://github.com/OPSWAT/metadefender-k8s/releases/download/metadefender_storage_security-0.0.28/metadefender_storage_security-0.0.28.tgz
     version: 0.0.28
-generated: "2024-06-21T12:27:55.835369162Z"
+generated: "2024-07-03T15:50:31.748238938Z"
