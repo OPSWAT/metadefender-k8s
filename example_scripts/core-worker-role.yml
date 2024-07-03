@@ -1,0 +1,12 @@
+kind: Role
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  namespace: default
+  name: core-worker-role
+rules:
+- apiGroups: [""] 
+  resources: ["secrets"]
+  verbs: ["create","update","get","list","patch"]
+- apiGroups: [""] 
+  resources: ["pods"]
+  verbs: ["get","list"]
