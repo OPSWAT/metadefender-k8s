@@ -5,7 +5,9 @@ apiVersion: networking.k8s.io/v1
 metadata:
   name: core-ingress
   annotations:
+    {{ if not .Values.core_ingress.spec_className }}
     kubernetes.io/ingress.class: {{ .Values.core_ingress.class }}
+    {{ end }}
     ingress.kubernetes.io/rewrite-target: /
     {{- if .Values.core_ingress.ingress_annotations }}
       {{- toYaml .Values.core_ingress.ingress_annotations | nindent 4 }}
@@ -15,6 +17,9 @@ metadata:
     {{ end }}
 
 spec:
+  {{ if .Values.core_ingress.spec_className }}
+  ingressClassName: {{ .Values.core_ingress.class }}
+  {{ end }}
   {{ if .Values.core_ingress.rules }}
   rules: {{ .Values.core_ingress.rules }}
   {{ else }}

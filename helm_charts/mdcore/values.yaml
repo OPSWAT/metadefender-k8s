@@ -90,7 +90,8 @@ core_ingress:
   service: md-core                  # Service name where the ingress should route to, this should be left unchanged
   port: 8008                        # Port where the ingress should route to
   enabled: false                    # Enable or disable the ingress creation
-  class: nginx                      # Sets the ingress class
+  spec_className: true              # true -> for adding class as spec || false -> for adding class as annotation. false for GKE as it needs to be as annotation.
+  class: ngnix                      # Sets the ingress class (For AWS alb, for GKE gce)
   tls: false                        # Flag for set up tls section in ingress
   secret: mdcore-tls                # SecretName of the tls secret created to be used for ingress
   ingress_annotations: 
@@ -121,6 +122,12 @@ env:                                                            # Set additional
   PROXY_USER: ""            # (optional) Username for proxy authentication
   PROXY_PWD: ""             # (optional) Password for proxy authentication
   PROXY_EXCLUSION: ""       # Not use the proxy server for the addresses starting with the following entries
+  # Licensing CleanUp
+  LICENSING_CLEANUP: "false"
+  # Upgrade Database Flags
+  MDCORE_UPGRADE_FROM_DB_NAME: "metadefender_core"
+  UPGRADE_DB: "false"
+  MIGRATE_HISTORY: "false"  # Only from version 5.10.1 See Pre-steps in docs.opswat.com 
 
 core_components:
   postgres-core:
@@ -146,7 +153,7 @@ core_components:
 
   md-core:
     name: md-core
-    image: opswat/metadefendercore-debian:5.10.0         # Overrides the default docker image for the MD Core service, this value can be changed if you want to set a different version of MD Core
+    image: opswat/metadefendercore-debian:5.10.1         # Overrides the default docker image for the MD Core service, this value can be changed if you want to set a different version of MD Core
     replicas: 1                                         # Sets the number of replicas if you want to have multiple MD Core instances
     env:
       - name: MD_USER
@@ -163,6 +170,14 @@ core_components:
         valueFrom:
           fieldRef:
             fieldPath: metadata.name
+      - name: MY_POD_NAME
+        valueFrom:
+          fieldRef:
+            fieldPath: metadata.name
+      - name: MY_POD_NAMESPACE
+        valueFrom:
+          fieldRef:
+            fieldPath: metadata.namespace
       - name: APIKEY
         valueFrom:
           secretKeyRef:
@@ -235,7 +250,7 @@ core_components:
         maxSurge: 0
     initContainers:
       - name: check-db-ready
-        image: opswat/metadefendercore-debian:5.10.0
+        image: opswat/metadefendercore-debian:5.10.1 
         imagePullPolicy: IfNotPresent
         envFrom:
           - configMapRef:
@@ -267,7 +282,7 @@ core_components:
           defaultMode: 0777
     initContainers:
       - name: wait-for-hub-services
-        image: opswat/metadefendercore-debian:5.10.0
+        image: opswat/metadefendercore-debian:5.10.1 
         imagePullPolicy: IfNotPresent
         command: [ '/wait-for-hub-services.sh' ]
         volumeMounts:

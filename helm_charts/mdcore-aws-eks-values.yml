@@ -66,6 +66,11 @@ core_components:
 core_ingress:
   host: <APP_NAMESPACE>-mdcore.k8s
   enabled: false
+  spec_className: true
+  ingress_annotations:
+    alb.ingress.kubernetes.io/scheme: internet-facing
+    alb.ingress.kubernetes.io/target-type: ip
+
 
 # enable TLS
 # md-core:
