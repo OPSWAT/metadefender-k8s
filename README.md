@@ -26,13 +26,13 @@
 OPSWAT MetaDefender products are adapting year over year for our customers to get advantage of the new technologies that are coming. With this project you will be able to deploy some of our MetaDefender products to a Kubernetes Cluster. We provide you with some architecture recommendations for the main cloud providers to host the Kubernetes cluster together with an script to provision such recommended architecture. Also we provide you with all the information of the components that will be installed inside the cluster to run our products and a script to install it depending on the different configuration options.
 
 
-Main Metadefender documentation pages:
+Main MetaDefender documentation pages:
 
 * AWS Cloud Deployment Architectures Recommended [Doc](https://docs.opswat.com/mdcore/cloud-deployment/recommended-architectures-in-aws)
 * MetaDefender Core Provisioned in AWS EKS [Doc](https://docs.opswat.com/mdcore/cloud-deployment/eks-cluster-architecture)
 * MetaDefender Core Kubernetes Components [Doc](https://docs.opswat.com/mdcore/kubernetes-configuration/kubernetes-components)
 * MetaDefender Core In Your Already Created Kubernetes Cluster [Doc](https://docs.opswat.com/mdcore/kubernetes-configuration/metadefender-core-in-your-already-created-k8s)
-* MetaDefender for Secure Storage Kubernetes deployment [Doc](https://docs.opswat.com/mdss/installation/kubernetes-deployment)
+* MetaDefender Storage Security Kubernetes deployment [Doc](https://docs.opswat.com/mdss/installation/kubernetes-deployment)
 
 <p align="right">(<a href="#top">back to top</a>)</p>
 
