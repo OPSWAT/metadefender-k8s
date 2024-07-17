@@ -23,7 +23,7 @@
 <!-- ABOUT THE PROJECT -->
 ## About The Project
 
-OPSWAT MetaDefender products are adapting year over year for our customers to get advantage of the new technologies that are coming. With this project you will be able to deploy some of our MetaDefender products to a Kubernetes Cluster. We provide you with some architecture recommendations for the main cloud providers to host the Kubernetes cluster together with an script to provision such recommended architecture. Also we provide you with all the information of the components that will be installed inside the cluster to run our products and a script to install it depending on the different configuration options.
+OPSWAT MetaDefender products are adapting year over year for our customers to get advantage of the new technologies that are coming. With this project you will be able to deploy some of our MetaDefender products to a Kubernetes Cluster. We provide you with some architecture recommendations for the main cloud providers to host the Kubernetes cluster together with a script to provision such recommended architecture. Also we provide you with all the information of the components that will be installed inside the cluster to run our products and a script to install it depending on the different configuration options.
 
 
 Main MetaDefender documentation pages:
@@ -59,7 +59,7 @@ To get a local copy up and running follow these simple example steps.
 
 ### Installation
 
- OPSWAT has prepared a recommended architecture for having Metadefender products deployed in a Kubernetes Cluster in the main CSP. 
+ OPSWAT has prepared a recommended architecture for having MetaDefender products deployed in a Kubernetes Cluster in the main CSP. 
  Depending on the architecture prefered the installation process is different as each product has its own configuration options. To facilitate the deployment of the product we have created what we call MetaDefender K8S script that will guide you through the different options and configure the enviroment for you. 
 
  There are two modes for using the script provision and install. 
@@ -96,7 +96,7 @@ For running MetaDefender products you will need to set up the license needed for
 
 In case of having any issue with your license please contact [Support](https://www.opswat.com/support)
 
-For other [questions](https://www.opswat.com/contact)
+For other questions: https://www.opswat.com/contact
 
 
 <p align="right">(<a href="#top">back to top</a>)</p>
