@@ -13,7 +13,7 @@
       </ul>
     </li>
     <li><a href="#contributing">Contributing</a></li>
-    <li><a href="#license">License</a></li>
+    <li><a href="#licensing">Licensing</a></li>
     <li><a href="#contact">Contact</a></li>
   </ol>
 </details>
@@ -112,6 +112,6 @@ For other [questions](https://www.opswat.com/contact)
 * Contact US: https://www.opswat.com/contact
 
 MetaDefender Core Documentation: [https://docs.opswat.com/mdcore](https://docs.opswat.com/mdcore)
-MetaDefender for Secure Storage Documentation: [https://docs.opswat.com/mdss](https://docs.opswat.com/mdss)
+MetaDefender Storage Security Documentation: [https://docs.opswat.com/mdss](https://docs.opswat.com/mdss)
 
 <p align="right">(<a href="#top">back to top</a>)</p>
