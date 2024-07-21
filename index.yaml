@@ -131,7 +131,7 @@ entries:
     type: application
     urls:
     - https://github.com/OPSWAT/metadefender-k8s/releases/download/metadefender_for_secure_storage-3.3.2-0/metadefender_for_secure_storage-3.3.2-0.tgz
-    version: 3.3.2-0
+    version: 3.3.2
   - apiVersion: v2
     created: "2024-07-08T14:21:02.134701022Z"
     description: This is a Helm chart for deploying MetaDefender for Secure Storage
