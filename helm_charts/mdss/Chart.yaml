@@ -37,3 +37,4 @@ long_description: |
 type: application
 
 version: 3.3.2-0
+appVersion: 3.3.2
