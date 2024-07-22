@@ -57,6 +57,22 @@ entries:
     - https://github.com/OPSWAT/metadefender-k8s/releases/download/MetaDefender_ICAP_Server-5.4.0/MetaDefender_ICAP_Server-5.4.0.tgz
     version: 5.4.0
   - apiVersion: v2
+    appVersion: 5.3.0
+    created: "2024-07-22T16:47:35.11156508Z"
+    description: This is a Helm chart for deploying MetaDefender ICAP Server (https://www.opswat.com/products/metadefender/icap)
+      in a Kubernetes cluster.
+    digest: 85370ef54fa969b648673d062e3e7a5b0e95ed437397e60220fa33b415534766
+    home: https://docs.opswat.com/mdicap/installation
+    keywords:
+    - mdicapsrv
+    - icap
+    - MetaDefender ICAP Server
+    name: MetaDefender_ICAP_Server
+    type: application
+    urls:
+    - https://github.com/OPSWAT/metadefender-k8s/releases/download/MetaDefender_ICAP_Server-5.3.0/MetaDefender_ICAP_Server-5.3.0.tgz
+    version: 5.3.0
+  - apiVersion: v2
     appVersion: 5.2.1
     created: "2024-07-08T14:21:01.835996885Z"
     description: This is a Helm chart for deploying MetaDefender ICAP Server (https://www.opswat.com/products/metadefender/icap)
@@ -120,6 +136,16 @@ entries:
     - https://github.com/OPSWAT/metadefender-k8s/releases/download/metadefender_core-5.8.0-0/metadefender_core-5.8.0-0.tgz
     version: 5.8.0-0
   - apiVersion: v2
+    created: "2024-07-22T16:47:35.294039413Z"
+    description: This is a Helm chart for deploying MetaDefender Core (https://www.opswat.com/products/metadefender/core)
+      in a Kubernetes cluster
+    digest: c2ac5383e59c29e677f6469dd77bd48d15dc1daba42f530778c369eaf0baa8b3
+    name: metadefender_core
+    type: application
+    urls:
+    - https://github.com/OPSWAT/metadefender-k8s/releases/download/metadefender_core-5.8.0-0/metadefender_core-5.8.0-0.tgz
+    version: 5.8.0-0
+  - apiVersion: v2
     created: "2024-07-08T14:21:01.979017573Z"
     description: This is a Helm chart for deploying MetaDefender Core (https://www.opswat.com/products/metadefender/core)
       in a Kubernetes cluster
@@ -174,6 +200,17 @@ entries:
       (https://www.opswat.com/products/metadefender/metadefender-for-secure-storage)
       in a Kubernetes cluster
     digest: 5fec9b289b652356a9120730ac580a815fa1c723c4cf80cec38ac795f0fef65f
+    name: metadefender_for_secure_storage
+    type: application
+    urls:
+    - https://github.com/OPSWAT/metadefender-k8s/releases/download/metadefender_for_secure_storage-3.3.2-0/metadefender_for_secure_storage-3.3.2-0.tgz
+    version: 3.3.2-0
+  - apiVersion: v2
+    created: "2024-07-22T16:47:35.463252159Z"
+    description: This is a Helm chart for deploying MetaDefender for Secure Storage
+      (https://www.opswat.com/products/metadefender/metadefender-for-secure-storage)
+      in a Kubernetes cluster
+    digest: 62468e8c9e60fde5f57a9a3c5012a04529952011068efc2c393e16d1fcb25766
     name: metadefender_for_secure_storage
     type: application
     urls:
@@ -250,4 +287,4 @@ entries:
     urls:
     - https://github.com/OPSWAT/metadefender-k8s/releases/download/metadefender_storage_security-0.0.28/metadefender_storage_security-0.0.28.tgz
     version: 0.0.28
-generated: "2024-07-22T16:41:09.116103962Z"
+generated: "2024-07-22T16:47:35.463318824Z"
