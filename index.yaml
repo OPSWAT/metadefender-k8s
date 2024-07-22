@@ -166,6 +166,16 @@ entries:
     - https://github.com/OPSWAT/metadefender-k8s/releases/download/metadefender_core-5.6.1-1/metadefender_core-5.6.1-1.tgz
     version: 5.6.1-1
   - apiVersion: v2
+    created: "2024-07-22T16:54:52.543177182Z"
+    description: This is a Helm chart for deploying MetaDefender Core (https://www.opswat.com/products/metadefender/core)
+      in a Kubernetes cluster
+    digest: 5c74d2e3284a1e0149e1c5a43909479ce1d5df36efc222f396cf7f6f4f48e64a
+    name: metadefender_core
+    type: application
+    urls:
+    - https://github.com/OPSWAT/metadefender-k8s/releases/download/metadefender_core-5.5.0/metadefender_core-5.5.0.tgz
+    version: 5.5.0
+  - apiVersion: v2
     created: "2024-07-08T14:21:01.979017573Z"
     description: This is a Helm chart for deploying MetaDefender Core (https://www.opswat.com/products/metadefender/core)
       in a Kubernetes cluster
@@ -318,4 +328,4 @@ entries:
     urls:
     - https://github.com/OPSWAT/metadefender-k8s/releases/download/metadefender_storage_security-0.0.28/metadefender_storage_security-0.0.28.tgz
     version: 0.0.28
-generated: "2024-07-22T16:53:13.399540418Z"
+generated: "2024-07-22T16:54:52.543270538Z"
