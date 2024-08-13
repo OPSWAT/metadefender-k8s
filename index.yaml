@@ -282,6 +282,18 @@ entries:
     - https://github.com/OPSWAT/metadefender-k8s/releases/download/metadefender_storage_security-3.4.1-chart.0/metadefender_storage_security-3.4.1-chart.0.tgz
     version: 3.4.1-chart.0
   - apiVersion: v2
+    appVersion: 3.4.1
+    created: "2024-08-13T06:53:09.239101039Z"
+    description: This is a Helm chart for deploying MetaDefender for Secure Storage
+      (https://www.opswat.com/products/metadefender/storage-security) in a Kubernetes
+      cluster
+    digest: 84e328bd31d022fd912e02c3b147cc791974975131ab96d2bde148b00aeebb89
+    name: metadefender_storage_security
+    type: application
+    urls:
+    - https://github.com/OPSWAT/metadefender-k8s/releases/download/metadefender_storage_security-3.4.1-alpha.1/metadefender_storage_security-3.4.1-alpha.1.tgz
+    version: 3.4.1-alpha.1
+  - apiVersion: v2
     created: "2024-07-22T16:02:57.810468065Z"
     description: This is a Helm chart for deploying MetaDefender for Secure Storage
       (https://www.opswat.com/products/metadefender/storage-security) in a Kubernetes
@@ -340,4 +352,4 @@ entries:
     urls:
     - https://github.com/OPSWAT/metadefender-k8s/releases/download/metadefender_storage_security-0.0.28/metadefender_storage_security-0.0.28.tgz
     version: 0.0.28
-generated: "2024-08-13T06:46:59.56518362Z"
+generated: "2024-08-13T06:53:09.239214823Z"
