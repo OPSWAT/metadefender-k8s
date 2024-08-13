@@ -25,6 +25,22 @@ entries:
     version: 0.0.28
   MetaDefender_ICAP_Server:
   - apiVersion: v2
+    appVersion: 5.5.1
+    created: "2024-08-13T08:39:05.376181334Z"
+    description: This is a Helm chart for deploying MetaDefender ICAP Server (https://www.opswat.com/products/metadefender/icap)
+      in a Kubernetes cluster.
+    digest: e22e9200bbf672a70dc45bd38bb1779356ba2c7f255432ee803210ca49d45cec
+    home: https://docs.opswat.com/mdicap/installation
+    keywords:
+    - mdicapsrv
+    - icap
+    - MetaDefender ICAP Server
+    name: MetaDefender_ICAP_Server
+    type: application
+    urls:
+    - https://github.com/OPSWAT/metadefender-k8s/releases/download/MetaDefender_ICAP_Server-5.5.1/MetaDefender_ICAP_Server-5.5.1.tgz
+    version: 5.5.1
+  - apiVersion: v2
     appVersion: 5.5.0
     created: "2024-07-22T16:02:57.36085164Z"
     description: This is a Helm chart for deploying MetaDefender ICAP Server (https://www.opswat.com/products/metadefender/icap)
@@ -271,6 +287,18 @@ entries:
   metadefender_storage_security:
   - apiVersion: v2
     appVersion: 3.4.1
+    created: "2024-08-13T08:39:05.546268922Z"
+    description: This is a Helm chart for deploying MetaDefender for Secure Storage
+      (https://www.opswat.com/products/metadefender/storage-security) in a Kubernetes
+      cluster
+    digest: 26b7801d08b20f2ab3011520fb0dd0e39a20a7f42e5dfb58db1a434240f186aa
+    name: metadefender_storage_security
+    type: application
+    urls:
+    - https://github.com/OPSWAT/metadefender-k8s/releases/download/metadefender_storage_security-3.4.1/metadefender_storage_security-3.4.1.tgz
+    version: 3.4.1
+  - apiVersion: v2
+    appVersion: 3.4.1
     created: "2024-08-13T06:46:59.565102118Z"
     description: This is a Helm chart for deploying MetaDefender for Secure Storage
       (https://www.opswat.com/products/metadefender/storage-security) in a Kubernetes
@@ -352,4 +380,4 @@ entries:
     urls:
     - https://github.com/OPSWAT/metadefender-k8s/releases/download/metadefender_storage_security-0.0.28/metadefender_storage_security-0.0.28.tgz
     version: 0.0.28
-generated: "2024-08-13T06:53:09.239214823Z"
+generated: "2024-08-13T08:39:05.546376392Z"
