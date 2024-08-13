@@ -32,5 +32,5 @@ long_description: |
 
 type: application
 
-version: 3.4.1-chart.0
+version: 3.4.1-alpha.1
 appVersion: 3.4.1
