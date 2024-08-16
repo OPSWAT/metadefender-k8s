@@ -1,3 +1,13 @@
+{{ if $.Values.storage_configs }}
+
+{{ range $storage_name, $storage_value := .Values.storage_configs }}
+---
+{{- toYaml $storage_value }}
+
+{{ end }}
+
+{{ end }}
+
 {{ if $.Values.persistance_enabled }}
 
 ## Use dynamic provisioning from minikube if available
