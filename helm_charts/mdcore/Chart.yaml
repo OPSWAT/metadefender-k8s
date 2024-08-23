@@ -50,5 +50,5 @@ long_description: |
   
 type: application
 
-version: 0.0.30
-appVersion: 5.10.1
+version: 5.11.0
+appVersion: 5.11.0

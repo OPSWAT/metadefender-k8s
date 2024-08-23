@@ -109,7 +109,7 @@ imagePullPolicy: IfNotPresent
 core_docker_repo: opswat
 
 env:                                                            # Set additional environment variables for the MD Core container
-  CORE_CONF_JSON: '\{\"global/restaddress\": \"0.0.0.0\"\}'     # This sets MD Core to listen only on ipv4 addresses by default, remove this setting to listen also on ipv6 
+  CORE_CONF_JSON: '{"global/restaddress": "0.0.0.0"}'           # This sets MD Core to listen only on ipv4 addresses by default, remove this setting to listen also on ipv6 
   # MD Core health-check settings
   MDCORE_HEALTH_CHECK: true         # Enable the MD Core health-check
   MDCORE_QUEUE_THRESHOLD: 0       # Maximum number of files in the queue
@@ -153,7 +153,7 @@ core_components:
 
   md-core:
     name: md-core
-    image: opswat/metadefendercore-debian:5.10.1         # Overrides the default docker image for the MD Core service, this value can be changed if you want to set a different version of MD Core
+    image: opswat/metadefendercore-debian:5.11.0         # Overrides the default docker image for the MD Core service, this value can be changed if you want to set a different version of MD Core
     replicas: 1                                         # Sets the number of replicas if you want to have multiple MD Core instances
     env:
       - name: MD_USER
@@ -250,7 +250,7 @@ core_components:
         maxSurge: 0
     initContainers:
       - name: check-db-ready
-        image: opswat/metadefendercore-debian:5.10.1 
+        image: opswat/metadefendercore-debian:5.11.0 
         imagePullPolicy: IfNotPresent
         envFrom:
           - configMapRef:
