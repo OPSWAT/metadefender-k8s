@@ -27,7 +27,7 @@ The installation can also be done using the helm repo which is updated on each r
  ```console
 helm repo add mdk8s https://opswat.github.io/metadefender-k8s/
 helm repo update mdk8s
-helm install my_mdss mdk8s/metadefender_for_secure_storage
+helm install my_mdss mdk8s/metadefender_storage_security
 ```
 
 ### Flexible deployment
