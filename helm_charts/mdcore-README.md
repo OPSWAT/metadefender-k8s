@@ -54,7 +54,6 @@ Example installation when using local helm files and setting the custom values m
 ```
 helm install my_mdcore ./helm_charts/mdcore -f mdcore-openshift.yml \
  --set 'db_password=<SET_POSTGRES_PASSWORD>' \
- --set 'env.POSTGRESQL_ADMIN_PASSWORD=<SET_POSTGRES_ADMIN_PASSWORD>' \
  --set 'storage_configs.pvc-example.spec.storageClassName=<SET_STORAGE_CLASS_NAME>' \
  --set 'mdcore_license_key=<SET_LICENSE_KEY>'
 ```

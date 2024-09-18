@@ -148,6 +148,8 @@ The following table lists the configurable parameters of the Metadefender ICAP c
 - To have a file "mdicapsrv-config.json" correctly, please install a MD ICAP Server, do configuration setting then use export feature to get the json config file.
 - Please specific value of the secret template file for enable HTTPS, ICAPS or NGINXs. Need to mapping the key of the secret HTTPS, ICAPS and NGINXS with `*.certSecretSubPath` and `*.certKeySecretSubPath`
 ## Release note
+### v5.6.0
+- Focused on new functionalities, enhancements and bug fixes
 ### v5.5.1
 - Support proxy through environment: `proxy.enabled` `proxy.http_proxy` `proxy.https_proxy` `proxy.no_proxy` 
 ### v5.5.0
