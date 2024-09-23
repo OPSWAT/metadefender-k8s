@@ -34,7 +34,7 @@ core_components:
           sizeLimit: 500Mi
     initContainers:
       - name: check-db-ready
-        image: opswat/metadefendercore-debian:5.10.1 
+        image: opswat/metadefendercore-debian:5.11.1 
         imagePullPolicy: IfNotPresent
         envFrom:
           - configMapRef:
@@ -43,7 +43,7 @@ core_components:
           'until pg_isready -h $DB_HOST -p $DB_PORT; 
           do echo waiting for database; sleep 2; done;' ]
       - name: copy-config-zip-file
-        image: opswat/metadefendercore-debian:5.10.1 
+        image: opswat/metadefendercore-debian:5.11.1 
         imagePullPolicy: IfNotPresent
         envFrom:
           - configMapRef:
