@@ -7,7 +7,18 @@ metadata:
   annotations:
     kubernetes.io/ingress.class: {{ .Values.mdss_ingress.class }}
     ingress.kubernetes.io/rewrite-target: /
+    {{- if .Values.mdss_ingress.ingress_annotations }}
+      {{- toYaml .Values.mdss_ingress.ingress_annotations | nindent 4 }}
+    {{ end }}
+
 spec:
+  {{ if .Values.mdss_ingress.spec_className }}
+  ingressClassName: {{ .Values.mdss_ingress.class }}
+  {{ end }}
+  {{ if .Values.mdss_ingress.rules }}
+  rules: 
+    {{- toYaml .Values.mdss_ingress.rules | nindent 4 }}
+  {{ else }}
   rules:
   - host: {{ .Values.mdss_ingress.host | replace "<APP_NAMESPACE>" .Release.Namespace }}
     http:
@@ -19,5 +30,11 @@ spec:
               name: {{ .Values.mdss_ingress.service }}
               port:
                 number: {{ .Values.mdss_ingress.port }}
-
+  {{ end }}
+  {{ if .Values.mdss_ingress.tls }}
+  tls:
+  - hosts:
+    - {{ .Values.mdss_ingress.host | replace "<APP_NAMESPACE>" .Release.Namespace }}
+    secretName: {{ .Values.mdss_ingress.secret }}
+  {{ end }}
 {{ end }}
