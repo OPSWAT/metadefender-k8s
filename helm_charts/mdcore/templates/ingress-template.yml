@@ -21,7 +21,8 @@ spec:
   ingressClassName: {{ .Values.core_ingress.class }}
   {{ end }}
   {{ if .Values.core_ingress.rules }}
-  rules: {{ .Values.core_ingress.rules }}
+  rules: 
+    {{- toYaml .Values.core_ingress.rules | nindent 4 }}
   {{ else }}
   rules:
   - host: {{ .Values.core_ingress.host | replace "<APP_NAMESPACE>" .Release.Namespace }}
