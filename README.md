@@ -13,7 +13,7 @@
       </ul>
     </li>
     <li><a href="#contributing">Contributing</a></li>
-    <li><a href="#license">License</a></li>
+    <li><a href="#licensing">Licensing</a></li>
     <li><a href="#contact">Contact</a></li>
   </ol>
 </details>
@@ -23,16 +23,16 @@
 <!-- ABOUT THE PROJECT -->
 ## About The Project
 
-OPSWAT MetaDefender products are adapting year over year for our customers to get advantage of the new technologies that are coming. With this project you will be able to deploy some of our MetaDefender products to a Kubernetes Cluster. We provide you with some architecture recommendations for the main cloud providers to host the Kubernetes cluster together with an script to provision such recommended architecture. Also we provide you with all the information of the components that will be installed inside the cluster to run our products and a script to install it depending on the different configuration options.
+OPSWAT MetaDefender products are adapting year over year for our customers to get advantage of the new technologies that are coming. With this project you will be able to deploy some of our MetaDefender products to a Kubernetes Cluster. We provide you with some architecture recommendations for the main cloud providers to host the Kubernetes cluster together with a script to provision such recommended architecture. Also we provide you with all the information of the components that will be installed inside the cluster to run our products and a script to install it depending on the different configuration options.
 
 
-Main Metadefender documentation pages:
+Main MetaDefender documentation pages:
 
 * AWS Cloud Deployment Architectures Recommended [Doc](https://docs.opswat.com/mdcore/cloud-deployment/recommended-architectures-in-aws)
 * MetaDefender Core Provisioned in AWS EKS [Doc](https://docs.opswat.com/mdcore/cloud-deployment/eks-cluster-architecture)
 * MetaDefender Core Kubernetes Components [Doc](https://docs.opswat.com/mdcore/kubernetes-configuration/kubernetes-components)
 * MetaDefender Core In Your Already Created Kubernetes Cluster [Doc](https://docs.opswat.com/mdcore/kubernetes-configuration/metadefender-core-in-your-already-created-k8s)
-* MetaDefender for Secure Storage Kubernetes deployment [Doc](https://docs.opswat.com/mdss/installation/kubernetes-deployment)
+* MetaDefender Storage Security Kubernetes deployment [Doc](https://docs.opswat.com/mdss/installation/kubernetes-deployment)
 
 <p align="right">(<a href="#top">back to top</a>)</p>
 
@@ -59,7 +59,7 @@ To get a local copy up and running follow these simple example steps.
 
 ### Installation
 
- OPSWAT has prepared a recommended architecture for having Metadefender products deployed in a Kubernetes Cluster in the main CSP. 
+ OPSWAT has prepared a recommended architecture for having MetaDefender products deployed in a Kubernetes Cluster in the main CSP. 
  Depending on the architecture prefered the installation process is different as each product has its own configuration options. To facilitate the deployment of the product we have created what we call MetaDefender K8S script that will guide you through the different options and configure the enviroment for you. 
 
  There are two modes for using the script provision and install. 
@@ -96,7 +96,7 @@ For running MetaDefender products you will need to set up the license needed for
 
 In case of having any issue with your license please contact [Support](https://www.opswat.com/support)
 
-For other [questions](https://www.opswat.com/contact)
+For other questions: https://www.opswat.com/contact
 
 
 <p align="right">(<a href="#top">back to top</a>)</p>
@@ -112,6 +112,6 @@ For other [questions](https://www.opswat.com/contact)
 * Contact US: https://www.opswat.com/contact
 
 MetaDefender Core Documentation: [https://docs.opswat.com/mdcore](https://docs.opswat.com/mdcore)
-MetaDefender for Secure Storage Documentation: [https://docs.opswat.com/mdss](https://docs.opswat.com/mdss)
+MetaDefender Storage Security Documentation: [https://docs.opswat.com/mdss](https://docs.opswat.com/mdss)
 
 <p align="right">(<a href="#top">back to top</a>)</p>
