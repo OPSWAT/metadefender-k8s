@@ -1,0 +1,39 @@
+{{ if $.Values.auto_onboarding }}
+
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: auto-onboarding
+spec:
+  template:
+    metadata:
+      labels:
+        app: auto-onboarding
+        aws-type: fargate
+    spec:
+      containers:
+        - name: auto-onboarding
+          image: {{ printf "%s/mdcloudservices_auto-onboarding:%s" $.Values.mdssc_docker_repo $.Values.BRANCH | quote }}
+          envFrom:
+            - configMapRef:
+                name: {{ $.Values.mdssc_config_map_env_name | quote }}
+            - secretRef:
+                name: onboarding-env
+          env:
+            - name: ONBOARDING_CONFIG_FILE_NAME
+              value: mdssc-config.json
+          volumeMounts:
+            - name: mdssc-import-config
+              mountPath: /onboarding_settings/mdssc-config.json
+              subPath: mdssc-config.json
+      restartPolicy: OnFailure
+      {{- if $.Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml $.Values.imagePullSecrets | nindent 8 }}
+      {{- end }}
+      volumes:
+        - name: mdssc-import-config
+          secret:
+            secretName: mdssc-import-config
+
+{{ end }}

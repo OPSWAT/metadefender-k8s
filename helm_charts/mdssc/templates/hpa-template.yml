@@ -1,0 +1,24 @@
+# Create an hpa for each component in MDSSC
+{{ range $component_name, $component := .Values.mdssc_components }}
+
+{{ if and (or $.Values.deploy_with_mdssc_db (not $component.is_db)) ( or (not $component.module_name) (contains (print $component.module_name) (index $.Values "mdssc-common-environment").ENABLED_MODULES))  }}
+
+{{- if $.Values.hpa.enabled -}}
+---
+apiVersion: autoscaling/v1
+kind: HorizontalPodAutoscaler
+metadata:
+  name: {{ $component.name | quote }}
+spec:
+  minReplicas: {{ $.Values.hpa.minReplicas }}
+  maxReplicas: {{ $.Values.hpa.maxReplicas }}
+  targetCPUUtilizationPercentage: {{ $.Values.hpa.cpuTargetUtilization }}
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: {{ $component.name | quote }}
+{{ end }}
+{{ end }}
+{{ end }}
+
+# helm template

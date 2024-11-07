@@ -1,0 +1,138 @@
+---
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: {{ .Values.mdssc_config_map_env_name }}
+data:
+  {{- toYaml (index .Values "mdssc-common-environment") | nindent 2 }}
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: webclient-nginx-config
+data:
+  default.conf: |
+    server {
+    listen 80 default_server;
+    listen [::]:80 default_server;
+    server_name _;
+    #return 301 https://$host$request_uri;
+    
+    add_header Referrer-Policy "no-referrer";
+    add_header X-Content-Type-Options "nosniff";
+    
+    location / {
+        try_files $uri $uri/ /index.html;
+        root   /usr/share/nginx/html;
+        index  index.html index.htm;
+    }
+
+    location /api {
+        proxy_pass http://api;
+    }
+
+    location /callback {
+        proxy_pass http://api/callback;
+    }
+
+    location /hubs { 
+        proxy_pass http://api;
+        
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_http_version 1.1;
+        proxy_cache_bypass $http_upgrade;
+    }
+
+    }
+    server {
+        #listen 443 ssl;
+        #ssl_certificate /etc/nginx/conf.d/ssl.crt;
+        #ssl_certificate_key /etc/nginx/conf.d/ssl.key;
+        #ssl_protocols TLSv1.2 TLSv1.3;
+        #ssl_ciphers 'ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305:ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-SHA384:ECDHE-RSA-AES256-SHA384:ECDHE-ECDSA-AES128-SHA256:ECDHE-RSA-AES128-SHA256:DHE-RSA-AES128-GCM-SHA256:DHE-RSA-AES256-GCM-SHA384';
+        #ssl_prefer_server_ciphers on;
+        
+        add_header X-Content-Type-Options "nosniff";
+        add_header Referrer-Policy "no-referrer";
+        add_header Strict-Transport-Security "max-age=15724800; includeSubdomains;";
+        
+        location / {
+            try_files $uri $uri/ /index.html;
+            root   /usr/share/nginx/html;
+            index  index.html index.htm;
+        }
+
+        location /api {
+            proxy_pass http://api;
+        }
+
+        location /callback {
+            proxy_pass http://api/callback;
+        }
+
+        location /hubs { 
+            proxy_pass http://api;
+            
+            proxy_set_header Upgrade $http_upgrade;
+            proxy_set_header Connection "upgrade";
+            proxy_http_version 1.1;
+            proxy_cache_bypass $http_upgrade;
+        }
+    }
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: rabbitmq-config
+data:
+  advanced.config: |
+    [
+      {rabbit, [
+        {consumer_timeout, undefined}
+      ]}
+    ].
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: appsettings
+data:
+  appsettings.json: |
+    {
+      "Serilog": {
+        "Using": [],
+        "MinimumLevel": {
+          "Default": "Information",
+          "Override": {
+            "Microsoft": "Warning",
+            "System": "Warning",
+            "Microsoft.Hosting.Lifetime": "Warning"
+          }
+        },
+        "Enrich": [ "FromLogContext", "WithMachineName", "WithProcessId", "WithProcessName", "WithThreadId" ],
+        "WriteTo": [
+          {
+            "Name": "File",
+            "Args": {
+              "buffered": false,
+              "fileSizeLimitBytes": 500000000,
+              "outputTemplate": "[{Timestamp:u}] [{Level}] {Namespace}: {Message:lj}{NewLine}{Exception}",
+              "path": "logs/log.txt",
+              "retainedFileCountLimit": "10",
+              "rollingInterval": "Day",
+              "rollOnFileSizeLimit": true
+            }
+          },
+          {
+            "Name": "Console",
+            "Args": {
+              "outputTemplate": "[{Timestamp:u}] [{Level}] {Namespace}: {Message:lj}{NewLine}{Exception}"
+            }
+          }
+        ]
+      }
+    }

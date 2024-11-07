@@ -1,0 +1,152 @@
+
+# Create a deployment for each component in MDSSC
+{{ range $component_name, $component := .Values.mdssc_components }}
+
+{{  if and (or $.Values.deploy_with_mdssc_db (not $component.is_db))  }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ $component.name | quote }}
+spec:
+  replicas: {{ $component.replicas }}
+  selector:
+    matchLabels:
+      app: {{ $component.name | quote }}
+  {{- if $component.strategy}}
+  strategy:
+    {{- toYaml $component.strategy | nindent 4 }}
+  {{- end }}
+  template:
+    metadata:
+      labels:
+        app: {{ $component.name | quote }}
+        {{- if $component.extra_labels }}
+          {{- toYaml $component.extra_labels | nindent 8 }}
+        {{- end }}
+    spec:
+      containers:
+        - envFrom:
+            - configMapRef:
+                name: {{ $.Values.mdssc_config_map_env_name | quote }}
+          {{ if $component.custom_repo -}}
+            {{ if eq $component.is_mdssc true -}}
+          image: {{ printf "%s/%s:%s" $.Values.mdssc_docker_repo $component.image (index $.Values "mdssc-common-environment").MDSSC_BRANCH | quote }}
+            {{ else -}}
+          image: {{ printf "%s/%s:%s" $.Values.mdssc_docker_repo $component.image (index $.Values "mdssc-common-environment").BRANCH | quote }}
+            {{ end -}}
+          {{- else -}}
+          image: {{ $component.image | quote }}
+          {{- end }}
+          imagePullPolicy: {{ $.Values.imagePullPolicy }}
+          {{- if $component.env }}
+          env:
+            {{- toYaml $component.env | nindent 12 }}
+          {{- end }}
+          name: {{ $component.name | quote }}
+          {{- if $component.ports }}
+          ports:
+          {{- range $component.ports }}
+            - containerPort: {{ .port }}
+          {{- end }}
+          {{- end }}
+          {{- if $component.livenessProbe }}
+          livenessProbe:
+            {{- toYaml $component.livenessProbe | nindent 12 }}
+          {{- end }}
+          {{- if $component.startupProbe }}
+          startupProbe:
+            {{- toYaml $component.startupProbe | nindent 12 }}
+          {{- end }}
+          {{- if $component.readinessProbe }}
+          readinessProbe:
+            {{- toYaml $component.readinessProbe | nindent 12 }}
+          {{- end }}
+          {{- if $component.command }}
+          command: 
+            {{- toYaml $component.command | nindent 12 }}
+          {{- end }}
+          {{- if $component.args }}
+          args:
+            {{- toYaml $component.args | nindent 12 }}
+          {{- end }}
+          {{- if $component.securityContext }}
+          securityContext:
+            {{- toYaml $component.securityContext | nindent 12 }}
+          {{- end }}
+          volumeMounts:
+            - name: appsettings
+              mountPath: /app/appsettings.json
+              subPath: appsettings.json
+            {{- if $component.mountConfig }}
+            - name: {{ $component.mountConfig.configName }}
+              mountPath: {{ $component.mountConfig.mountPath }}
+              subPath: {{ $component.mountConfig.subPath }}
+            {{ end }}
+            {{- if $component.persistentDir }}
+            - name: {{ $component.name }}
+              mountPath: {{ $component.persistentDir }}
+              {{- if not (eq $.Values.storage_provisioner "hostPath") }}
+              subPath: {{ $component.name }}
+              {{- end }}
+            {{ end }}
+            {{- if $component.extraVolumeMounts }}
+              {{- toYaml $component.extraVolumeMounts | nindent 12 }}
+            {{- end }}
+          {{- if $component.resources }}
+          resources:
+            {{- toYaml $component.resources | nindent 12 }}
+          {{- end }}
+      {{- if $component.sidecars }}
+        {{- toYaml $component.sidecars | nindent 8 }}
+      {{- end }}
+      {{- if $component.initContainers }}
+      initContainers:
+        {{- toYaml $component.initContainers | nindent 8 }}
+      {{- end }}
+          {{- if $component.update_ca }}
+          lifecycle:
+            postStart:
+              exec:
+                command: ["/bin/sh", "-c", "update-ca-certificates"]
+          {{- end}}
+      restartPolicy: Always
+      {{- if $.Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml $.Values.imagePullSecrets | nindent 8 }}
+      {{- end }}
+      {{- if $component.customPodDefinitions }}
+        {{- toYaml $component.customPodDefinitions | nindent 6 }}
+      {{- end }}
+      volumes:
+        - name: appsettings
+          configMap:
+            name: appsettings
+        {{- if $component.mountConfig }}
+        - name: {{ $component.mountConfig.configName }}
+          configMap:
+            name: {{ $component.mountConfig.configName }}
+        {{ end }}
+        {{- if (and $component.persistentDir $.Values.persistance_enabled) }}
+        {{- if eq $.Values.storage_provisioner "hostPath" }}
+        - name: {{ $component.name }}
+          hostPath:
+            path: {{ printf "/%s/%s" ( $.Values.hostPathPrefix | replace "<APP_NAMESPACE>" $.Release.Namespace) $component.name }}
+            type: DirectoryOrCreate
+        {{ else }}
+        - name: {{ $component.name }}
+          persistentVolumeClaim:
+            claimName: {{ printf "%s" $.Values.storage_name }}
+            {{ end }}
+        {{ end }}
+        {{- if $component.extraVolumes -}}
+          {{- range $volumeLabel, $volume := $component.extraVolumes }}
+        -
+            {{- toYaml $volume | nindent 10 }}
+        {{- end }}
+        {{- end }}
+      hostAliases:
+        {{- toYaml $.Values.mdsscHostAliases | nindent 8 }}
+      
+{{ end }}
+{{ end }}

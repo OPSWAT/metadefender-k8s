@@ -2,7 +2,7 @@
 
 mdss-common-environment:
   ENABLED_MODULES: "azureblob,amazonsdk,nfs"                                  # Enabled modules by default
-  # ENABLED_MODULES: "azureblob,amazonsdk,googlecloud,alibabacloud,azurefiles,smb,box,onedrive,sftp,debug"             # All supported modules
+  # ENABLED_MODULES: "azureblob,amazonsdk,googlecloud,alibabacloud,azurefiles,smb,box,onedrive,sftp,debug,mft"             # All supported modules
 
   # This defines the connection string to the db ( should be modified when using an external db)
   MONGO_URL: "mongodb://mongodb:27017/MDCS"
@@ -33,13 +33,13 @@ mdss-common-environment:
   SMBSERVICE_PORT: "5002"
   
   CODE_VERSION: "30a858390ca19fff81f2092f83a32f11c07d4fc8" # Deprecated for helm deployments
-  BUILD_VERSION: "3.4.4.955"
+  BUILD_VERSION: "3.5.0.1030"
 
   # This can be modified in order to define how many messages can be sent to rabbitmq in parallel.
-  RABBITMQ_SCANNING_PREFETCH_COUNT: "20"
+  RABBITMQ_SCANNING_PREFETCH_COUNT: "10"
 
   HTTPS_ACTIVE: "no"
-  BRANCH: "3.4.4"          # Set MDSS version (image tag)
+  BRANCH: "3.5.0"          # Set MDSS version (image tag)
   # These variables can be changed to reveal debug information in the application
   LOG_LEVEL: "4"
   APP_LOG_LEVEL: "INFORMATION"
@@ -145,6 +145,19 @@ mdss-common-environment:
   # time interval between two consecutive job runs for the discovery completed job
   DISCOVERY_COMPLETED_CHECK_SECONDS: "10"
 
+  # Remediation Prefetch Count
+  RABBITMQ_ALIBABACLOUD_REMEDIATIONS_PREFETCH_COUNT: "10"
+  RABBITMQ_AMAZONSDK_REMEDIATIONS_PREFETCH_COUNT: "10"
+  RABBITMQ_AZUREBLOB_REMEDIATIONS_PREFETCH_COUNT: "10"
+  RABBITMQ_AZUREFILES_REMEDIATIONS_PREFETCH_COUNT: "10"
+  RABBITMQ_BOX_REMEDIATIONS_PREFETCH_COUNT: "10"
+  RABBITMQ_GOOGLECLOUD_REMEDIATIONS_PREFETCH_COUNT: "10"
+  RABBITMQ_MFT_REMEDIATIONS_PREFETCH_COUNT: "10"
+  RABBITMQ_NFS_REMEDIATIONS_PREFETCH_COUNT: "10"
+  RABBITMQ_ONE_DRIVE_REMEDIATIONS_PREFETCH_COUNT: "10"
+  RABBITMQ_REMEDIATIONS_PREFETCH_COUNT: "10"
+  RABBITMQ_SFTP_REMEDIATIONS_PREFETCH_COUNT: "10"
+  RABBITMQ_SMB_REMEDIATIONS_PREFETCH_COUNT: "10"
 
 
 # Set to true if the respective database engine should also be deployed
@@ -840,3 +853,41 @@ mdss_components:
       requests:
         memory: "0.5Gi"
         cpu: "0.500"
+
+ # ======================================= MFT MODULE ================================================
+  discoverymftservice:
+    name: discoverymftservice
+    module_name: mft
+    custom_repo: true
+    image: mdcloudservices_discoverymft
+    extra_labels:
+      aws-type: fargate
+    resources:
+      requests:
+        memory: "0.25Gi"
+        cpu: "1.000"
+  
+  remediationsservice-mft:
+    name: remediationsservice-mft
+    module_name: mft
+    custom_repo: true
+    image: mdcloudservices_remediationsmft
+    extra_labels:
+      aws-type: fargate
+    resources:
+      requests:
+        memory: "0.25Gi"
+        cpu: "0.100"
+      
+  storagesservice-mft:
+    name: storagesservice-mft
+    module_name: mft
+    custom_repo: true
+    image: mdcloudservices_storagesmft
+    extra_labels:
+      aws-type: fargate
+    resources:
+      requests:
+        memory: "0.25Gi"
+        cpu: "0.010"
+  

@@ -1,0 +1,23 @@
+{{ if .Values.mdssc_ingress.enabled }}
+---
+kind: Ingress
+apiVersion: networking.k8s.io/v1
+metadata:
+  name: webclient-ingress
+  annotations:
+    kubernetes.io/ingress.class: {{ .Values.mdssc_ingress.class }}
+    ingress.kubernetes.io/rewrite-target: /
+spec:
+  rules:
+  - host: {{ .Values.mdssc_ingress.host | replace "<APP_NAMESPACE>" .Release.Namespace }}
+    http:
+      paths:
+        - path: /
+          pathType: Prefix
+          backend:
+            service:
+              name: {{ .Values.mdssc_ingress.service }}
+              port:
+                number: {{ .Values.mdssc_ingress.port }}
+
+{{ end }}
