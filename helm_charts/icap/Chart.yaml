@@ -12,9 +12,7 @@ description: This is a Helm chart for deploying MetaDefender ICAP Server (https:
 long_description: |
   This chart can deploy the following depending on the provided values:
   - One or more MD ICAP Server instances 
-
   ## Installation
-  
   ### From source
   MD ICAP Server can be installed directly from the source code, here's an example using the generic values:
   ```console
@@ -22,13 +20,11 @@ long_description: |
   cd metadefender/helm_charts
   helm install my_mdicapsrv ./my_mdicapsrv -f my_mdicapsrv-generic-values.yml
   ```
-
   ### From the latest release
   The installation can also be done using the latest release from github:
   ```console
   helm install my_my_mdicapsrv <MDICAPSRV_RELEASE_URL>.tgz -f my_mdicapsrv-generic-values.yml
   ```
-
   ## Operational Notes
   The entire deployment can be customized by overwriting the chart's default configuration values. Here are a few point to look out for when changing these values:
   - Sensitive values (like credentials and keys) are saved in the Kubernetes cluster as secrets and are not deleted when the chart is removed and they can be reused for future deployments

@@ -1,0 +1,489 @@
+# Default values for mdssc. These will also be included in the environment of each mdssc container
+
+mdssc-common-environment:
+
+  DISCOVERY_STRATEGY: "ImageArchiveDiscovery"
+
+  # This should only be used for troubleshooting, requests are proxy passed by NGINX
+  API_DEV_PORT: "8001 "
+
+  PRODUCT_NAME: "MetaDefender Software Supply Chain"
+  PRODUCT_NAME_SHORT: "MDSSC"
+  EULA_ACCEPTED_AFTER_UPGRADE: "yes"
+
+  ENABLED_MODULES: "github,dockerhub,bitbucket,amazonecr,quay,jfrogcontainer,jfrogbinary"
+
+  # This defines the connection string to the db ( should be modified when using an external db)
+  MONGO_URL: "mongodb://mongodb:27017/MDCS"
+
+  # Some managed mongo db services require ignoring certificate errors 
+  MONGO_SSL_ALLOW_INVALID_CERTIFICATES: "false"
+
+  MONGO_CA_CERTIFICATE: ""
+  MONGO_DB: "MDCS"
+  MONGO_MIGRATIONS_HOST: "mongomigrations"
+  MONGO_MIGRATIONS_PORT: "27777"
+
+  RABBITMQ_URI: "amqp://rabbitmq:5672"
+  RABBITMQ_HOST: "rabbitmq"
+  RABBITMQ_PORT: "5672"
+  RABBITMQ_DEFAULT_PASS: guest
+  RABBITMQ_DEFAULT_USER: guest
+
+  APIGATEWAY_PORT: "8005"
+  APIGATEWAY_PORT_SSL: "8006"
+
+  NGINX_TIMEOUT: "300"
+  BACKUPS_TO_KEEP: "3"
+  LICENSINGSERVICE_HOST: "licensingservice"
+  LICENSINGSERVICE_URL: "http://licensingservice"
+  LICENSINGSERVICE_PORT: "5000"
+  SMBSERVICE_URL: "http://smbservice"
+  SMBSERVICE_PORT: "5002"
+  
+  CODE_VERSION: "30a858390ca19fff81f2092f83a32f11c07d4fc8"
+  BUILD_VERSION: "3.4.1.369"
+
+  # This can be modified in order to define how many messages can be sent to rabbitmq in parallel.
+  RABBITMQ_SCANNING_PREFETCH_COUNT: "20"
+
+  HTTPS_ACTIVE: "no"
+  BRANCH: "platform-1.4"          # Set Platform version (image tag)
+  MDSSC_BRANCH: "2.3.2"          # Set MDSSC version (image tag)
+
+  # These variables can be changed to reveal debug information in the application
+  LOG_LEVEL: "4"
+  APP_LOG_LEVEL: "INFORMATION"
+
+  SMB_SHORT_DEADLINE: "5"
+  SMB_LONG_DEADLINE: "30"
+
+  # This can be modified in order to specify the number of retries per operation( e.g: download, upload, scan)
+  POLLY_RETRY_COUNT: "3"
+  # There are two types of retry long and short. Long retry is configured to try every 5 minutes until the POLLY_RETRY_COUNT is reached. This retry is used for web requests.
+  POLLY_LONG_RETRY: "5"
+  # This is the short retry version, configured to retry after 1 minute.
+  POLLY_SHORT_RETRY: "1"
+
+  # This value is used to define the upload chuck for files transferred using SMB , the limit is 7 MB( for azure files the limit is 4MB )
+  SMB_UPLOAD_CHUNK: "2"
+
+  # This value is used by the rtp process to decide whether to process all files on storage or only those added after its start up (0 - for new objects only, 1 - for all objects)
+  DISCOVERY_SERVICE_SMB_RTP_HANDLING: "0"
+
+  # This can be changed to the following values 0 - Default, 1 - IgnoreChainErrors, 2 - IgnoreAllErrors
+  MD_CORE_CERTIFICATE_VALIDATION: "0"
+
+  # This retry value is used only for box operations where the time increases exponentially between retries ( e.g: "the second time it will be 4 minutes instead of two )
+  POLLY_LONG_RETRY_BOX: "2"
+  # This variable has the same mechanism as the POLLY_LONG_RETRY_BOX
+  POLLY_SHORT_RETRY_BOX: "1"
+  # This defines how much time shall pass between remediation retries when encountering failures.
+  POLLY_POST_ACTION_RETRY_TIME: "30"
+
+  LOAD_BALANCER_MD_CORE_UNAVAILABLE_TIME: "5"
+  WEBCLIENT_HOST: "webclient"
+
+  # This variable is used in order to limit the number of blobs we receive from azure per response.
+  AZURE_BLOBS_PAGE_SIZE: "100"
+
+  DISCOVERY_SERVICE_IGNORE_EMPTY_OBJECTS: "0"
+
+  # This variable is used to define how much time should pass until we can discover a file that has failed previously, after 24 hours it shall be discovered again.
+  DISCOVERY_SERVICE_REPROCESSING_FAILED_TIME_HOURS: "24"
+
+  # This variable is used to define how much time should pass until a stuck file's state is set to failed
+  MARK_STUCK_FILE_AS_FAILED_HOURS: "24"
+
+  CACHE_SERVICE_URI: "redis:6379"
+  ### Deprecated
+  CACHE_SERVICE_URL: "redis"
+  CACHE_SERVICE_PORT: "6379"
+  ###
+
+  # This retry time is used for other generic operations.
+  POLLY_RETRY_TIME: "30"
+
+  # in seconds
+  OBJECT_CONTENT_REDIS_TTL: "30"
+
+  RABBITMQ_RPC_LONG_TIMEOUT: "5" # minutes
+
+  LICENSINGSERVICE_LISTENING_IP: "0.0.0.0"
+  SFTPSERVICE_URL: "http://sftpservice"
+  SFTPSERVICE_PORT: "5003"
+
+  SFTP_SHORT_DEADLINE: "5"
+  SFTP_LONG_DEADLINE: "30"
+  SFTP_UPLOAD_CHUNK: "2"
+
+  # This variable is used to force Signature Version 4 for AWS S3/S3 compatible request. 
+  FORCE_AWS_SIGNATURE_V4: "1"
+
+  NFSSERVICE_URL: "http://nfsservice"
+  NFSSERVICE_PORT: "5004"
+
+  NFS_SHORT_DEADLINE: "5"
+  NFS_LONG_DEADLINE: "30"
+
+  NFS_UPLOAD_CHUNK: "2"
+
+  # This value is used to determine how MDSSC consider that a file from a smb share is ready to be processed (Default 1-FILEOPEN_CHECK, 0-DEBOUNCE_CHECK)
+  SMBSERVICE_FILE_READY_CHECK_MODE: "1"
+  # This can be modified in order to define how many threads can be processed in parallel.
+  SMBSERVICE_PREFETCH_COUNT: "10"
+
+  DISCOVERY_SERVICE_SFTP_RTP_HANDLING: "0"
+  DISCOVERY_SERVICE_NFS_RTP_HANDLING: "0"
+
+  # Default number of hours for token expiration, maximum 24 hours
+  TOKEN_EXPIRY_TIME_HOURS: "1"
+
+  # Discovery debounce time used in order to check if a file is uploaded or not, we check if the file has not been modified between a 5 seconds interval
+  SFTP_DISCOVERY_DEBOUNCE_TIME_SECONDS: "5"
+  NFS_DISCOVERY_DEBOUNCE_TIME_SECONDS: "5"
+
+  # time to wait (in minutes) before retrying the register session method in SMB
+  SMBSERVICE_SESSION_RETRY_WAIT_TIME: "5"
+
+  # maximum amount of retries for the register session method in SMB
+  SMBSERVICE_SESSION_MAX_RETRIES: "3"
+
+  # number of active connections per smb storage; default is 10, maximum is 100
+  SMBSERVICE_SESSIONS_ON_STORAGE: "10"
+
+  # time interval between two consecutive job runs for the discovery completed job
+  DISCOVERY_COMPLETED_CHECK_SECONDS: "10"
+
+
+# Set to true if the respective database engine should also be deployed
+deploy_with_mdssc_db: true                 # Enable or disable the local in-cluster database, set to false when deploying with an external database service
+
+# Set to false to not create any volumes or host paths in the deployment, all storage will be ephemeral
+persistance_enabled: true
+
+# Set to true to deploy with HorizontalPodAutoscaling
+hpa:
+  enabled: false
+  minReplicas: 2
+  maxReplicas: 3
+  cpuTargetUtilization: 85
+
+# Available storage providers:
+# - minikube-hostpath: Local storage on the current node using the minikube provisioner
+# - no-provisioner: WIP, Local storage using static Volumes
+# - hostPath
+storage_provisioner: hostPath
+storage_name: hostPath
+storage_node: minikube
+hostPathPrefix: mdssc-storage-<APP_NAMESPACE>         # This is the absolute path on the node where to keep the database filesystem for persistance, <APP_NAMESPACE> is replaced with the current deployment namespace
+
+# Ingress settings for mdssc
+mdssc_ingress:
+  host: <APP_NAMESPACE>-mdssc.k8s             # Hostname for the publicly accessible ingress, the `<APP_NAMESPACE>` string will be replaced with the current namespace                
+  service: webclient                    # Service name where the ingress should route to, this should be left unchanged          
+  port: 80                              # Port where the ingress should route to
+  enabled: false                        # Enable or disable the ingress creation      
+  class: public                         # Sets the ingress class, it can be "public" or "nginx" or some other value depending on the ingress controller in the cluster
+
+# Auto onboarding settings
+auto_onboarding: false                  # If set to true, it will deploy a container that will do the initial setup automatically if correct values are provided
+mdssc_import_config: null                # Content of config file to be imported by the onboarding container
+ONBOARDING_USER_NAME: null              # User name of user that will be created by onboarding container (defaults to admin if left unset)
+ONBOARDING_PASSWORD: null               # Password of user that will be created by onboarding container (randomly generated if left unset, can be retrieved from the "onboarding-env" secret)
+ONBOARDING_EMAIL: null                  # Email of user that will be created by onboarding container
+ONBOARDING_FULL_NAME: null              # Full name of user that will be created by onboarding container
+
+## Uncomment if you want to use a private repo (it must already be configured in the cluster as a secret)
+# imagePullSecrets:
+#   - name: regcred
+
+# Docker repo to use, this should be changed when using private images (this string will be prepended to the image name)
+# If a component has "custom_repo: true" then the image name will be formated as "{docker_repo/}image_name{:BRANCH}" otherwise it will remain unaltered
+mdssc_docker_repo: opswat
+
+imagePullPolicy: IfNotPresent
+
+mdssc_config_map_env_name: 'mdssc-env'
+mdsscHostAliases:                              # Custom hosts entries
+  - ip: "10.0.1.16"
+    hostnames:
+    - "s3-us-west-1.cloudian-sf"
+    - "test.s3-us-west-1.cloudian-sf"
+    - "small.s3-us-west-1.cloudian-sf"
+
+mdssc_components:
+  mongodb:
+    name: mongodb
+    image: mongo:3.6
+    ports:
+      - port: 27017
+    persistentDir: /data/db
+    is_db: true
+    resources:
+      requests:
+        memory: "2Gi"
+        cpu: "0.5"
+
+  mongomigrations:
+    name: mongomigrations
+    custom_repo: true
+    image: mdcloudservices_mongo-migrations
+    ports:
+      - port: 27777
+    persistentDir: /backup
+    resources:
+      requests:
+        memory: "0.125Gi"
+        cpu: "0.010"
+
+  rabbitmq:
+    name: rabbitmq
+    image: rabbitmq:3.11.4-management
+    ports:
+      - port: 5672
+      - port: 15672
+    mountConfig:
+      configName: rabbitmq-config
+      mountPath: /data/rabbitmq/advanced.config
+      subPath: advanced.config
+    env:
+      - name: RABBITMQ_ADVANCED_CONFIG_FILE
+        value: /data/rabbitmq/advanced.config
+    extra_labels:
+      aws-type: fargate
+    resources:
+      requests:
+        memory: "0.5Gi"
+        cpu: "0.5"
+  
+  redis:
+    name: redis
+    image: redis:7.0
+    ports:
+      - port: 6379
+    extra_labels:
+      aws-type: fargate
+    resources:
+      requests:
+        memory: "0.125Gi"
+        cpu: "0.100"
+
+  licensingservice:
+    name: licensingservice
+    custom_repo: true
+    image: mdcloudservices_licensing
+    ports:
+      - port: 5000
+    extra_labels:
+      aws-type: fargate
+    resources:
+      requests:
+        memory: "0.125Gi"
+        cpu: "0.010"
+
+  # ======================================= MDSSC MODULE ================================================ # 
+
+  frontend:
+    name: frontend
+    is_mdssc: true
+    custom_repo: true
+    image: mdssc_frontend
+    ports:
+      - port: 443
+      - port: 80
+    mountConfig:
+      configName: webclient-nginx-config
+      mountPath: /etc/nginx/conf.d/default.conf
+      subPath: default.conf
+    extra_labels:
+      aws-type: fargate
+    resources:
+      requests:
+        memory: "0.25Gi"
+        cpu: "0.100"
+
+  api:
+    name: api
+    is_mdssc: true
+    custom_repo: true
+    image: mdssc_api
+    env:
+      - name: ASPNETCORE_URLS
+        value: http://+
+    ports:
+      - port: 443
+      - port: 80
+    extra_labels:
+      aws-type: fargate
+    resources:
+      requests:
+        memory: "0.5Gi"
+        cpu: "0.100"
+  github:
+    name: github
+    is_mdssc: true
+    custom_repo: true
+    image: "mdssc_github"
+    extra_labels:
+      aws-type: fargate
+    resources:
+      requests:
+        memory: "0.125Gi"
+        cpu: "0.010"
+  binaries:
+    name: binaries
+    is_mdssc: true
+    custom_repo: true
+    image: "mdssc_binaries"
+    extra_labels:
+      aws-type: fargate
+    resources:
+      requests:
+        memory: "0.125Gi"
+        cpu: "0.010"
+  dockerhub:
+    name: dockerhub
+    is_mdssc: true
+    custom_repo: true
+    image: "mdssc_dockerhub"
+    extra_labels:
+      aws-type: fargate
+    resources:
+      requests:
+        memory: "0.125Gi"
+        cpu: "0.010"
+  ecr:
+    name: ecr
+    is_mdssc: true
+    custom_repo: true
+    image: "mdssc_ecr"
+    extra_labels:
+      aws-type: fargate
+    resources:
+      requests:
+        memory: "0.125Gi"
+        cpu: "0.010"
+  quay:
+      name: quay
+      is_mdssc: true
+      custom_repo: true
+      image: "mdssc_quay"
+      extra_labels:
+        aws-type: fargate
+      resources:
+        requests:
+          memory: "0.125Gi"
+          cpu: "0.010"
+  containers:
+      name: containers
+      is_mdssc: true
+      custom_repo: true
+      image: "mdssc_containers"
+      extra_labels:
+        aws-type: fargate
+      resources:
+        requests:
+          memory: "0.125Gi"
+          cpu: "0.010"
+
+  # ======================================= MDSS COMMON MODULE ================================================ # 
+      
+  workflowmanagerservice:
+    name: workflowmanagerservice
+    custom_repo: true
+    image: mdcloudservices_workflowmanager
+    extra_labels:
+      aws-type: fargate
+    resources:
+      requests:
+        memory: "0.25Gi"
+        cpu: "0.100"
+
+  loggingservice:
+    name: loggingservice
+    custom_repo: true
+    image: "mdcloudservices_logging"
+    extra_labels:
+      aws-type: fargate
+    resources:
+      requests:
+        memory: "0.25Gi"
+        cpu: "0.050"
+
+  remediationsservice:
+    name: remediationsservice
+    custom_repo: true
+    image: mdcloudservices_remediations
+    extra_labels:
+      aws-type: fargate
+    resources:
+      requests:
+        memory: "0.25Gi"
+        cpu: "0.100"
+  
+  storagesservice:
+    name: storagesservice
+    custom_repo: true
+    image: mdcloudservices_storages
+    extra_labels:
+      aws-type: fargate
+    resources:
+      requests:
+        memory: "0.25Gi"
+        cpu: "0.010"
+
+  discoveryservice:
+    name: discoveryservice
+    custom_repo: true
+    image: mdcloudservices_discovery
+    extra_labels:
+      aws-type: fargate
+    resources:
+      requests:
+        memory: "0.5Gi"
+        cpu: "1.000"
+
+  scanningservice:
+    name: scanningservice
+    custom_repo: true
+    image: mdcloudservices_scanning
+    extra_labels:
+      aws-type: fargate
+    resources:
+      requests:
+        memory: "1Gi"
+        cpu: "0.500"
+        
+  jobdispatcher:
+    name: jobdispatcher
+    custom_repo: true
+    image: mdcloudservices_job-dispatcher
+    extra_labels:
+      aws-type: fargate
+    resources:
+      requests:
+        memory: "0.25Gi"
+        cpu: "0.050"
+  
+  loadbalancerservice:
+    name: loadbalancerservice
+    custom_repo: true
+    image: "mdcloudservices_load-balancer"
+    extra_labels:
+      aws-type: fargate
+    resources:
+      requests:
+        memory: "0.25Gi"
+        cpu: "0.100"
+
+  usermanagementservice:
+    name: usermanagementservice
+    custom_repo: true
+    image: mdcloudservices_usermanagement
+    extra_labels:
+      aws-type: fargate
+    resources:
+      requests:
+        memory: "0.25Gi"
+        cpu: "0.010"

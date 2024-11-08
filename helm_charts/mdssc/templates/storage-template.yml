@@ -1,0 +1,105 @@
+{{ if $.Values.persistance_enabled }}
+
+## Use dynamic provisioning from minikube if available
+{{ if eq .Values.storage_provisioner "minikube-hostpath" }}
+---
+kind: StorageClass
+apiVersion: storage.k8s.io/v1
+metadata:
+  name: {{ printf "%s-%s" .Release.Namespace .Values.storage_name }}
+provisioner: k8s.io/minikube-hostpath
+reclaimPolicy: Retain
+volumeBindingMode: Immediate
+{{ end }}
+
+{{ if eq .Values.storage_provisioner "no-provisioner" }}
+---
+kind: StorageClass
+apiVersion: storage.k8s.io/v1
+metadata:
+  name: {{ printf "%s-%s" .Release.Namespace .Values.storage_name }}
+provisioner: kubernetes.io/no-provisioner
+volumeBindingMode: WaitForFirstConsumer
+
+## Create a share PV for all component in MDSSC
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  labels:
+    app: {{ printf "%s-%s-pv" .Release.Namespace .Values.storage_name }}
+    type: local
+  name: {{ printf "%s-%s-pv" .Release.Namespace .Values.storage_name }}
+spec:
+  accessModes:
+    - ReadWriteMany
+  capacity:
+    storage: 15Gi
+  storageClassName: {{ printf "%s-%s" .Release.Namespace $.Values.storage_name }}
+  volumeMode: Filesystem
+  persistentVolumeReclaimPolicy: Retain
+  local:
+    path: {{ printf "%s/%s-%s" "/data" .Release.Namespace .Values.storage_name | quote }}
+  nodeAffinity:
+    required:
+      nodeSelectorTerms:
+      - matchExpressions:
+        - key: kubernetes.io/hostname
+          operator: In
+          values:
+          - {{ $.Values.storage_node }}
+
+{{ end }}
+
+{{ if eq .Values.storage_provisioner "efs.csi.aws.com" }}
+# ---
+# apiVersion: storage.k8s.io/v1beta1
+# kind: CSIDriver
+# metadata:
+#   name: efs.csi.aws.com
+# spec:
+#   attachRequired: false
+---
+kind: StorageClass
+apiVersion: storage.k8s.io/v1
+metadata:
+  name: {{ printf "%s-%s" .Release.Namespace .Values.storage_name }}
+provisioner: efs.csi.aws.com
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: {{ printf "%s-%s-pv" .Release.Namespace .Values.storage_name }}
+spec:
+  capacity:
+    storage: 100Gi
+  volumeMode: Filesystem
+  accessModes:
+    - ReadWriteMany
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: {{ printf "%s-%s" .Release.Namespace .Values.storage_name }}
+  csi:
+    driver: efs.csi.aws.com
+    volumeHandle: {{ .Values.EfsVolumeHandle }}
+    volumeAttributes:
+      path: {{ printf "/%s" .Release.Namespace}}
+
+{{ end }}
+
+{{ if ne .Values.storage_provisioner "hostPath" }}
+## Create a shared PVC for all components in MDSSC
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ printf "%s-pvc" .Values.storage_name }}
+spec:
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 15Gi
+  storageClassName: {{ printf "%s-%s" .Release.Namespace .Values.storage_name }}
+{{ end }}
+
+{{ end }}

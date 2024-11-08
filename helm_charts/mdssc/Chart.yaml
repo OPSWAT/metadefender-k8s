@@ -1,0 +1,36 @@
+apiVersion: v2
+name: metadefender_software_supply_chain
+description: This is a Helm chart for deploying MetaDefender Software Supply Chain (https://www.opswat.com/products/metadefender/software-supply-chain) in a Kubernetes cluster
+
+long_description: |
+  This chart can deploy the following depending on the provided values:
+  - All MDSSC services in separate pods 
+  - A MongoDB database instance pre-configured to be used by MDSSC
+
+  ## Installation
+  
+  ### From source
+  MDSSC can be installed directly from the source code, here's an example using generic values:
+  ```console
+  git clone https://github.com/OPSWAT/metadefender-k8s.git metadefender
+  cd metadefender/helm_carts
+  helm install my_mdssc ./mdssc
+  ```
+
+  ### From the GitHub helm repo
+  The installation can also be done using the helm repo which is updated on each release:
+  ```console
+  helm repo add mdk8s https://opswat.github.io/metadefender-k8s/
+  helm repo update mdk8s
+  helm install my_mdssc mdk8s/metadefender_software_supply_chain
+  ```
+
+  ## Operational Notes
+  The entire deployment can be customized by overwriting the chart's default configuration values. Here are a few point to look out for when changing these values:
+  - By default, a MongoDB database is deployed alongside the MDSSC deployment
+  - In a production environment it's recommended to use an external service for the database  and set `deploy_with_mdssc_db` to false in order to not deploy an in-cluster database
+
+type: application
+
+version: 2.3.2
+appVersion: 2.3.2
