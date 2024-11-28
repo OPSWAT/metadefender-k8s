@@ -138,6 +138,21 @@ entries:
     version: 0.0.29
   metadefender_core:
   - apiVersion: v2
+    appVersion: 5.12.1
+    created: "2024-11-28T13:18:31.339661623Z"
+    description: 'This is a Helm chart for deploying MetaDefender Core (https://www.opswat.com/products/metadefender/core)
+      in a Kubernetes cluster.   Release Notes - MetaDefender Core version 5.11.1
+      - Environment variables to migrate processing history (Pre-steps needed) - Environment
+      variables to enable Licensing Cleanup and examples for Role/Rolebinding - Fixed
+      warning of kubernetes.io/ingress.class annotation for AWS and Azure. Added control
+      flag to still use it for GCP '
+    digest: bd4684b0af60114dbd0bf57e6b92383b8423ab730aaf073002e8d6de94c76929
+    name: metadefender_core
+    type: application
+    urls:
+    - https://github.com/OPSWAT/metadefender-k8s/releases/download/metadefender_core-5.12.1/metadefender_core-5.12.1.tgz
+    version: 5.12.1
+  - apiVersion: v2
     appVersion: 5.12.0
     created: "2024-10-17T10:52:06.950718197Z"
     description: 'This is a Helm chart for deploying MetaDefender Core (https://www.opswat.com/products/metadefender/core)
@@ -360,6 +375,18 @@ entries:
     version: 2.3.2
   metadefender_storage_security:
   - apiVersion: v2
+    appVersion: 3.5.1
+    created: "2024-11-28T13:18:31.483540926Z"
+    description: This is a Helm chart for deploying MetaDefender for Secure Storage
+      (https://www.opswat.com/products/metadefender/storage-security) in a Kubernetes
+      cluster
+    digest: e51a25630ebdb2c99946f34052de6de5705113e0c85dfb765e10fe9dbe348ac5
+    name: metadefender_storage_security
+    type: application
+    urls:
+    - https://github.com/OPSWAT/metadefender-k8s/releases/download/metadefender_storage_security-3.5.1/metadefender_storage_security-3.5.1.tgz
+    version: 3.5.1
+  - apiVersion: v2
     appVersion: 3.5.0
     created: "2024-11-15T11:44:45.926269178Z"
     description: This is a Helm chart for deploying MetaDefender for Secure Storage
@@ -490,4 +517,4 @@ entries:
     urls:
     - https://github.com/OPSWAT/metadefender-k8s/releases/download/metadefender_storage_security-0.0.28/metadefender_storage_security-0.0.28.tgz
     version: 0.0.28
-generated: "2024-11-15T11:44:45.926403048Z"
+generated: "2024-11-28T13:18:31.483943292Z"
