@@ -1,0 +1,16 @@
+
+
+core_components:
+  md-core:
+    serviceSpec:                            # This will overwrite other service options (ports, type, etc) if configured
+      ports:
+        - name: "8008"
+          port: 8008
+          targetPort: 8008
+          nodePort: 30808
+      type: NodePort
+      sessionAffinity: None
+      externalTrafficPolicy: Local
+      internalTrafficPolicy: Local
+      selector:
+        app: "md-core"

@@ -39,7 +39,7 @@ mdss-common-environment:
   RABBITMQ_SCANNING_PREFETCH_COUNT: "10"
 
   HTTPS_ACTIVE: "no"
-  BRANCH: "3.5.0"          # Set MDSS version (image tag)
+  BRANCH: "3.5.1"          # Set MDSS version (image tag)
   # These variables can be changed to reveal debug information in the application
   LOG_LEVEL: "4"
   APP_LOG_LEVEL: "INFORMATION"
@@ -223,7 +223,7 @@ mdssHostAliases:                              # Custom hosts entries
 mdss_components:
   mongodb:
     name: mongodb
-    image: mongo:3.6
+    image: mongo:6.0
     ports:
       - port: 27017
     persistentDir: /data/db

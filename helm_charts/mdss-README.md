@@ -24,7 +24,7 @@ helm install my_mdss ./mdss
 
 ### From the GitHub helm repo
 The installation can also be done using the helm repo which is updated on each release:
- ```console
+```console
 helm repo add mdk8s https://opswat.github.io/metadefender-k8s/
 helm repo update mdk8s
 helm install my_mdss mdk8s/metadefender_storage_security
@@ -40,6 +40,23 @@ Currently supported modules:
 `azureblob,amazonsdk,googlecloud,alibabacloud,azurefiles,smb,box,onedrive,sftp,debug`
 
 The `debug` module is reserved for deploying debug and maintenance pods.
+
+## Upgrading
+The helm upgrade command can be used to upgrade the mdss services using the latest helm chart:
+```
+helm upgrade my_mdss <path_to_chart>
+```
+### Database upgrades
+**This step is not required when using an external, managed database**
+
+The helm chart is configured by default to use the latest compatible version of MongoDB. Before upgrading an existing deployment with persistent database, make sure that the database is upgraded to the specific version for the coresponding release:
+ - MDSS 3.5.1 - MongoDB 6.0
+
+The MongoDB upgrade procedure needs to be done sequentially following all intermediate releases.
+
+The following components are non-persistent and can be updated to the latest compatible version by setting the respective image tag:
+ - RabbitMQ: rabbitmq:3.11.4-management
+ - Redis Cache: redis:7.0
 
 ## Operational Notes
 The entire deployment can be customized by overwriting the chart's default configuration values. Here are a few point to look out for when changing these values:
