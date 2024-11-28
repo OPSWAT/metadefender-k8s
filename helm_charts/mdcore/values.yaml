@@ -130,6 +130,13 @@ env:                                                            # Set additional
   MIGRATE_HISTORY: "false"  # Only from version 5.10.1 See Pre-steps in docs.opswat.com 
   MDCORE_LICENSE_COMMENT: ""
 
+hpa:
+  deployment: md-core
+  enabled: false
+  minReplicas: 1
+  maxReplicas: 3
+  cpuTargetUtilization: 85
+
 core_components:
   postgres-core:
     name: postgres-core
@@ -154,7 +161,7 @@ core_components:
 
   md-core:
     name: md-core
-    image: opswat/metadefendercore-debian:5.12.0        # Overrides the default docker image for the MD Core service, this value can be changed if you want to set a different version of MD Core
+    image: opswat/metadefendercore-debian:5.12.1        # Overrides the default docker image for the MD Core service, this value can be changed if you want to set a different version of MD Core
     replicas: 1                                         # Sets the number of replicas if you want to have multiple MD Core instances
     env:
       - name: MD_USER
@@ -251,7 +258,7 @@ core_components:
         maxSurge: 0
     initContainers:
       - name: check-db-ready
-        image: opswat/metadefendercore-debian:5.12.0 
+        image: opswat/metadefendercore-debian:5.12.1 
         imagePullPolicy: IfNotPresent
         envFrom:
           - configMapRef:
@@ -283,7 +290,7 @@ core_components:
           defaultMode: 0777
     initContainers:
       - name: wait-for-hub-services
-        image: opswat/metadefendercore-debian:5.12.0
+        image: opswat/metadefendercore-debian:5.12.1
         imagePullPolicy: IfNotPresent
         command: [ '/wait-for-hub-services.sh' ]
         volumeMounts:

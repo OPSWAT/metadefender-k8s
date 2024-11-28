@@ -15,6 +15,9 @@ metadata:
     {{- toYaml $component.service_annotations | nindent 4 }}
   {{- end }}
 spec:
+{{- if $component.serviceSpec }}
+  {{- toYaml $component.serviceSpec | nindent 2 }}
+{{- else }}
   ports:
   {{- range $component.ports }}
     - name: {{ .port | quote }}
@@ -29,6 +32,7 @@ spec:
   {{- end }}
   selector:
       app: {{ $component.name | quote }}
+{{- end }}
 status:
   loadBalancer: {}
 {{ end }}
