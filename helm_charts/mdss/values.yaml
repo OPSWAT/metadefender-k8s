@@ -185,10 +185,10 @@ hostPathPrefix: mdss-storage-<APP_NAMESPACE>         # This is the absolute path
 
 # Ingress settings for mdss
 mdss_ingress:
+  enabled: false                        # Enable or disable the ingress creation      
   host: <APP_NAMESPACE>-mdss.k8s             # Hostname for the publicly accessible ingress, the `<APP_NAMESPACE>` string will be replaced with the current namespace                
   service: webclient                    # Service name where the ingress should route to, this should be left unchanged          
   port: 80                              # Port where the ingress should route to
-  enabled: false                        # Enable or disable the ingress creation      
   class: public                         # Sets the ingress class, it can be "public" or "nginx" or some other value depending on the ingress controller in the cluster
   spec_className: false                 # true -> for adding class as spec || false -> for adding class as annotation. false for GKE as it needs to be as annotation.
   tls: false                            # Flag for set up tls section in ingress
@@ -222,8 +222,8 @@ mdssHostAliases:                              # Custom hosts entries
 
 mdss_components:
   mongodb:
-    name: mongodb
-    image: mongo:6.0
+    image: mongo
+    image_tag: "6.0"
     ports:
       - port: 27017
     persistentDir: /data/db
@@ -234,7 +234,6 @@ mdss_components:
         cpu: "0.5"
 
   mongomigrations:
-    name: mongomigrations
     custom_repo: true
     image: mdcloudservices_mongo-migrations
     ports:
@@ -246,8 +245,8 @@ mdss_components:
         cpu: "0.010"
 
   rabbitmq:
-    name: rabbitmq
-    image: rabbitmq:3.11.4-management
+    image: rabbitmq
+    image_tag: "3.11.4-management"
     ports:
       - port: 5672
       - port: 15672
@@ -266,8 +265,8 @@ mdss_components:
         cpu: "0.5"
   
   redis:
-    name: redis
-    image: redis:7.0
+    image: redis
+    image_tag: "7.0"
     ports:
       - port: 6379
     extra_labels:
@@ -278,7 +277,6 @@ mdss_components:
         cpu: "0.100"
 
   licensingservice:
-    name: licensingservice
     custom_repo: true
     image: mdcloudservices_licensing
     ports:
@@ -291,7 +289,6 @@ mdss_components:
         cpu: "0.010"
   
   discoveryservice:
-    name: discoveryservice
     custom_repo: true
     image: mdcloudservices_discovery
     extra_labels:
@@ -302,7 +299,6 @@ mdss_components:
         cpu: "1.000"
 
   scanningservice:
-    name: scanningservice
     custom_repo: true
     image: mdcloudservices_scanning
     extra_labels:
@@ -313,7 +309,6 @@ mdss_components:
         cpu: "0.500"
   
   notificationservice:
-    name: notificationservice
     custom_repo: true
     image: mdcloudservices_notification
     extra_labels:
@@ -324,7 +319,6 @@ mdss_components:
         cpu: "0.010"
 
   jobdispatcher:
-    name: jobdispatcher
     custom_repo: true
     image: mdcloudservices_job-dispatcher
     extra_labels:
@@ -335,7 +329,6 @@ mdss_components:
         cpu: "0.050"
   
   securitychecklistservice:
-    name: securitychecklistservice
     custom_repo: true
     image: "mdcloudservices_security-checklist"
     extra_labels:
@@ -346,7 +339,6 @@ mdss_components:
         cpu: "0.010"
 
   loadbalancerservice:
-    name: loadbalancerservice
     custom_repo: true
     image: "mdcloudservices_load-balancer"
     extra_labels:
@@ -357,7 +349,6 @@ mdss_components:
         cpu: "0.100"
 
   loggingservice:
-    name: loggingservice
     custom_repo: true
     image: "mdcloudservices_logging"
     extra_labels:
@@ -368,7 +359,6 @@ mdss_components:
         cpu: "0.050"
 
   remediationsservice:
-    name: remediationsservice
     custom_repo: true
     image: mdcloudservices_remediations
     extra_labels:
@@ -379,7 +369,6 @@ mdss_components:
         cpu: "0.100"
   
   storagesservice:
-    name: storagesservice
     custom_repo: true
     image: mdcloudservices_storages
     extra_labels:
@@ -390,7 +379,6 @@ mdss_components:
         cpu: "0.010"
       
   workflowmanagerservice:
-    name: workflowmanagerservice
     custom_repo: true
     image: mdcloudservices_workflowmanager
     extra_labels:
@@ -401,7 +389,6 @@ mdss_components:
         cpu: "0.100"
   
   apigateway:
-    name: apigateway
     custom_repo: true
     image: mdcloudservices_api
     env:
@@ -418,7 +405,6 @@ mdss_components:
         cpu: "0.100"
 
   webclient:
-    name: webclient
     custom_repo: true
     image: mdcloudservices_web
     ports:
@@ -436,7 +422,6 @@ mdss_components:
         cpu: "0.100"
 
   usermanagementservice:
-    name: usermanagementservice
     custom_repo: true
     image: mdcloudservices_usermanagement
     extra_labels:
@@ -448,7 +433,6 @@ mdss_components:
 
   # ======================================= AMAZONSDK MODULE ================================================
   discoveryamazonsdkservice:
-    name: discoveryamazonsdkservice
     module_name: amazonsdk
     custom_repo: true
     image: mdcloudservices_discoveryamazonsdk
@@ -460,7 +444,6 @@ mdss_components:
         cpu: "1.000"
 
   remediationsservice-amazonsdk:
-    name: remediationsservice-amazonsdk
     module_name: amazonsdk
     custom_repo: true
     image: mdcloudservices_remediationsamazonsdk
@@ -472,7 +455,6 @@ mdss_components:
         cpu: "0.100"
   
   storagesservice-amazonsdk:
-    name: storagesservice-amazonsdk
     module_name: amazonsdk
     custom_repo: true
     image: mdcloudservices_storagesamazonsdk
@@ -484,7 +466,6 @@ mdss_components:
         cpu: "0.010"
   # ======================================= AZUREBLOB MODULE ================================================
   discoveryazureblobservice:
-    name: discoveryazureblobservice
     module_name: azureblob
     custom_repo: true
     image: mdcloudservices_discoveryazureblob
@@ -496,7 +477,6 @@ mdss_components:
         cpu: "1.000"
 
   remediationsservice-azureblob:
-    name: remediationsservice-azureblob
     module_name: azureblob
     custom_repo: true
     image: mdcloudservices_remediationsazureblob
@@ -508,7 +488,6 @@ mdss_components:
         cpu: "0.100"
       
   storagesservice-azureblob:
-    name: storagesservice-azureblob
     module_name: azureblob
     custom_repo: true
     image: mdcloudservices_storagesazureblob
@@ -520,7 +499,6 @@ mdss_components:
         cpu: "0.010"
   # ======================================= ALIBABACLOUD MODULE ================================================
   discoveryalibabacloudservice:
-    name: discoveryalibabacloudservice
     module_name: alibabacloud
     custom_repo: true
     image: mdcloudservices_discoveryalibabacloud
@@ -532,7 +510,6 @@ mdss_components:
         cpu: "1.000"
   
   remediationsservice-alibabacloud:
-    name: remediationsservice-alibabacloud
     module_name: alibabacloud
     custom_repo: true
     image: mdcloudservices_remediationsalibabacloud
@@ -544,7 +521,6 @@ mdss_components:
         cpu: "0.100"
   
   storagesservice-alibabacloud:
-    name: storagesservice-alibabacloud
     module_name: alibabacloud
     custom_repo: true
     image: mdcloudservices_storagesalibabacloud
@@ -556,7 +532,6 @@ mdss_components:
         cpu: "0.010"
   # ======================================= GOOGLECLOUD MODULE ================================================
   discoverygooglecloudservice:
-    name: discoverygooglecloudservice
     module_name: googlecloud
     custom_repo: true
     image: mdcloudservices_discoverygooglecloud
@@ -568,7 +543,6 @@ mdss_components:
         cpu: "1.000"
   
   remediationsservice-googlecloud:
-    name: remediationsservice-googlecloud
     module_name: googlecloud
     custom_repo: true
     image: mdcloudservices_remediationsgooglecloud
@@ -580,7 +554,6 @@ mdss_components:
         cpu: "0.100"
   
   storagesservice-googlecloud:
-    name: storagesservice-googlecloud
     module_name: googlecloud
     custom_repo: true
     image: mdcloudservices_storagesgooglecloud
@@ -592,7 +565,6 @@ mdss_components:
         cpu: "0.010"
   # ======================================= BOX MODULE ================================================
   discoveryboxservice:
-    name: discoveryboxservice
     module_name: box
     custom_repo: true
     image: mdcloudservices_discoverybox
@@ -604,7 +576,6 @@ mdss_components:
         cpu: "1.000"
   
   remediationsservice-box:
-    name: remediationsservice-box
     module_name: box
     custom_repo: true
     image: mdcloudservices_remediationsbox
@@ -616,7 +587,6 @@ mdss_components:
         cpu: "0.100"
       
   storagesservice-box:
-    name: storagesservice-box
     module_name: box
     custom_repo: true
     image: mdcloudservices_storagesbox
@@ -628,7 +598,6 @@ mdss_components:
         cpu: "0.010"
   # ======================================= AZUREFILES MODULE ================================================
   discoveryazurefilesservice:
-    name: discoveryazurefilesservice
     module_name: azurefiles
     custom_repo: true
     image: mdcloudservices_discoveryazurefiles
@@ -640,7 +609,6 @@ mdss_components:
         cpu: "1.000"
   
   remediationsservice-azurefiles:
-    name: remediationsservice-azurefiles
     module_name: azurefiles
     custom_repo: true
     image: mdcloudservices_remediationsazurefiles
@@ -652,7 +620,6 @@ mdss_components:
         cpu: "0.100"
   
   storagesservice-azurefiles:
-    name: storagesservice-azurefiles
     module_name: azurefiles
     custom_repo: true
     image: mdcloudservices_storagesazurefiles
@@ -664,7 +631,6 @@ mdss_components:
         cpu: "0.010"
   # ======================================= SMB MODULE ================================================
   discoverysmbservice:
-    name: discoverysmbservice
     module_name: smb
     custom_repo: true
     image: mdcloudservices_discoverysmb
@@ -676,7 +642,6 @@ mdss_components:
         cpu: "1.000"
   
   remediationsservice-smb:
-    name: remediationsservice-smb
     module_name: smb
     custom_repo: true
     image: mdcloudservices_remediationssmb
@@ -688,7 +653,6 @@ mdss_components:
         cpu: "0.100"
   
   storagesservice-smb:
-    name: storagesservice-smb
     module_name: smb
     custom_repo: true
     image: mdcloudservices_storagessmb
@@ -700,7 +664,6 @@ mdss_components:
         cpu: "0.010"
   
   smbservice:
-    name: smbservice
     module_name: smb
     custom_repo: true
     image: mdcloudservices_smbservice
@@ -714,7 +677,6 @@ mdss_components:
         cpu: "0.500"
   # ======================================= ONEDRIVE MODULE ================================================
   discoveryonedriveservice:
-    name: discoveryonedriveservice
     module_name: onedrive
     custom_repo: true
     image: mdcloudservices_discoveryonedrive
@@ -726,7 +688,6 @@ mdss_components:
         cpu: "1.000"
   
   remediationsservice-onedrive:
-    name: remediationsservice-onedrive
     module_name: onedrive
     custom_repo: true
     image: mdcloudservices_remediationsonedrive
@@ -738,7 +699,6 @@ mdss_components:
         cpu: "0.100"
       
   storagesservice-onedrive:
-    name: storagesservice-onedrive
     module_name: onedrive
     custom_repo: true
     image: mdcloudservices_storagesonedrive
@@ -751,7 +711,6 @@ mdss_components:
   
   # ======================================= SFTP MODULE ================================================
   discoverysftpservice:
-    name: discoverysftpservice
     module_name: sftp
     custom_repo: true
     image: mdcloudservices_discoverysftp
@@ -763,7 +722,6 @@ mdss_components:
         cpu: "1.000"
   
   remediationsservice-sftp:
-    name: remediationsservice-sftp
     module_name: sftp
     custom_repo: true
     image: mdcloudservices_remediationssftp
@@ -775,7 +733,6 @@ mdss_components:
         cpu: "0.100"
   
   storagesservice-sftp:
-    name: storagesservice-sftp
     module_name: sftp
     custom_repo: true
     image: mdcloudservices_storagessftp
@@ -787,7 +744,6 @@ mdss_components:
         cpu: "0.010"
   
   sftpservice:
-    name: sftpservice
     module_name: sftp
     custom_repo: true
     image: mdcloudservices_sftpservice
@@ -805,7 +761,6 @@ mdss_components:
       
   # ======================================= NFS MODULE ================================================
   discoverynfsservice:
-    name: discoverynfsservice
     module_name: nfs
     custom_repo: true
     image: mdcloudservices_discoverynfs
@@ -817,7 +772,6 @@ mdss_components:
         cpu: "1.000"
   
   remediationsservice-nfs:
-    name: remediationsservice-nfs
     module_name: nfs
     custom_repo: true
     image: mdcloudservices_remediationsnfs
@@ -829,7 +783,6 @@ mdss_components:
         cpu: "0.100"
   
   storagesservice-nfs:
-    name: storagesservice-nfs
     module_name: nfs
     custom_repo: true
     image: mdcloudservices_storagesnfs
@@ -841,7 +794,6 @@ mdss_components:
         cpu: "0.010"
   
   nfsservice:
-    name: nfsservice
     module_name: nfs
     custom_repo: true
     image: mdcloudservices_nfsservice
@@ -856,7 +808,6 @@ mdss_components:
 
  # ======================================= MFT MODULE ================================================
   discoverymftservice:
-    name: discoverymftservice
     module_name: mft
     custom_repo: true
     image: mdcloudservices_discoverymft
@@ -868,7 +819,6 @@ mdss_components:
         cpu: "1.000"
   
   remediationsservice-mft:
-    name: remediationsservice-mft
     module_name: mft
     custom_repo: true
     image: mdcloudservices_remediationsmft
@@ -880,7 +830,6 @@ mdss_components:
         cpu: "0.100"
       
   storagesservice-mft:
-    name: storagesservice-mft
     module_name: mft
     custom_repo: true
     image: mdcloudservices_storagesmft

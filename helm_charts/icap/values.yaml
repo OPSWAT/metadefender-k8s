@@ -137,8 +137,12 @@ icap_components:
             memory: "128Mi"   # Maximum memory limit
             cpu: "100m"       # Maximum cpu limit
     name: md-icapsrv
+
     # Overrides the default docker image for the MD ICAP Server service, this value can be changed if you want to set a different version of MD ICAP Server
-    image: opswat/metadefendericapsrv-debian:5.6.0
+    image: opswat/metadefendericapsrv-debian
+    # Default is appVersion of the helm Chart
+    # image_tag: ""
+
     # Warning: When to use this feature!
     # Sets the number of replicas if you want to have multiple MD ICAP Server instances
     replicas: 1

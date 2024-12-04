@@ -1,5 +1,11 @@
 # Create a deployment for each component in MD ICAP Server if it's enabled
 {{ $component := .Values.icap_components.md_icapsrv }}
+
+# If the image tag is not defined, set it to the chart version
+{{ if or (ne defined $component.image_tag) (eq $component.image_tag "") }}
+{{ $component.image_tag = .Chart.AppVersion }}
+{{ end }}
+
 {{ $ENV := $component.env }}
 {{ if $component.import_configuration.enabled }}
 {{ $importTargets := dict "name" "IMPORT_CONF_FILE_TARGET" "value" (toJson $component.import_configuration.targets) }}
@@ -17,7 +23,7 @@ kind: Deployment
 metadata:
   name: {{ $component.name | quote }}
 spec:
-  replicas: {{ $component.replicas }}
+  replicas: {{ $component.replicas | default 1 }}
   selector:
     matchLabels:
       app: {{ $component.name | quote }}
@@ -43,9 +49,9 @@ spec:
             - configMapRef:
                 name: mdicapsrv-env
           {{- if $component.custom_repo }}
-          image: {{ printf "%s/%s:%s" $.Values.icap_docker_repo $component.image | quote }}
+          image: {{ printf "%s/%s:%s" $.Values.icap_docker_repo $component.image $component.image_tag | quote }}
           {{ else }}
-          image: {{ $component.image | quote }}
+          image: {{ printf "%s:%s" $component.image $component.image_tag | quote }}
           {{- end }}
           {{- if $ENV }}
           env:

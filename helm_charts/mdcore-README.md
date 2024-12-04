@@ -147,7 +147,8 @@ The following table lists the configurable parameters of the Metadefender core c
 | `core_components.postgres-core.is_db` |  | `true` |
 | `core_components.postgres-core.persistentDir` |  | `"/var/lib/postgresql/data"` |
 | `core_components.md-core.name` |  | `"md-core"` |
-| `core_components.md-core.image` | Overrides the default docker image for the MD Core service, this value can be changed if you want to set a different version of MD Core | `"opswat/metadefendercore-debian:5.0.1"` |
+| `core_components.md-core.image` | Overrides the default docker image for the MD Core service, this value can be changed if you want to set a different version of MD Core | `"opswat/metadefendercore-debian"` |
+| `core_components.md-core.image_tag` | Overrides the default docker image tag for the MD Core service, this value can be changed if you want to set a different version of MD Core | Helm Chart version. Ex : `5.0.1` |
 | `core_components.md-core.replicas` | Sets the number of replicas if you want to have multiple MD Core instances | `1` |
 | `core_components.md-core.env` |  | `[{"name": "MD_USER", "valueFrom": {"secretKeyRef": {"name": "mdcore-cred", "key": "user"}}}, {"name": "MD_PWD", "valueFrom": {"secretKeyRef": {"name": "mdcore-cred", "key": "password"}}}, {"name": "MD_INSTANCE_NAME", "valueFrom": {"fieldRef": {"fieldPath": "metadata.name"}}}, {"name": "APIKEY", "valueFrom": {"secretKeyRef": {"name": "mdcore-api-key", "key": "value"}}}, {"name": "LICENSE_KEY", "valueFrom": {"secretKeyRef": {"name": "mdcore-license-key", "key": "value"}}}, {"name": "DB_USER", "valueFrom": {"secretKeyRef": {"name": "mdcore-postgres-cred", "key": "user"}}}, {"name": "DB_PWD", "valueFrom": {"secretKeyRef": {"name": "mdcore-postgres-cred", "key": "password"}}}]` |
 | `core_components.md-core.ports` |  | `[{"port": 8008}]` |

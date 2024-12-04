@@ -1,6 +1,12 @@
 
 # Create a service for each component in MD ICAP Server it has exposed ports
 {{ range $component_name, $component := .Values.icap_components }}
+
+# If the component name is not defined, set it to the component name
+{{- if or (ne defined $component.name) (eq $component.name "") }}
+{{- $component.name := $component_name }}
+{{- end }}
+
 {{ if $component.ports }}
 ---
 apiVersion: v1

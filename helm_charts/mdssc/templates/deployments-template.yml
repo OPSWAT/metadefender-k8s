@@ -2,6 +2,20 @@
 # Create a deployment for each component in MDSSC
 {{ range $component_name, $component := .Values.mdssc_components }}
 
+# If the component name is not defined, set it to the component name
+{{- if or (ne defined $component.name) (eq $component.name "") }}
+{{- $component.name := $component_name }}
+{{- end }}
+
+# If the image tag is not defined, set it to latest
+{{ if or (ne defined $component.image_tag) (eq $component.image_tag "") }}
+  {{ if eq $component.is_mdssc true -}}
+    {{ $component.image_tag := .Chart.AppVersion }}
+  {{ else }}
+    {{ $component.image_tag := "latest" }}
+  {{ end }}
+{{ end }}
+
 {{  if and (or $.Values.deploy_with_mdssc_db (not $component.is_db))  }}
 ---
 apiVersion: apps/v1
@@ -9,7 +23,7 @@ kind: Deployment
 metadata:
   name: {{ $component.name | quote }}
 spec:
-  replicas: {{ $component.replicas }}
+  replicas: {{ $component.replicas | default 1 }}
   selector:
     matchLabels:
       app: {{ $component.name | quote }}
@@ -30,13 +44,9 @@ spec:
             - configMapRef:
                 name: {{ $.Values.mdssc_config_map_env_name | quote }}
           {{ if $component.custom_repo -}}
-            {{ if eq $component.is_mdssc true -}}
-          image: {{ printf "%s/%s:%s" $.Values.mdssc_docker_repo $component.image (index $.Values "mdssc-common-environment").MDSSC_BRANCH | quote }}
-            {{ else -}}
-          image: {{ printf "%s/%s:%s" $.Values.mdssc_docker_repo $component.image (index $.Values "mdssc-common-environment").BRANCH | quote }}
-            {{ end -}}
+          image: {{ printf "%s/%s:%s" $.Values.mdssc_docker_repo $component.image $component.image_tag | quote }}
           {{- else -}}
-          image: {{ $component.image | quote }}
+          image: {{ printf "%s:%s" $component.image $component.image_tag | quote }}
           {{- end }}
           imagePullPolicy: {{ $.Values.imagePullPolicy }}
           {{- if $component.env }}

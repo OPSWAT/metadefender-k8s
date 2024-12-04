@@ -1,6 +1,11 @@
 
 # Create a service for each component in MD ICAP Server it has exposed ports
 {{ $component := .Values.postgres_mdicapsrv }}
+
+{{- if or (ne defined $component.name) (eq $component.name "") }}
+{{- $component.name := "postgres-mdicapsrv" }}
+{{- end }}
+
 ---
 apiVersion: v1
 kind: Service
