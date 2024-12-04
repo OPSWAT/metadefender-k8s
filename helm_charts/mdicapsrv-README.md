@@ -62,7 +62,8 @@ The following table lists the configurable parameters of the Metadefender ICAP c
 | `icap_ingress.class` | Sets the ingress class | `"nginx"` |
 | `postgres_mdicapsrv.enabled` | Set to false to not create postgresql server  | `true` |
 | `postgres_mdicapsrv.name` | Name of the Postgres instance | `"postgres-mdicapsrv"` |
-| `postgres_mdicapsrv.image` | Default image repository for postgres instance | `"postgres:12.12"` |
+| `postgres_mdicapsrv.image` | Default image repository for postgres instance | `"postgres"` |
+| `postgres_mdicapsrv.image_tag` | Default image tag for postgres instance | `"12.12"` |
 | `postgres_mdicapsrv.env.name` | List of envs <ul><li>`POSTGRES_PASSWORD: ` This environment variable is required for you to use the PostgreSQL image. It must not be empty or undefined. This environment variable sets the superuser password for PostgreSQL</li><li>`POSTGRES_USER: ` This variable will create the specified user with superuser power and a database with the same name. If it is not specified, then the default user of postgres will be used</li></ul>  | `"postgres"` |
 | `icap_docker_repo` | Name of MD ICAP Server image repository | `"opswat"` |
 | `storage_configs.enabled` | Enable or disable for storage data Postgresql | `"false"` |
@@ -79,7 +80,9 @@ The following table lists the configurable parameters of the Metadefender ICAP c
 | `icap_components.md_icapsrv.initContainers.envFrom.configMapRef.name` | The name of the config map reference with MD ICAP Server | `"mdicapsrv-env"` |
 | `icap_components.md_icapsrv.initContainers.command` | The command line for check postgresql server ready for connection | `['sh', '-c', 'until pg_isready -h $DB_HOST -p $DB_PORT; do echo waiting for database; sleep 2; done;']` |
 | `icap_components.md_icapsrv.name` | Name of MD ICAP Server image | `"md-icapsrv"` |
-| `icap_components.md_icapsrv.image` | This value always get the image latest in the repository. Overrides the default docker image for the MD ICAP Server service, this value can be changed if you want to set a different version of MD ICAP Server (ex: opswat/metadefendericapsrv-debian:4.13.0). | `"opswat/metadefendericapsrv-debian"` |
+| `icap_components.md_icapsrv.custom_repo` | Overrides default docker repository to use for downloading the image. It will use `icap_docker_repo` value. | `false` |
+| `icap_components.md_icapsrv.image` | Overrides the default docker image for the MD ICAP Server service, this value can be changed if you want to set a different version of MD ICAP Server (ex: opswat/metadefendericapsrv-debian). | `"opswat/metadefendericapsrv-debian"` |
+| `icap_components.md_icapsrv.image_tag` | This value always get the image tag in the repository. Overrides the default docker image for the MD ICAP Server service, this value can be changed if you want to set a different version of MD ICAP Server (ex: 4.13.0). | `Helm Chart appVersion` |
 | `icap_components.md_icapsrv.env` | The system environments for MD ICAP Server | `[{"name":"MD_USER","valueFrom":{"secretKeyRef":{"name":"mdicapsrv-cred","key":"user"}}},{"name":"MD_PWD","valueFrom":{"secretKeyRef":{"name":"mdicapsrv-cred","key":"password"}}},{"name":"APIKEY","valueFrom":{"secretKeyRef":{"name":"mdicapsrv-api-key","key":"value"}}},{"name":"LICENSE_KEY","valueFrom":{"secretKeyRef":{"name":"mdicapsrv-license-key","key":"value"}}},{"name":"POSTGRES_PASSWORD","valueFrom":{"secretKeyRef":{"name":"mdicapsrv-postgres-cred","key":"password"}}},{"name":"POSTGRES_USER","valueFrom":{"secretKeyRef":{"name":"mdicapsrv-postgres-cred","key":"user"}}}]` |
 | `icap_components.md_icapsrv.data_retention.config_history` | Set the time of the data retention config history | `"168"` |
 | `icap_components.md_icapsrv.data_retention.processing_history` | Set the time of the data retention processing history | `"168"` |

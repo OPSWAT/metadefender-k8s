@@ -214,8 +214,8 @@ mdsscHostAliases:                              # Custom hosts entries
 
 mdssc_components:
   mongodb:
-    name: mongodb
-    image: mongo:3.6
+    image: mongo
+    image_tag: "3.6"
     ports:
       - port: 27017
     persistentDir: /data/db
@@ -226,7 +226,6 @@ mdssc_components:
         cpu: "0.5"
 
   mongomigrations:
-    name: mongomigrations
     custom_repo: true
     image: mdcloudservices_mongo-migrations
     ports:
@@ -238,8 +237,8 @@ mdssc_components:
         cpu: "0.010"
 
   rabbitmq:
-    name: rabbitmq
-    image: rabbitmq:3.11.4-management
+    image: rabbitmq
+    image_tag: "3.11.4-management"
     ports:
       - port: 5672
       - port: 15672
@@ -258,8 +257,8 @@ mdssc_components:
         cpu: "0.5"
   
   redis:
-    name: redis
-    image: redis:7.0
+    image: redis
+    image_tag: "7.0"
     ports:
       - port: 6379
     extra_labels:
@@ -270,7 +269,6 @@ mdssc_components:
         cpu: "0.100"
 
   licensingservice:
-    name: licensingservice
     custom_repo: true
     image: mdcloudservices_licensing
     ports:
@@ -285,7 +283,6 @@ mdssc_components:
   # ======================================= MDSSC MODULE ================================================ # 
 
   frontend:
-    name: frontend
     is_mdssc: true
     custom_repo: true
     image: mdssc_frontend
@@ -304,7 +301,6 @@ mdssc_components:
         cpu: "0.100"
 
   api:
-    name: api
     is_mdssc: true
     custom_repo: true
     image: mdssc_api
@@ -321,7 +317,6 @@ mdssc_components:
         memory: "0.5Gi"
         cpu: "0.100"
   github:
-    name: github
     is_mdssc: true
     custom_repo: true
     image: "mdssc_github"
@@ -332,7 +327,6 @@ mdssc_components:
         memory: "0.125Gi"
         cpu: "0.010"
   binaries:
-    name: binaries
     is_mdssc: true
     custom_repo: true
     image: "mdssc_binaries"
@@ -343,7 +337,6 @@ mdssc_components:
         memory: "0.125Gi"
         cpu: "0.010"
   dockerhub:
-    name: dockerhub
     is_mdssc: true
     custom_repo: true
     image: "mdssc_dockerhub"
@@ -354,7 +347,6 @@ mdssc_components:
         memory: "0.125Gi"
         cpu: "0.010"
   ecr:
-    name: ecr
     is_mdssc: true
     custom_repo: true
     image: "mdssc_ecr"
@@ -365,32 +357,29 @@ mdssc_components:
         memory: "0.125Gi"
         cpu: "0.010"
   quay:
-      name: quay
-      is_mdssc: true
-      custom_repo: true
-      image: "mdssc_quay"
-      extra_labels:
-        aws-type: fargate
-      resources:
-        requests:
-          memory: "0.125Gi"
-          cpu: "0.010"
+    is_mdssc: true
+    custom_repo: true
+    image: "mdssc_quay"
+    extra_labels:
+      aws-type: fargate
+    resources:
+      requests:
+        memory: "0.125Gi"
+        cpu: "0.010"
   containers:
-      name: containers
-      is_mdssc: true
-      custom_repo: true
-      image: "mdssc_containers"
-      extra_labels:
-        aws-type: fargate
-      resources:
-        requests:
-          memory: "0.125Gi"
-          cpu: "0.010"
+    is_mdssc: true
+    custom_repo: true
+    image: "mdssc_containers"
+    extra_labels:
+      aws-type: fargate
+    resources:
+      requests:
+        memory: "0.125Gi"
+        cpu: "0.010"
 
   # ======================================= MDSS COMMON MODULE ================================================ # 
       
   workflowmanagerservice:
-    name: workflowmanagerservice
     custom_repo: true
     image: mdcloudservices_workflowmanager
     extra_labels:
@@ -401,7 +390,6 @@ mdssc_components:
         cpu: "0.100"
 
   loggingservice:
-    name: loggingservice
     custom_repo: true
     image: "mdcloudservices_logging"
     extra_labels:
@@ -412,7 +400,6 @@ mdssc_components:
         cpu: "0.050"
 
   remediationsservice:
-    name: remediationsservice
     custom_repo: true
     image: mdcloudservices_remediations
     extra_labels:
@@ -423,7 +410,6 @@ mdssc_components:
         cpu: "0.100"
   
   storagesservice:
-    name: storagesservice
     custom_repo: true
     image: mdcloudservices_storages
     extra_labels:
@@ -434,7 +420,6 @@ mdssc_components:
         cpu: "0.010"
 
   discoveryservice:
-    name: discoveryservice
     custom_repo: true
     image: mdcloudservices_discovery
     extra_labels:
@@ -445,7 +430,6 @@ mdssc_components:
         cpu: "1.000"
 
   scanningservice:
-    name: scanningservice
     custom_repo: true
     image: mdcloudservices_scanning
     extra_labels:
@@ -456,7 +440,6 @@ mdssc_components:
         cpu: "0.500"
         
   jobdispatcher:
-    name: jobdispatcher
     custom_repo: true
     image: mdcloudservices_job-dispatcher
     extra_labels:
@@ -467,7 +450,6 @@ mdssc_components:
         cpu: "0.050"
   
   loadbalancerservice:
-    name: loadbalancerservice
     custom_repo: true
     image: "mdcloudservices_load-balancer"
     extra_labels:
@@ -478,7 +460,6 @@ mdssc_components:
         cpu: "0.100"
 
   usermanagementservice:
-    name: usermanagementservice
     custom_repo: true
     image: mdcloudservices_usermanagement
     extra_labels:

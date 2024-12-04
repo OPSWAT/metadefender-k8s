@@ -2,6 +2,12 @@
 # Create a service for each component in MD Core it has exposed ports
 {{ range $component_name, $component := .Values.core_components }}
 {{ if and $component.ports ( or (not $component.module_name) (contains (print $component.module_name) $.Values.ENABLED_MODULES)) }}
+
+# If the component name is not defined, set it to the component name
+{{- if or (ne defined $component.name) (eq $component.name "") }}
+{{- $component.name := $component_name }}
+{{- end }}
+
 {{ if and (not $.Values.deploy_with_core_db) $component.is_db }}
 
 {{ else }}

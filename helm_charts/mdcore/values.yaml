@@ -86,10 +86,10 @@ hostPathPrefix: mdcore-storage-<APP_NAMESPACE>      # The absolute path on the n
 
 # Ingress setting for md core (md core setting are ignored if deploy_with_core is false)
 core_ingress:
+  enabled: false                    # Enable or disable the ingress creation
   host: <APP_NAMESPACE>-mdcore.k8s       # Hostname for the publicly accessible ingress, the `<APP_NAMESPACE>` string will be replaced with the namespace where the chart is deployed
   service: md-core                  # Service name where the ingress should route to, this should be left unchanged
   port: 8008                        # Port where the ingress should route to
-  enabled: false                    # Enable or disable the ingress creation
   spec_className: true              # true -> for adding class as spec || false -> for adding class as annotation. false for GKE as it needs to be as annotation.
   class: ngnix                      # Sets the ingress class (For AWS alb, for GKE gce)
   tls: false                        # Flag for set up tls section in ingress
@@ -131,8 +131,8 @@ env:                                                            # Set additional
   MDCORE_LICENSE_COMMENT: ""
 
 hpa:
-  deployment: md-core
   enabled: false
+  deployment: md-core
   minReplicas: 1
   maxReplicas: 3
   cpuTargetUtilization: 85
@@ -140,7 +140,8 @@ hpa:
 core_components:
   postgres-core:
     name: postgres-core
-    image: postgres:14.8
+    image: postgres
+    image_tag: "14.8"
     env:
       - name: POSTGRES_PASSWORD
         valueFrom:
@@ -161,7 +162,9 @@ core_components:
 
   md-core:
     name: md-core
-    image: opswat/metadefendercore-debian:5.12.1        # Overrides the default docker image for the MD Core service, this value can be changed if you want to set a different version of MD Core
+    image: opswat/metadefendercore-debian        # Overrides the default docker image for the MD Core service, this value can be changed if you want to set a different version of MD Core
+    # Default image is Chart helm version
+    # image_tag: ""
     replicas: 1                                         # Sets the number of replicas if you want to have multiple MD Core instances
     env:
       - name: MD_USER

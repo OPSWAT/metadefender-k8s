@@ -1,4 +1,9 @@
 {{- if .Values.postgres_mdicapsrv.enabled }}
+
+{{- if or (ne defined $component.name) (eq $component.name "") }}
+{{- $component.name := "postgres-mdicapsrv" }}
+{{- end }}
+
 {{- if (eq .Values.icap_components.md_icapsrv.database.db_mode "4")}}
 {{ $component := .Values.postgres_mdicapsrv }}
 apiVersion: apps/v1
@@ -19,7 +24,15 @@ spec:
         - envFrom:
             - configMapRef:
                 name: mdicapsrv-env
-          image: {{ $component.image | quote }}
+          {{- if $component.custom_repo }}
+          image: {{ printf "%s/%s:%s" $.Values.icap_docker_repo $component.image $component.image_tag | quote }}
+          {{ else }}
+          image: {{ printf "%s:%s" $component.image $component.image_tag | quote }}
+          {{- end }}
+          {{- if $.Values.imagePullSecrets }}
+          imagePullSecrets:
+            {{- toYaml $.Values.imagePullSecrets | nindent 12 }}
+          {{- end }}
           env:
             {{- toYaml $component.env | nindent 12 }}
           name: "postgres-mdicapsrv"

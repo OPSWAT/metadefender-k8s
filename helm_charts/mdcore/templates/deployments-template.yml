@@ -1,7 +1,16 @@
 # Create a deployment for each component in MD Core if it's enabled
-
 {{ range $component_name, $component := .Values.core_components }}
 {{ if and (or $.Values.deploy_with_core_db (not $component.is_db)) ( or (not $component.module_name) (contains (print $component.module_name) $.Values.ENABLED_MODULES)) }}
+
+# If the image tag is not defined, set it to the chart version
+{{ if or (ne defined $component.image_tag) (eq $component.image_tag "") }}
+{{ $component.image_tag = .Chart.AppVersion }}
+{{ end }}
+
+# If the component name is not defined, set it to the component name
+{{- if or (ne defined $component.name) (eq $component.name "") }}
+{{- $component.name := $component_name }}
+{{- end }}
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -33,9 +42,9 @@ spec:
                 name: {{ printf "%s-config" $.Release.Name }}
             {{- end }}
           {{ if $component.custom_repo -}}
-          image: {{ printf "%s/%s:%s" $.Values.core_docker_repo $component.image $.Values.BRANCH | quote }}
+          image: {{ printf "%s/%s:%s" $.Values.core_docker_repo $component.image $component.image_tag | quote }}
           {{- else -}}
-          image: {{ $component.image | quote }}
+          image: {{ printf "%s:%s" $component.image $component.image_tag | quote }}
           {{- end }}
           imagePullPolicy: {{ $.Values.imagePullPolicy }}
           {{- if $component.env }}
