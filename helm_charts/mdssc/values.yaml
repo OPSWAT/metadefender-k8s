@@ -48,8 +48,8 @@ mdssc-common-environment:
   RABBITMQ_SCANNING_PREFETCH_COUNT: "20"
 
   HTTPS_ACTIVE: "no"
-  BRANCH: "platform-1.4"          # Set Platform version (image tag)
-  MDSSC_BRANCH: "2.3.2"          # Set MDSSC version (image tag)
+  BRANCH: "platform-1.6"          # Set Platform version (image tag)
+  MDSSC_BRANCH: "2.4.0"          # Set MDSSC version (image tag)
 
   # These variables can be changed to reveal debug information in the application
   LOG_LEVEL: "4"
@@ -181,7 +181,7 @@ hostPathPrefix: mdssc-storage-<APP_NAMESPACE>         # This is the absolute pat
 # Ingress settings for mdssc
 mdssc_ingress:
   host: <APP_NAMESPACE>-mdssc.k8s             # Hostname for the publicly accessible ingress, the `<APP_NAMESPACE>` string will be replaced with the current namespace                
-  service: webclient                    # Service name where the ingress should route to, this should be left unchanged          
+  service: frontend                    # Service name where the ingress should route to, this should be left unchanged          
   port: 80                              # Port where the ingress should route to
   enabled: false                        # Enable or disable the ingress creation      
   class: public                         # Sets the ingress class, it can be "public" or "nginx" or some other value depending on the ingress controller in the cluster
@@ -380,6 +380,17 @@ mdssc_components:
       is_mdssc: true
       custom_repo: true
       image: "mdssc_containers"
+      extra_labels:
+        aws-type: fargate
+      resources:
+        requests:
+          memory: "0.125Gi"
+          cpu: "0.010"
+  sourcecode:
+      name: sourcecode
+      is_mdssc: true
+      custom_repo: true
+      image: "mdssc_sourcecode"
       extra_labels:
         aws-type: fargate
       resources:

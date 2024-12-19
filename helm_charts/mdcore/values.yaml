@@ -129,6 +129,19 @@ env:                                                            # Set additional
   UPGRADE_DB: "false"
   MIGRATE_HISTORY: "false"  # Only from version 5.10.1 See Pre-steps in docs.opswat.com 
   MDCORE_LICENSE_COMMENT: ""
+  OLMS_HOST_URL: ""
+  OLMS_TOKEN: ""
+  OLMS_REST_PORT: ""
+  OLMS_SOCKET_PORT: ""
+  OLMS_RULE: ""
+  OLMS_COMMENT: ""
+  OLMS_USE_PROXY: false
+  OLMS_PROXY_SERVER: ""
+  OLMS_PROXY_PORT: ""
+  OLMS_PROXY_USERNAME: ""
+  OLMS_PROXY_PASSWORD: ""
+  OLMS_PROXY_TYPE: ""         
+  OLMS_CONNECTION_TYPE: ""
 
 hpa:
   deployment: md-core
@@ -161,7 +174,7 @@ core_components:
 
   md-core:
     name: md-core
-    image: opswat/metadefendercore-debian:5.12.1        # Overrides the default docker image for the MD Core service, this value can be changed if you want to set a different version of MD Core
+    image: opswat/metadefendercore-debian:5.13.0        # Overrides the default docker image for the MD Core service, this value can be changed if you want to set a different version of MD Core
     replicas: 1                                         # Sets the number of replicas if you want to have multiple MD Core instances
     env:
       - name: MD_USER
@@ -230,11 +243,9 @@ core_components:
       name: md-core                                      # Label needed for the ingress to find the service based on the name
     resources:
       requests:
-        memory: "7Gi"                                    # Minimum reserved memory
+        memory: "4Gi"                                    # Minimum reserved memory
         cpu: "4.0"                                       # Minimum reserved cpu
-      limits:
-        memory: "8Gi"                                    # Maximum memory limit
-        cpu: "8.0"                                       # Maximum cpu limit
+        ephemeral-storage: "60Gi"                        # Minimum reserved storage
     readinessProbe:
       httpGet:
         # scheme: HTTPS
@@ -258,7 +269,7 @@ core_components:
         maxSurge: 0
     initContainers:
       - name: check-db-ready
-        image: opswat/metadefendercore-debian:5.12.1 
+        image: opswat/metadefendercore-debian:5.13.0 
         imagePullPolicy: IfNotPresent
         envFrom:
           - configMapRef:
@@ -290,7 +301,7 @@ core_components:
           defaultMode: 0777
     initContainers:
       - name: wait-for-hub-services
-        image: opswat/metadefendercore-debian:5.12.1
+        image: opswat/metadefendercore-debian:5.13.0
         imagePullPolicy: IfNotPresent
         command: [ '/wait-for-hub-services.sh' ]
         volumeMounts:
