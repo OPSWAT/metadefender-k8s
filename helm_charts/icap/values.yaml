@@ -265,11 +265,9 @@ icap_components:
     #      claimName: icap-disk-pvc
     resources:
       requests:
-        memory: "2Gi"               # Minimum reserved memory
+        memory: "4Gi"               # Minimum reserved memory
         cpu: "2.0"                  # Minimum reserved cpu
-      limits:                        
-        memory: "4Gi"               # Maximum memory limit
-        cpu: "4.0"                  # Maximum cpu limit
+        ephemeral-storage: "25Gi"   # Minimum reserved storage
     imagePullPolicy: IfNotPresent
     livenessProbe:
       initialDelaySeconds: 30
