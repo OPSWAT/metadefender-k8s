@@ -4,7 +4,6 @@ description: |
   This is a Helm chart for deploying MetaDefender Core (https://www.opswat.com/products/metadefender/core) in a Kubernetes cluster. 
 
   Release Notes
-  - MetaDefender Core version 5.11.1
   - Environment variables to migrate processing history (Pre-steps needed)
   - Environment variables to enable Licensing Cleanup and examples for Role/Rolebinding
   - Fixed warning of kubernetes.io/ingress.class annotation for AWS and Azure. Added control flag to still use it for GCP
@@ -50,5 +49,5 @@ long_description: |
   
 type: application
 
-version: 5.13.0
-appVersion: 5.13.0
+version: 5.13.2
+appVersion: 5.13.2

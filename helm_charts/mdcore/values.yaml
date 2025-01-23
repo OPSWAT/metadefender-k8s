@@ -174,7 +174,7 @@ core_components:
 
   md-core:
     name: md-core
-    image: opswat/metadefendercore-debian:5.13.0        # Overrides the default docker image for the MD Core service, this value can be changed if you want to set a different version of MD Core
+    image: opswat/metadefendercore-debian:5.13.2        # Overrides the default docker image for the MD Core service, this value can be changed if you want to set a different version of MD Core
     replicas: 1                                         # Sets the number of replicas if you want to have multiple MD Core instances
     env:
       - name: MD_USER
@@ -269,7 +269,7 @@ core_components:
         maxSurge: 0
     initContainers:
       - name: check-db-ready
-        image: opswat/metadefendercore-debian:5.13.0 
+        image: opswat/metadefendercore-debian:5.13.2
         imagePullPolicy: IfNotPresent
         envFrom:
           - configMapRef:
@@ -301,7 +301,7 @@ core_components:
           defaultMode: 0777
     initContainers:
       - name: wait-for-hub-services
-        image: opswat/metadefendercore-debian:5.13.0
+        image: opswat/metadefendercore-debian:5.13.2
         imagePullPolicy: IfNotPresent
         command: [ '/wait-for-hub-services.sh' ]
         volumeMounts:
