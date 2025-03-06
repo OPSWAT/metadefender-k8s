@@ -3,6 +3,12 @@
 mdssc-common-environment:
 
   DISCOVERY_STRATEGY: "ImageArchiveDiscovery"
+  BITBUCKET_DISCOVERY_STRATEGY: "ImageArchiveDiscovery"
+  BITBUCKET_RATE_LIMIT_RETRY_WAIT_MINUTES: "15"
+
+  GITLAB_DISCOVERY_STRATEGY: "ImageArchiveDiscovery"
+  SVN_DISCOVERY_STRATEGY: "RegularDiscovery"
+  GITLAB_RATE_LIMIT_RETRY_WAIT_MINUTES: "5"
 
   # This should only be used for troubleshooting, requests are proxy passed by NGINX
   API_DEV_PORT: "8001 "
@@ -11,7 +17,7 @@ mdssc-common-environment:
   PRODUCT_NAME_SHORT: "MDSSC"
   EULA_ACCEPTED_AFTER_UPGRADE: "yes"
 
-  ENABLED_MODULES: "github,dockerhub,bitbucket,amazonecr,quay,jfrogcontainer,jfrogbinary"
+  ENABLED_MODULES: "github,dockerhub,bitbucket,amazonecr,quay,jfrogcontainer,jfrogbinary,azureacr,gitlabsource,svn"
 
   # This defines the connection string to the db ( should be modified when using an external db)
   MONGO_URL: "mongodb://mongodb:27017/MDCS"
@@ -49,7 +55,7 @@ mdssc-common-environment:
 
   HTTPS_ACTIVE: "no"
   BRANCH: "platform-1.6"          # Set Platform version (image tag)
-  MDSSC_BRANCH: "2.4.0"          # Set MDSSC version (image tag)
+  MDSSC_BRANCH: "2.4.2"          # Set MDSSC version (image tag)
 
   # These variables can be changed to reveal debug information in the application
   LOG_LEVEL: "4"
@@ -289,6 +295,7 @@ mdssc_components:
     is_mdssc: true
     custom_repo: true
     image: mdssc_frontend
+    # replicas: 2
     ports:
       - port: 443
       - port: 80
@@ -391,6 +398,28 @@ mdssc_components:
       is_mdssc: true
       custom_repo: true
       image: "mdssc_sourcecode"
+      extra_labels:
+        aws-type: fargate
+      resources:
+        requests:
+          memory: "0.125Gi"
+          cpu: "0.010"
+  bitbucket:
+      name: bitbucket
+      is_mdssc: true
+      custom_repo: true
+      image: "mdssc_bitbucket"
+      extra_labels:
+        aws-type: fargate
+      resources:
+        requests:
+          memory: "0.125Gi"
+          cpu: "0.010"
+  notifications:
+      name: notifications
+      is_mdssc: true
+      custom_repo: true
+      image: "mdssc_notifications"
       extra_labels:
         aws-type: fargate
       resources:

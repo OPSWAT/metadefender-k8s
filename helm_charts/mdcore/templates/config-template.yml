@@ -340,6 +340,8 @@ data:
   wait-for-hub-services.sh: |
     #!/bin/sh
     {{- if contains "mdhub" $.Values.ENABLED_MODULES }}
+    apt update
+    apt install netcat-traditional -y
     until nc -vz {{ (index .Values.core_components "redis").name }} {{ (index (index .Values.core_components "redis").ports 0).port }}; do echo "Waiting for redis service"; sleep 2; done;
     until nc -vz {{ (index .Values.core_components "rabbitmq").name }} {{ (index (index .Values.core_components "rabbitmq").ports 0).port }}; do echo "Waiting for rabbitmq service"; sleep 2; done;
     until nc -vz {{ (index .Values.core_components "md-nas").name }} {{ (index (index .Values.core_components "md-nas").ports 0).port }}; do echo "Waiting for md-nas service"; sleep 2; done;
