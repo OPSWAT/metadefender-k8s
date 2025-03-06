@@ -32,7 +32,8 @@ Main Metadefender documentation pages:
 * MetaDefender Core Provisioned in AWS EKS [Doc](https://docs.opswat.com/mdcore/cloud-deployment/eks-cluster-architecture)
 * MetaDefender Core Kubernetes Components [Doc](https://docs.opswat.com/mdcore/kubernetes-configuration/kubernetes-components)
 * MetaDefender Core In Your Already Created Kubernetes Cluster [Doc](https://docs.opswat.com/mdcore/kubernetes-configuration/metadefender-core-in-your-already-created-k8s)
-* MetaDefender for Secure Storage Kubernetes deployment [Doc](https://docs.opswat.com/mdss/installation/kubernetes-deployment)
+* MetaDefender Storage Security Kubernetes deployment [Doc](https://docs.opswat.com/mdss/installation/kubernetes-deployment)
+* MetaDefender Software Supply Chain Kubernetes deployment [Doc](https://docs.opswat.com/supply-chain/sizing-guide/kubernetes-deployment)
 
 <p align="right">(<a href="#top">back to top</a>)</p>
 
