@@ -179,8 +179,13 @@ data:
     [
       {rabbit, [
         {consumer_timeout, undefined}
+      ]},
+      {rabbitmq_prometheus, [
+        {return_per_object_metrics, true}
       ]}
     ].
+  enabled_plugins: |
+    [rabbitmq_prometheus,rabbitmq_management].
 
 ---
 apiVersion: v1

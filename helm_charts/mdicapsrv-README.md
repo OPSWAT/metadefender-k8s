@@ -51,6 +51,12 @@ The following table lists the configurable parameters of the Metadefender ICAP c
 | `olms.olms_socket_port` | Default Socket port for the Opswat License Manager Server | `"3316"` |
 | `olms.olms_rule` | Default rule for active license on the Opswat License Manager Server | `"Default_Rule"` |
 | `olms.olms_comment` | Set the comment for the Opswat License Manager Server | `""` |
+| `olms.olms_use_proxy` | Use the proxy for the Opswat License Manager Server | `"false"` |
+| `olms.olms_proxy_server` | The proxy server host for the Opswat License Manager Server | `""` |
+| `olms.olms_proxy_port` | The proxy server port for the Opswat License Manager Server | `""` |
+| `olms.olms_proxy_username` | The proxy username support for authenticate | `""` |
+| `olms.olms_proxy_password` | The proxy password support for authenticate | `""` |
+| `olms.olms_proxy_type` | The proxy type support for the Opswat License Manager Server | `""` |
 | `proxy.enabled` | Set the value to `true` to use the proxy feature | `"false"` |
 | `proxy.http_proxy` | This environment variable defines the proxy server to be used for HTTP requests | `""` |
 | `proxy.https_proxy` | This environment variable specifies the proxy server for HTTPS requests | `""` |
@@ -148,54 +154,4 @@ The following table lists the configurable parameters of the Metadefender ICAP c
 - To have a file "mdicapsrv-config.json" correctly, please install a MD ICAP Server, do configuration setting then use export feature to get the json config file.
 - Please specific value of the secret template file for enable HTTPS, ICAPS or NGINXs. Need to mapping the key of the secret HTTPS, ICAPS and NGINXS with `*.certSecretSubPath` and `*.certKeySecretSubPath`
 ## Release note
-### v5.6.0
-- Focused on new functionalities, enhancements and bug fixes
-### v5.5.1
-- Support proxy through environment: `proxy.enabled` `proxy.http_proxy` `proxy.https_proxy` `proxy.no_proxy` 
-### v5.5.0
-- Support customize database name through variable `db_name` in values.yaml or environment variable: `MDICAPSRV_DB_NAME`
-- Support active license with Opswat License Manager Server added config for Opswat License Manager Server via: `olms.olms_server` `olms.olms_rest_port` `olms.olms_socket_port` `olms.olms_sockets_port` `olms.olms_rule` `olms.olms_token`
-- Support licensing cleanup through configures <ul><li>Environment variable: `LICENSING_CLEANUP`</li><li>Service Account Name: `icap_components.md-icapsrv.service_account_name`</li><li>Secret name to stored: `icap_components.md-icapsrv.custom_secret` </li></ul>
-### v5.4.0
-- Support Transfer-Encoding for HTTP parser
-- Enhance ICAP collect support package
-- Support includes ICAP's version to execute files
-- Support multiple Blocked page
-- Update NGINX header one time when response data from Lua
-- Fix some issues
-### v5.3.0
-- Support SOAP/JSON message with Base64 embedded data
-- UI accessibility
-- Security enhancements: <ul><li>NGINX 22.1</li><li>Curl 8.4.0</li><li>Angular CLI 14.0</li></ul>
-- Other updates: <ul><li>"Permissive passive" mode under the Global settings section is now enabled by default.</li><li>New scan verdict filtration for SBOM related result.</li></ul>
-### v5.2.1
-- Integration with My OPSWAT portal.
-### v5.2.0
-- Feature upload certificates
-- Remove import targets: certs, ssl
-- Added annotation for ingress when enable auto scaling with HPA
-- Support active license with Opswat License Manager Server added config for Opswat License Manager Server via: `olms_server` `olms_rest_port` `olms_socket_port` `olms_sockets_port` `olms_rule`
-- Support Postgres Server added config for database server via: `db_mode` `db_type` `db_host` `db_port`
-- Added configurations for trust certificate server from the secrets via: `trustCertificate.certSecret` `trustCertificate.certSecretSubPath`
-- Support HPA on Kubernetes via: `autoscaling` (Notice: Require installed metrics server before enable HPA https://github.com/kubernetes-sigs/metrics-server)
-### v5.1.1
-- Support TLS version. (icap_components.md_icapsrv.tls.https.tlsVersions, icap_components.md_icapsrv.tls.icaps.tlsVersions, icap_components.md_icapsrv.tls.nginxs.tlsVersions)
-- Enforce End-User Licensing Agreement. (ACCEPT_EULA)
-- Remove some unused configurations relate to AWS environment
-- Change `MDICAPSRV_IMPORT_CONF_FILE` to `icap_components.md_icapsrv.import_configuration.importConfigPath`
-- Change `MDICAPSRV_AUDIT_DATA_RETENTION` to  `icap_components.md_icapsrv.data_retention.config_history`
-- Change `MDICAPSRV_HISTORY_DATA_RETENTION` to `icap_components.md_icapsrv.data_retention.processing_history`
-- Change `MDICAPSRV_CERT_PATH` to `icap_components.md_icapsrv.tls.https.mountPath` and `icap_components.md_icapsrv.tls.icaps.mountPath`
-- Change `MDICAPSRV_NGINX_CERT_PATH` to `icap_components.md_icapsrv.tls.nginxs.mountPath`
-- Change `icap_components.md_icapsrv.nginx_support.tls.nginxsCertSecret` to `icap_components.md_icapsrv.tls.nginxs.certSecret`
-- Change `icap_components.md_icapsrv.nginx_support.tls.certSecretSubPath` to `icap_components.md_icapsrv.tls.nginxs.certSecretSubPath`
-- Change `icap_components.md_icapsrv.nginx_support.tls.certKeySecret` to `icap_components.md_icapsrv.tls.nginxs.certKeySecret`
-- Change `icap_components.md_icapsrv.nginx_support.tls.certKeySecretSubPath` to `icap_components.md_icapsrv.tls.nginxs.certKeySecretSubPath`
-- Change `.Values.MDICAPSRV_REST_PORT` to `.Values.icap_components.md_icapsrv.ports.rest` 
-- Change `.Values.MDICAPSRV_ICAP_PORT` to `.Values.icap_components.md_icapsrv.ports.icap` 
-- Change `.Values.MDICAPSRV_ICAPS_PORT` to `.Values.icap_components.md_icapsrv.ports.icaps` 
-- Change `icap_components.md_icapsrv.nginx_support.port` to `.Values.icap_components.md_icapsrv.ports.nginx` 
-- Change `icap_components.md_icapsrv.nginx_support.port_s` to `.Values.icap_components.md_icapsrv.ports.nginxs` 
-- Change `.Values.app_name` to `.Release.Namespace`
-### v5.1.0
-- Support import config from encrypt file. (icap_components.md_icapsrv.import_configuration.importConfigFilePass)
+- [Reference document](https://www.opswat.com/docs/mdicap/release-notes/release-notes)

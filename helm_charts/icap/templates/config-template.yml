@@ -36,12 +36,12 @@ data:
   OLMS_RULE: {{ .Values.olms.olms_rule | quote }}
   OLMS_COMMENT: {{ .Values.olms.olms_comment | quote }}
 {{- if .Values.olms.olms_use_proxy }}
-  OLMS_USE_PROXY: {{ .Values.olms.olms_use_proxy }}
-  OLMS_PROXY_SERVER: {{ .Values.olms.olms_proxy_server }}
-  OLMS_PROXY_PORT: {{ .Values.olms.olms_proxy_port }}
-  OLMS_PROXY_USERNAME: {{ .Values.olms.olms_proxy_username }}
-  OLMS_PROXY_PASSWORD: {{ .Values.olms.olms_proxy_password }}
-  OLMS_PROXY_PROXY_TYPE: {{ .Values.olms.olms_proxy_type }}
+  OLMS_USE_PROXY: {{ .Values.olms.olms_use_proxy | quote }}
+  OLMS_PROXY_SERVER: {{ .Values.olms.olms_proxy_server | quote }}
+  OLMS_PROXY_PORT: {{ .Values.olms.olms_proxy_port | quote }}
+  OLMS_PROXY_USERNAME: {{ .Values.olms.olms_proxy_username | quote }}
+  OLMS_PROXY_PASSWORD: {{ .Values.olms.olms_proxy_password | quote }}
+  OLMS_PROXY_PROXY_TYPE: {{ .Values.olms.olms_proxy_type | quote }}
 {{- end }}
 {{- end }}
 {{- if .Values.icap_components.md_icapsrv.nginx_support.enabled }}
@@ -106,6 +106,8 @@ metadata:
 data:
   user: {{ $icapUserValue }}
   password: {{ $icapPasswordValue }}
+
+
 # Generate, set or keep the MD ICAP Server API key
 {{- $icapApiKeyValue := (randNumeric 36) | b64enc | quote }}
 {{- $icapApiSecret := (lookup "v1" "Secret" .Release.Namespace "mdicapsrv-api-key") }}
@@ -115,6 +117,7 @@ data:
 {{- if .Values.mdicapsrv_api_key }}
 {{- $icapApiKeyValue = .Values.mdicapsrv_api_key | b64enc }}
 {{- end }}
+
 ---
 kind: Secret
 apiVersion: v1
@@ -125,6 +128,7 @@ metadata:
     "helm.sh/resource-policy": keep
 data:
   value: {{ $icapApiKeyValue }}
+
 # Set or keep the MD ICAP Server license key
 {{- $icapLicenseKeyValue := "SET_LICENSE_KEY_HERE" | b64enc | quote }}
 {{- $icapLicenseSecret := (lookup "v1" "Secret" .Release.Namespace "mdicapsrv-license-key") }}
@@ -134,6 +138,7 @@ data:
 {{- if .Values.mdicapsrv_license_key }}
 {{- $icapLicenseKeyValue = .Values.mdicapsrv_license_key | b64enc }}
 {{- end }}
+
 ---
 kind: Secret
 apiVersion: v1
@@ -176,6 +181,7 @@ kind: ConfigMap
 metadata:
   name: ignition-file
 data:
+
   # file-like keys
   main.py: |
     #!/usr/bin/python3
@@ -185,8 +191,10 @@ data:
     import os
     import shutil
     from psycopg2.extensions import ISOLATION_LEVEL_AUTOCOMMIT
+
     db_instance_ranges = {"database":{"instance":0}}
     TIME_LOOP = 1 # minutes
+
     def GetDatabaseNames():
       print("1.1 GetDatabaseNames")
       conn = psycopg2.connect(database="postgres", user = os.getenv("DB_USER"), password = os.getenv("DB_PWD"), host = os.getenv("DB_HOST"), port = os.getenv("DB_PORT"))
@@ -196,6 +204,7 @@ data:
       cur.close()
       conn.close()
       return res
+
     def GetInstanceNames(db_name):
       print("1.2 GetInstanceNames")
       conn = psycopg2.connect(database=db_name, user = os.getenv("DB_USER"), password = os.getenv("DB_PWD"), host = os.getenv("DB_HOST"), port = os.getenv("DB_PORT"))
@@ -205,6 +214,7 @@ data:
       cur.close()
       conn.close()
       return res
+
     def CountConnections(db_name, private_user):
       print("1.3 CountConnections")
       conn = psycopg2.connect(database=db_name, user = os.getenv("DB_USER"), password = os.getenv("DB_PWD"), host = os.getenv("DB_HOST"), port = os.getenv("DB_PORT"))
@@ -214,21 +224,25 @@ data:
       cur.close()
       conn.close()
       return res
+
     def CleanupDatabase(db_name, instance_name):
       print("2.5 CleanupDatabase")
       # Remove redundant parition on those tables
       try:
         conn = psycopg2.connect(database=db_name, user = os.getenv("DB_USER"), password = os.getenv("DB_PWD"), host = os.getenv("DB_HOST"), port = os.getenv("DB_PORT"))
         cur = conn.cursor()
+
         # Get instance id
         cur.execute("SELECT instance_id FROM register.instance WHERE instance_name = %s", (instance_name,))
         instance = cur.fetchone()[0]
         print("2.5.1 Get instance id FROM register.instance {}".format(instance))
+
         # Get all partitioned table names
         cur.execute("""select oid::regclass::text table_name from pg_class
           where relkind = 'p' and oid in (select distinct inhparent from pg_inherits)
           order by table_name""")
         partitioned_tables = cur.fetchall()
+
         # Drop partitions
         for tableVal in partitioned_tables:
           table = tableVal[0] + "_" + str(instance)
@@ -237,11 +251,13 @@ data:
             cur.execute("DROP TABLE IF EXISTS {} CASCADE".format(table))
           except Exception as e:
             print("Could not drop table {}. {}".format(table, e))
+
         conn.commit()
         cur.close()
         conn.close()
       except Exception as e:
         print("Could not cleanup database {}. {}".format(db_name, e))
+
     def CleanupStorage(instance_name):
       print("2.6 CleanupStorage")
       path = os.getenv("STORAGE_PATH") + "//" + instance_name
@@ -250,6 +266,8 @@ data:
           shutil.rmtree(path)
       except Exception as e:
         print("Could not remove path {}. {}".format(path, e))
+
+
     def DropDatabase(db_name):
       try:
         print("2.6.1 DropDatabase {}".format(db_name))
@@ -261,16 +279,21 @@ data:
         conn.commit()
         cur.close()
         conn.close()
+
         # Remove from retention dict
         db_instance_ranges.pop(db_name)
       except Exception as e:
         print("Could not drop database {}. {}".format(db_name, e))
+
     def HandleRetention(db_name, instance_name):
       print("2.4.4 HandleRetention")
+
       if os.getenv("database_check") == "true":
         CleanupDatabase(db_name, instance_name)
+
       if os.getenv("storage_check") == "true":
         CleanupStorage(instance_name)
+
     def Cleanup(db_name, instance_name):
       print("2.4 Cleanup {} {} {}".format(db_name, instance_name, db_instance_ranges))
       retention_range = float(os.getenv("range"))
@@ -289,12 +312,16 @@ data:
           print("2.4.3 db_instance_ranges[db_name][instance_name] > retention_range")
           HandleRetention(db_name, instance_name)
           db_instance_ranges[db_name][instance_name] = 0
+
       print("2.7 Cleanup done")
+
     def DataRetention():
       print("1 DataRetention")
+
       # Get all database on postgresql server
       db_names = GetDatabaseNames()
       print("2 GetDatabaseNames done")
+
       for dbname_val in db_names:
         db_name = dbname_val[0]
         # Connect database to get instance names
@@ -302,34 +329,43 @@ data:
         all_instances_idle = True
         print("--------------------------------------------------------------")
         print("Start cleaning up database {}".format(db_name))
+
         for instance_name_val in rows:
           instance_name = instance_name_val[0]
           # Calculate sha1 hash sum to get correlating private user from instance name
           print("2.1 Calculate sha1 hash sum {} {}".format(db_name, instance_name))
           private_user = "usr_" + hashlib.sha1(instance_name.encode()).hexdigest()
           print("2.2 {}".format(private_user))
+
           if CountConnections(db_name, private_user) > 0:
             print("This icap {}:{} is still in use. Skip cleaning up".format(db_name, instance_name))
             all_instances_idle = False
             if db_name in db_instance_ranges:
               db_instance_ranges.pop(db_name)
             continue
+
           # If this database doesn't have any connections
           # Eliminate the partition
           Cleanup(db_name, instance_name)
+
           # Append 5 minute
           db_instance_ranges[db_name][instance_name] += TIME_LOOP
           print("2.8 DataRetention done {}".format(instance_name))
+
         if all_instances_idle == True:
           print("There are no mdicapsrv instances in-use. Drop database {}".format(db_name))
           DropDatabase(db_name)
+
       print("3 DataRetention done")
+
     try:
       start_time = time.time()
       print("Data retetion is running...")
+
       # Start retention
       if os.getenv("enable_check") == "true":
         DataRetention()
+
       # Every 5 minutes, DR checks ignition-file's changes.
       sleep_time = 60.0 * TIME_LOOP - ((time.time() - start_time) % 60.0)
       if sleep_time > 0:
