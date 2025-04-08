@@ -7,6 +7,7 @@ ACCEPT_EULA: false
 ## - if the "mdicapsrv-cred" secret exists, the values from the secret are used as credentials
 mdicapsrv_user: admin                      # Initial admin user for the MD ICAP Server web interface
 mdicapsrv_password: null                   # Initial admin password for the MD ICAP Server web interface, if not set it will be randomly generated
+
 ## Uncomment the following line to set a fixed API key for MD ICAP Server that will overwrite 
 ## any secret that already exists for API key (the secret will be kept when the chart is deleted)
 ## If left unset the following will apply:
@@ -17,6 +18,7 @@ activation_server: activation.dl.opswat.com
 mdicapsrv_api_key: null                   # 36 character API key used for the MD ICAP Server REST API, if not set it will be randomly generated
 ## Set your MD ICAP Server license key here and it will be stored in the "mdicapsrv-license-key" secret that will be created 
 ## if it does not exist. If left unset then a a secret is generated with and empty license key.
+
 mdicapsrv_license_key: <SET_LICENSE_KEY_HERE>    # A valid license key, **this value is mandatory**
 ## Uncomment the following lines to set a fixed user and password for the MD ICAP Server PostgreSQL database that will overwrite 
 ## any secret that already exists for these credentials (the secret will be kept when the chart is deleted)
@@ -59,6 +61,7 @@ icap_ingress:
   rest_port: 8048                   # Port where the ingress should route to
   enabled: false                    # Enable or disable the ingress creation
   class: nginx                      # Sets the ingress class
+
 ## Uncomment if you want to use a private repo (it must already be configured in the cluster as a secret)
 # imagePullSecrets:
 #   - name: regcred
@@ -66,7 +69,7 @@ icap_ingress:
 postgres_mdicapsrv:
   enabled: true
   name: postgres-mdicapsrv
-  image: postgres:12.20
+  image: postgres:16.6
   env:
     - name: POSTGRES_PASSWORD
       valueFrom:
@@ -84,7 +87,9 @@ postgres_mdicapsrv:
 # Docker repo to use, this should be changed when using private images (this string will be prepended to the image name)
 # If a component has "custom_repo: true" then the image name will be formated as "{docker_repo/}image_name{:BRANCH}" otherwise it will remain unaltered
 icap_docker_repo: opswat
+
 icap_container_persistent: false     # To enable for mounting icap path /opt/mdicapsrv/icap_data/var/lib/mdicapsrv using below storage_configs pvc
+
 # Example using a PVC with dynamic provisioning from an existing storage class for postgres_mdicapsrv container
 storage_configs:                       
   enabled: false
@@ -94,6 +99,8 @@ storage_configs:
     requests:
       storage: 5Gi
   storageClassName: "default" # to change to you existing storage class allocated by your CSP
+
+
 extra_storage_configs:              # Example for creating PVC for ICAP container. Use extraVolumeMounts and extraVolumes in icap container definition together with this PVC
 #  extra_pvc:
 #    apiVersion: v1
@@ -107,6 +114,7 @@ extra_storage_configs:              # Example for creating PVC for ICAP containe
 #        requests:
 #          storage: 5Gi
 #      storageClassName: azurefile
+
 # Enable feature health check
 healthcheck:
   enabled: true
@@ -122,7 +130,7 @@ icap_components:
   # Init container to check database system is ready to accept connections
     initContainers:
       - name: check-db-ready
-        image: postgres:12.20
+        image: postgres:16.6
         envFrom:
           - configMapRef:
               name: mdicapsrv-env
@@ -139,7 +147,7 @@ icap_components:
     name: md-icapsrv
     custom_repo: true
     # Overrides the default docker image for the MD ICAP Server service, this value can be changed if you want to set a different version of MD ICAP Server
-    image: metadefendericapsrv-debian:5.7.0
+    image: metadefendericapsrv-debian:5.8.0
     # Warning: When to use this feature!
     # Sets the number of replicas if you want to have multiple MD ICAP Server instances
     replicas: 1
@@ -253,6 +261,12 @@ icap_components:
     service_type: ClusterIP          # Sets the service type for MD ICAP Server service (ClusterIP, NodePort, LoadBalancer)
     sessionAffinity: None
     service_annotations: null
+    securityContext: {}
+    # securityContext:
+    #   runAsUser: 1000
+    #   runAsGroup: 1000
+    #   runAsNonRoot: true
+    #   allowPrivilegeEscalation: false
 # If `aws-type` is set to `fargate`, the MD ICAP Server pod will be scheduled on an AWS Fargate virtual node (if a fargate profile is provisioned and configured)
     extra_labels:
       aws-type: fargate
@@ -266,9 +280,11 @@ icap_components:
     #      claimName: icap-disk-pvc
     resources:
       requests:
-        memory: "4Gi"               # Minimum reserved memory
+        memory: "2Gi"               # Minimum reserved memory
         cpu: "2.0"                  # Minimum reserved cpu
-        ephemeral-storage: "25Gi"   # Minimum reserved storage
+      limits:                        
+        memory: "4Gi"               # Maximum memory limit
+        cpu: "4.0"                  # Maximum cpu limit
     imagePullPolicy: IfNotPresent
     livenessProbe:
       initialDelaySeconds: 30
@@ -284,6 +300,7 @@ icap_components:
       type: RollingUpdate
       rollingUpdate:
         maxSurge: 0
+
 # nodeSelector is the simplest recommended form of node selection constraint. 
 # You can add the nodeSelector field to your Pod specification and specify the node labels you want the target node to have.
 # Kubernetes only schedules the Pod onto nodes that have each of the labels you specify.

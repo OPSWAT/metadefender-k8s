@@ -39,7 +39,7 @@ mdss-common-environment:
   RABBITMQ_SCANNING_PREFETCH_COUNT: "10"
 
   HTTPS_ACTIVE: "no"
-  BRANCH: "3.5.3"          # Set MDSS version (image tag)
+  BRANCH: "3.6.0"          # Set MDSS version (image tag)
   # These variables can be changed to reveal debug information in the application
   LOG_LEVEL: "4"
   APP_LOG_LEVEL: "INFORMATION"
@@ -274,6 +274,7 @@ mdss_components:
     ports:
       - port: 5672
       - port: 15672
+      - port: 15692
     mountConfig:
       configName: rabbitmq-config
       mountPath: /data/rabbitmq/advanced.config
