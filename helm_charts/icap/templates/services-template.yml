@@ -17,26 +17,41 @@ spec:
     - name: "rest-port"
       port: {{ $component.ports.rest }}
       targetPort: {{ $component.ports.rest }}
+      {{- if and (or (eq $component.service_type "NodePort") (eq $component.service_type "LoadBalancer")) (and $component.nodePorts $component.nodePorts.rest) }}
+      nodePort: {{ $component.nodePorts.rest }}
+      {{- end }}
 {{- end }}
 {{- if $component.ports.icap }}
     - name: "icap-port"
       port: {{ $component.ports.icap }}
       targetPort: {{ $component.ports.icap }}
+      {{- if and (or (eq $component.service_type "NodePort") (eq $component.service_type "LoadBalancer")) (and $component.nodePorts $component.nodePorts.icap) }}
+      nodePort: {{ $component.nodePorts.icap }}
+      {{- end }}
 {{- end }}
 {{- if $component.ports.icaps }}
     - name: "icaps-port"
       port: {{ $component.ports.icaps }}
       targetPort: {{ $component.ports.icaps }}
+      {{- if and (or (eq $component.service_type "NodePort") (eq $component.service_type "LoadBalancer")) (and $component.nodePorts $component.nodePorts.icaps) }}
+      nodePort: {{ $component.nodePorts.icaps }}
+      {{- end }}
 {{- end }}
 {{- if $component.ports.nginx }}
     - name: "nginx-port"
       port: {{ $component.ports.nginx }}
       targetPort: {{ $component.ports.nginx }}
+      {{- if and (or (eq $component.service_type "NodePort") (eq $component.service_type "LoadBalancer")) (and $component.nodePorts $component.nodePorts.nginx) }}
+      nodePort: {{ $component.nodePorts.nginx }}
+      {{- end }}
 {{- end }}
 {{- if $component.ports.nginxs }}
     - name: "nginxs-port"
       port: {{ $component.ports.nginxs }}
       targetPort: {{ $component.ports.nginxs }}
+      {{- if and (or (eq $component.service_type "NodePort") (eq $component.service_type "LoadBalancer")) (and $component.nodePorts $component.nodePorts.nginxs) }}
+      nodePort: {{ $component.nodePorts.nginxs }}
+      {{- end }}
 {{- end }}
   {{- if $component.service_type }}
   type: {{ $component.service_type }}
