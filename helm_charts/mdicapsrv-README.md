@@ -115,6 +115,7 @@ The following table lists the configurable parameters of the Metadefender ICAP c
 | `icap_components.md_icapsrv.tls.nginxs.certKeySecretSubPath` | The key in the Secret has the value containing the certificate private key | `"mdicapsrv-nginxs.key"` |
 | `icap_components.md_icapsrv.tls.nginxs.mountPath` |MD ICAP Server container will mount NGINX Communication certificate to the path | `"/nginxs_cert"` |
 | `icap_components.md_icapsrv.ports.rest` | Default REST port for the MD ICAP Server service | `"8048"` |
+| `icap_components.md_icapsrv.nodePorts.rest` | Default REST nodePort for the MD ICAP Server service | `""` |
 | `icap_components.md_icapsrv.trustCertificate.enabled` | Enable mount certificate to MD ICAP Server and trust it | `"true"` |
 | `icap_components.md_icapsrv.trustCertificate.mountPath` | Set the path for mount certificate server to the container | `"/trust_certs"` |
 | `icap_components.md_icapsrv.trustCertificate.configs.certSecret` | Set the name of the secret contains certificate | `"mdicapsrv-trust-server-cert"` |
@@ -123,6 +124,10 @@ The following table lists the configurable parameters of the Metadefender ICAP c
 | `icap_components.md_icapsrv.ports.icaps` | Default ICAPS port for the MD ICAP Server service | `"11344"` |
 | `icap_components.md_icapsrv.ports.nginx` | Default NGINX communication port | `"8043"` |
 | `icap_components.md_icapsrv.ports.nginxs` | Default NGINX secured communication port | `"8443"` |
+| `icap_components.md_icapsrv.nodePorts.icap` | Default ICAP nodePort for the MD ICAP Server service | `""` |
+| `icap_components.md_icapsrv.nodePorts.icaps` | Default ICAPS nodePort for the MD ICAP Server service | `""` |
+| `icap_components.md_icapsrv.nodePorts.nginx` | Default NGINX communication nodePort | `""` |
+| `icap_components.md_icapsrv.nodePorts.nginxs` | Default NGINX secured communication nodePort | `""` |
 | `icap_components.md_icapsrv.database.db_mode` | Database mode | `"4"` |
 | `icap_components.md_icapsrv.database.db_type` | Database type | `"remote"` |
 | `icap_components.md_icapsrv.database.db_host` | Hostname / entrypoint of the database, this value should be changed any if using an external database service | `"postgres-mdicapsrv"` |
