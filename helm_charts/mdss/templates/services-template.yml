@@ -1,9 +1,7 @@
-# Create a service for each component in MDSS it has exposed ports
 {{ range $component_name, $component := .Values.mdss_components }}
 {{ if and $component.ports ( or (not $component.module_name) (contains (print $component.module_name) (index $.Values "mdss-common-environment").ENABLED_MODULES)) }}
 
 {{ if and (not $.Values.deploy_with_mdss_db) $component.is_db }}
-
 {{ else }}
 ---
 apiVersion: v1
@@ -19,10 +17,26 @@ spec:
   {{- toYaml $component.serviceSpec | nindent 2 }}
 {{- else }}
   ports:
-  {{- range $component.ports }}
+  {{- if eq $component.name "smbservice" }}
+    {{- $smbPort := int (index $.Values "mdss-common-environment").SMBSERVICE_PORT }}
+    {{- range $i := until 5 }}
+    {{- $port := add $smbPort $i }}
+    - name: {{ printf "data-%d" $port | quote }}
+      port: {{ $port }}
+      targetPort: {{ $port }}
+    {{- end }}
+    {{- range $i := until 5 }}
+    {{- $port :=  add (add $smbPort 1000) $i }}
+    - name: {{ printf "health-%d" $port | quote }}
+      port: {{ $port }}
+      targetPort: {{ $port }}
+    {{- end }}
+  {{- else }}
+    {{- range $component.ports }}
     - name: {{ .port | quote }}
       port: {{ .port }}
       targetPort: {{ .port }}
+    {{- end }}
   {{- end }}
   {{- if $component.service_type }}
   type: {{ $component.service_type }}
@@ -36,7 +50,5 @@ spec:
 status:
   loadBalancer: {}
 {{ end }}
-
 {{ end }}
-
 {{ end }}
