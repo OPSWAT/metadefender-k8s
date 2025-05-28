@@ -13,7 +13,89 @@ spec:
     spec:
       containers:
         - name: auto-onboarding
-          image: {{ printf "%s/mdcloudservices_auto-onboarding:%s" $.Values.mdss_docker_repo $.Values.BRANCH | quote }}
+          image: {{ printf "%s/mdcloudservices_auto-onboarding:%s" $.Values.mdss_docker_repo (index $.Values "mdss-common-environment").BRANCH | quote }}
+          command: ["/bin/bash", "-c"]
+          args:
+            - |
+              # Wait for target service to be available
+              echo "Waiting for ${WEBCLIENT_HOST}:${WEBCLIENT_SERVICE_PORT_80} to be available..."
+              
+              # Retry logic
+              MAX_RETRIES=30
+              RETRY_INTERVAL=30
+              
+              # Define delay between requests
+              REQUEST_DELAY=5
+              
+              for i in $(seq 1 $MAX_RETRIES); do
+                # Do a full content check to detect error pages
+                FULL_RESPONSE=$(curl -s "${WEBCLIENT_HOST}:${WEBCLIENT_SERVICE_PORT_80}/register")
+                HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" "${WEBCLIENT_HOST}:${WEBCLIENT_SERVICE_PORT_80}/register")
+                
+                # Also check the registration API endpoint
+                REGISTER_API_HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" "${WEBCLIENT_HOST}:${WEBCLIENT_SERVICE_PORT_80}/api/user/register")
+                
+                # Check for common error indicators in response content and ensure API endpoint is available
+                if [[ "$HTTP_CODE" -ge 200 ]] && [[ "$HTTP_CODE" -lt 300 ]] && 
+                   ! echo "$FULL_RESPONSE" | grep -q "<title>.*Error\|Gateway\|Bad Request\|Not Found" && 
+                   [[ "$REGISTER_API_HTTP_CODE" -ge 200 ]] && [[ "$REGISTER_API_HTTP_CODE" -lt 500 ]]; then
+                  echo "Service is fully available with HTTP code $HTTP_CODE and register API endpoint available with code $REGISTER_API_HTTP_CODE, proceeding with onboarding"
+                  break
+                fi
+                
+                if [ $i -eq $MAX_RETRIES ]; then
+                  echo "Service not available after max retries"
+                  echo "Register page status: HTTP code $HTTP_CODE, response body: ${FULL_RESPONSE:0:200}..."
+                  echo "Registration API endpoint status: HTTP code $REGISTER_API_HTTP_CODE"
+                  exit 1
+                fi
+                
+                echo "Attempt $i of $MAX_RETRIES: Service not ready yet, waiting $RETRY_INTERVAL seconds..."
+                echo "Register page HTTP code: $HTTP_CODE, Registration API HTTP code: $REGISTER_API_HTTP_CODE"
+                sleep $RETRY_INTERVAL
+              done
+              
+              # Register user
+              echo "Starting auto onboarding process..."
+              curl --location --request POST "${WEBCLIENT_HOST}:${WEBCLIENT_SERVICE_PORT_80}/api/user/register" \
+              --header "Content-Type: application/json" \
+              --data-raw "{\"userName\": \"${USER_NAME}\", \"password\": \"${USER_PASSWORD}\", \"email\": \"${USER_EMAIL}\", \"fullName\": \"${USER_FULL_NAME}\"}"
+              echo "Sleeping for $REQUEST_DELAY seconds after registration..."
+              sleep $REQUEST_DELAY
+
+              # First authenticate and extract the token
+              RESPONSE=$(curl --location --request POST "${WEBCLIENT_HOST}:${WEBCLIENT_SERVICE_PORT_80}/api/user/authenticate" \
+                --header 'Content-Type: application/json' \
+                --data-raw "{\"userName\": \"${USER_NAME}\", \"password\": \"${USER_PASSWORD}\"}" \
+                -s -w "\n%{http_code}")
+
+              HTTP_CODE=$(tail -n1 <<< "$RESPONSE")
+              BODY=$(sed '$ d' <<< "$RESPONSE")
+
+              # Extract access token
+              ACCESS_TOKEN=$(echo $BODY | jq -r '.accessToken')
+              
+              curl -v --request POST \
+              --url "http://${WEBCLIENT_HOST}:${WEBCLIENT_SERVICE_PORT_80}/api/onboarding/eula" \
+              --header "Authorization: Bearer ${ACCESS_TOKEN}" \
+              --data '{}'
+              echo "Sleeping for $REQUEST_DELAY seconds after EULA acceptance..."
+              sleep $REQUEST_DELAY
+
+              # Then use the token to import configuration
+              curl --location --request POST "${WEBCLIENT_HOST}:${WEBCLIENT_SERVICE_PORT_80}/api/Configuration/import" \
+              --header "Authorization: Bearer ${ACCESS_TOKEN}" \
+              --form "ConfigurationFile=@/${ONBOARDING_CONFIG_FILE_NAME}" \
+              -s -w "\n%{http_code}"
+              echo "Sleeping for $REQUEST_DELAY seconds after configuration import..."
+              sleep $REQUEST_DELAY
+
+              curl -v --request POST \
+              --url "http://${WEBCLIENT_HOST}:${WEBCLIENT_SERVICE_PORT_80}/api/onboarding" \
+              --header "Authorization: Bearer ${ACCESS_TOKEN}" \
+              --data '{}'
+
+              echo "Auto onboarding completed"
           envFrom:
             - configMapRef:
                 name: {{ $.Values.mdss_config_map_env_name | quote }}
@@ -24,7 +106,7 @@ spec:
               value: mdss-config.json
           volumeMounts:
             - name: mdss-import-config
-              mountPath: /onboarding_settings/mdss-config.json
+              mountPath: /mdss-config.json
               subPath: mdss-config.json
       restartPolicy: OnFailure
       {{- if $.Values.imagePullSecrets }}
