@@ -17,7 +17,7 @@ mdssc-common-environment:
   PRODUCT_NAME_SHORT: "MDSSC"
   EULA_ACCEPTED_AFTER_UPGRADE: "yes"
 
-  ENABLED_MODULES: "github,dockerhub,bitbucket,amazonecr,quay,jfrogcontainer,jfrogbinary,azureacr,gitlabsource,svn"
+  ENABLED_MODULES: "github,dockerhub,bitbucket,amazonecr,quay,jfrogcontainer,svn,jfrogbinary,azureacr,gitlabsource,svn"
 
   # This defines the connection string to the db ( should be modified when using an external db)
   MONGO_URL: "mongodb://mongodb:27017/MDCS"
@@ -48,14 +48,14 @@ mdssc-common-environment:
   SMBSERVICE_PORT: "5002"
   
   CODE_VERSION: "30a858390ca19fff81f2092f83a32f11c07d4fc8"
-  BUILD_VERSION: "3.4.1.369"
+  BUILD_VERSION: "2.5.1.968"
 
   # This can be modified in order to define how many messages can be sent to rabbitmq in parallel.
   RABBITMQ_SCANNING_PREFETCH_COUNT: "20"
 
   HTTPS_ACTIVE: "no"
-  BRANCH: "platform-1.6"          # Set Platform version (image tag)
-  MDSSC_BRANCH: "2.4.2"          # Set MDSSC version (image tag)
+  BRANCH: "platform-1.9"          # Set Platform version (image tag)
+  MDSSC_BRANCH: "2.5.1"          # Set MDSSC version (image tag)
 
   # These variables can be changed to reveal debug information in the application
   LOG_LEVEL: "4"
@@ -77,8 +77,8 @@ mdssc-common-environment:
   # This value is used by the rtp process to decide whether to process all files on storage or only those added after its start up (0 - for new objects only, 1 - for all objects)
   DISCOVERY_SERVICE_SMB_RTP_HANDLING: "0"
 
-  # This can be changed to the following values 0 - Default, 1 - IgnoreChainErrors, 2 - IgnoreAllErrors
-  MD_CORE_CERTIFICATE_VALIDATION: "0"
+  # This can be changed to the following values Default, IgnoreChainErrors, IgnoreAllErrors
+  # MD_CORE_CERTIFICATE_VALIDATION: "IgnoreAllErrors"
 
   # This retry value is used only for box operations where the time increases exponentially between retries ( e.g: "the second time it will be 4 minutes instead of two )
   POLLY_LONG_RETRY_BOX: "2"
@@ -327,17 +327,6 @@ mdssc_components:
       requests:
         memory: "0.5Gi"
         cpu: "0.100"
-  github:
-    name: github
-    is_mdssc: true
-    custom_repo: true
-    image: "mdssc_github"
-    extra_labels:
-      aws-type: fargate
-    resources:
-      requests:
-        memory: "0.125Gi"
-        cpu: "0.010"
   binaries:
     name: binaries
     is_mdssc: true
@@ -371,17 +360,6 @@ mdssc_components:
       requests:
         memory: "0.125Gi"
         cpu: "0.010"
-  quay:
-      name: quay
-      is_mdssc: true
-      custom_repo: true
-      image: "mdssc_quay"
-      extra_labels:
-        aws-type: fargate
-      resources:
-        requests:
-          memory: "0.125Gi"
-          cpu: "0.010"
   containers:
       name: containers
       is_mdssc: true
@@ -398,17 +376,6 @@ mdssc_components:
       is_mdssc: true
       custom_repo: true
       image: "mdssc_sourcecode"
-      extra_labels:
-        aws-type: fargate
-      resources:
-        requests:
-          memory: "0.125Gi"
-          cpu: "0.010"
-  bitbucket:
-      name: bitbucket
-      is_mdssc: true
-      custom_repo: true
-      image: "mdssc_bitbucket"
       extra_labels:
         aws-type: fargate
       resources:
