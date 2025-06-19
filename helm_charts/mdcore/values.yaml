@@ -58,6 +58,11 @@ ENABLED_MODULES: ""
 deploy_with_core_db: true           # Enable or disable the local in-cluster PostgreSQL database
 
 
+############# STORAGE CONFIGURATION ##################
+### There are two ways to configure it that can be interchangables. The PVC to use is selected with storage_name ###
+### 1. Using the storage_configs where the whole PVC kind is injected to the template ###
+### 2. Using PVC section with specific variables to inject to the storage template ###
+
 storage_configs: null        # Custom storage yaml, set to null for ephemeral or hostPath storage
 # storage_configs:              # Example using a PVC with dynamic provisioning from an existing storage class
 #   pvc-example:
@@ -72,6 +77,27 @@ storage_configs: null        # Custom storage yaml, set to null for ephemeral or
 #         requests:
 #           storage: 1Gi
 #       storageClassName: <SET_STORAGE_CLASS_NAME>
+
+pvc:
+  enabled: false
+  name: metadefender-pvc                             # The name of the PVC.
+  labels:                                       # Key-value pairs for categorizing and selecting resources.
+    app: my-app
+  annotations:
+    #volume.beta.kubernetes.io/storage-class: "standard" #Additional metadata; for example, specifying the storage class. (deprecated it is just an example)
+  accessModes:                        # Specifies the desired access modes for the volume. (Common modes ReadWriteOnce, ReadOnlyMany and ReadWriteMany)
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 100Gi              # The amount of storage requested.
+  storageClassName: default    # The name of the StorageClass to use for dynamic provisioning. If omitted, the default StorageClass is used.
+  volumeMode: Filesystem        # Defines whether the volume is presented as a filesystem (Filesystem) or a raw block device (Block).
+  #selector:                     # A label query over volumes to consider for binding. Useful for static provisioning.
+  #  matchLabels:
+  #    type: local         
+  #volumeName: example-pv        #  Specifies the name of an existing PersistentVolume to bind to. This is typically used in static provisioning scenarios.
+
+
 
 # Generate secrets for MD Core username, password, postgres user and password
 mdcore_generate_secrets: true
@@ -177,7 +203,7 @@ core_components:
 
   md-core:
     name: md-core
-    image: opswat/metadefendercore-debian:5.14.1        # Overrides the default docker image for the MD Core service, this value can be changed if you want to set a different version of MD Core
+    image: opswat/metadefendercore-debian:5.14.2        # Overrides the default docker image for the MD Core service, this value can be changed if you want to set a different version of MD Core
     replicas: 1                                         # Sets the number of replicas if you want to have multiple MD Core instances
     env:
       - name: MD_USER
@@ -272,7 +298,7 @@ core_components:
         maxSurge: 0
     initContainers:
       - name: check-db-ready
-        image: opswat/metadefendercore-debian:5.14.1
+        image: opswat/metadefendercore-debian:5.14.2
         imagePullPolicy: IfNotPresent
         envFrom:
           - configMapRef:
@@ -304,7 +330,7 @@ core_components:
           defaultMode: 0777
     initContainers:
       - name: wait-for-hub-services
-        image: opswat/metadefendercore-debian:5.14.1
+        image: opswat/metadefendercore-debian:5.14.2
         imagePullPolicy: IfNotPresent
         command: [ '/wait-for-hub-services.sh' ]
         volumeMounts:
