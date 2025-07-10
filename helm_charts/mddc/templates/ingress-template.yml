@@ -1,0 +1,42 @@
+{{- range .Values.mddc_ingress }}
+  {{- if .enabled }}
+---
+kind: Ingress
+apiVersion: networking.k8s.io/v1
+metadata:
+  name: {{ .name }}
+  annotations:
+    kubernetes.io/ingress.class: {{ .class }}
+    ingress.kubernetes.io/rewrite-target: /
+    {{- if .ingress_annotations }}
+      {{- toYaml .ingress_annotations | nindent 4 }}
+    {{- end }}
+
+spec:
+  {{- if .spec_className }}
+  ingressClassName: {{ .class }}
+  {{- end }}
+  {{- if .rules }}
+  rules:
+    {{- toYaml .rules | nindent 4 }}
+  {{- else }}
+  rules:
+    - host: {{ .host | replace "<APP_NAMESPACE>" $.Release.Namespace }}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ .service }}
+                port:
+                  number: {{ .port }}
+  {{- end }}
+  {{- if .tls }}
+  tls:
+    - hosts:
+        - {{ .host | replace "<APP_NAMESPACE>" $.Release.Namespace }}
+      secretName: {{ .secret }}
+  {{- end }}
+  {{- end }}
+{{- end }}

@@ -1,0 +1,49 @@
+{{ if $.Values.storage_configs }}
+
+{{ range $storage_name, $storage_value := .Values.storage_configs }}
+---
+{{- toYaml $storage_value }}
+
+{{ end }}
+
+{{ end }}
+
+
+{{- range $i, $pvc := .Values.pvcList }}
+
+{{ if $pvc.enabled }}
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ $pvc.name | quote }}
+  labels:
+    {{- range $k, $v := $pvc.labels }}
+    {{ $k }}: {{ $v | quote }}
+    {{- end }}
+  annotations:
+    {{- range $k, $v := $pvc.annotations }}
+    {{ $k }}: {{ $v | quote }}
+    {{- end }}
+spec:
+  accessModes:
+    {{- range $mode := $pvc.accessModes }}
+    - {{ $mode | quote }}
+    {{- end }}
+  resources:
+    requests:
+      storage: {{ $pvc.resources.requests.storage | quote }}
+  storageClassName: {{ $pvc.storageClassName | quote }}
+  volumeMode: {{ $pvc.volumeMode | quote }}
+  {{- if $pvc.selector }}
+  selector:
+    matchLabels:
+      {{- range $k, $v := $pvc.selector.matchLabels }}
+      {{ $k }}: {{ $v | quote }}
+      {{- end }}
+  {{- end }}
+  {{- if $pvc.volumeName }}
+  volumeName: {{ $pvc.volumeName | quote }}
+  {{- end }}
+{{ end }}
+{{- end }}

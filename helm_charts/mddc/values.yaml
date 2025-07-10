@@ -1,0 +1,344 @@
+# Default values for mddc. These will also be included in the environment of each mddc container
+env: 
+  user: "<MDDC_USER>"
+  password: "<MDDC_PASSWORD>"
+  apikey: null
+  email: "<MDDC_EMAIL>"
+  rabbitmq_host: "rabbitmq"
+  rabbitmq_port: "5672"
+  rabbitmq_user: "<RABBITMQ_DEFAULT_USER>"
+  rabbitmq_password: "<RABBITMQ_DEFAULT_PASS>"
+  redis_host: "redis"
+  redis_port: "6379"
+  postgresql_host: postgres
+  postgresql_port: "5432"
+  postgresql_user: "<POSTGRES_USER>"
+  postgresql_password: "<POSTGRES_PASSWORD>"
+  LOG_LEVEL: "debug"
+  connection_key: "<MDDC_CONNCETION_KEY>"
+  encryption_key: "<MDDC_ENCRYPTION_KEY>"
+  license_key: "<LICENSE_KEY>"
+  
+  
+# Generate secrets in Kubernetes Cluster for MetaDefender Distributed Cluster username, password, postgres user and password. Set to false in case of inputing the secrets from external secrets
+mddc_generate_secrets: true
+
+
+# Set to true if the respective database engine should also be deployed
+deploy_with_mddc_db: true                 # Enable or disable the local in-cluster database, set to false when deploying with an external database service
+
+# Set to false to not create any volumes or host paths in the deployment, all storage will be ephemeral
+persistance_enabled: true
+
+############# STORAGE CONFIGURATION ##################
+### There are two ways to configure the storage that can be interchangable. The PVC to use is selected with storage_name ###
+### 1. Using PVC section with specific variables to inject to the storage template ###
+### 2. Using the storage_configs where the whole PVC kind is injected to the template ###
+
+pvcList:
+  - name: file-storage-pvc  # The name of the PVC.
+    enabled: true                       
+    labels:                                       # Key-value pairs for categorizing and selecting resources.
+      app: mddc-opswat
+    annotations:
+      #volume.beta.kubernetes.io/storage-class: "standard" #Additional metadata; for example, specifying the storage class. (deprecated it is just an example)
+    accessModes:                        # Specifies the desired access modes for the volume. (Common modes ReadWriteOnce, ReadOnlyMany and ReadWriteMany)
+      - ReadWriteOnce
+    resources:
+      requests:
+        storage: 50Gi              # The amount of storage requested.
+    storageClassName: gp2    # The name of the StorageClass to use for dynamic provisioning. If omitted, the default StorageClass is used.
+    volumeMode: Filesystem        # Defines whether the volume is presented as a filesystem (Filesystem) or a raw block device (Block).
+    #selector:                     # A label query over volumes to consider for binding. Useful for static provisioning.
+    #  matchLabels:
+    #    type: local         
+    #volumeName: example-pv        #  Specifies the name of an existing PersistentVolume to bind to. This is typically used in static provisioning scenarios.
+  - name: postgres-pvc  # The name of the PVC.
+    enabled: true                       
+    labels:                                       # Key-value pairs for categorizing and selecting resources.
+      app: mddc-opswat
+    annotations:
+      #volume.beta.kubernetes.io/storage-class: "standard" #Additional metadata; for example, specifying the storage class. (deprecated it is just an example)
+    accessModes:                        # Specifies the desired access modes for the volume. (Common modes ReadWriteOnce, ReadOnlyMany and ReadWriteMany)
+      - ReadWriteOnce
+    resources:
+      requests:
+        storage: 100Gi              # The amount of storage requested.
+    storageClassName: gp2    # The name of the StorageClass to use for dynamic provisioning. If omitted, the default StorageClass is used.
+    volumeMode: Filesystem        # Defines whether the volume is presented as a filesystem (Filesystem) or a raw block device (Block).
+    #selector:                     # A label query over volumes to consider for binding. Useful for static provisioning.
+    #  matchLabels:
+    #    type: local         
+    #volumeName: example-pv        #  Specifies the name of an existing PersistentVolume to bind to. This is typically used in static provisioning scenarios.
+
+storage_configs: null        # Custom storage yaml, set to null for ephemeral or hostPath storage
+# storage_configs:              # Example using a PVC with dynamic provisioning from an existing storage class
+#   pvc-example:
+#     apiVersion: v1
+#     kind: PersistentVolumeClaim
+#     metadata:
+#       name: ocstorage
+#     spec:
+#       accessModes:
+#         - ReadWriteOnce
+#       resources:
+#         requests:
+#           storage: 1Gi
+#       storageClassName: <SET_STORAGE_CLASS_NAME>
+
+
+# Available storage providers:
+# - hostPath
+# - custom
+storage_provisioner: custom
+hostPathPrefix: mddc-storage-<APP_NAMESPACE>         # This is the absolute path on the node where to keep the database filesystem for persistance, <APP_NAMESPACE> is replaced with the current deployment namespace
+
+# Ingresses settings for mddc
+
+mddc_ingress:
+  - enabled: false                                    # Enable or disable the ingress creation
+    name: control-center                              # Name for the ingress component in Kubernetes
+    class: nginx                                      # Sets the ingress class, it can be "public" or "nginx" or some other value depending on the ingress controller in the cluster 
+    spec_className: true                              # true -> for adding class as spec || false -> for adding class as annotation. false for GKE as it needs to be as annotation.
+    host: control-center.<APP_NAMESPACE>.com          # Hostname for the publicly accessible ingress, the `<APP_NAMESPACE>` string will be replaced with the current namespace 
+    service: control-center                           # Service name where the ingress should route to, this should be left unchanged
+    port: 8892                                        # Port where the ingress should route to
+    secret: webclient-tls                             # SecretName of the tls secret created to be used for ingress
+    tls: true                                         # Flag for set up tls section in ingress
+    rules: []                                         # To customize the whole rules section, if [] it will use the above variables to mount the rules
+    ingress_annotations:                              # Section to customize the annotations for the ingress as needed
+      nginx.ingress.kubernetes.io/rewrite-target: /
+  - enabled: false                                    # Enable or disable the ingress creation
+    name: worker-api-gateway                          # Name for the ingress component in Kubernetes
+    class: nginx                                      # Sets the ingress class, it can be "public" or "nginx" or some other value depending on the ingress controller in the cluster 
+    spec_className: true                              # true -> for adding class as spec || false -> for adding class as annotation. false for GKE as it needs to be as annotation.
+    host: worker-api-gateway.<APP_NAMESPACE>.com      # Hostname for the publicly accessible ingress, the `<APP_NAMESPACE>` string will be replaced with the current namespace 
+    service: worker-api-gateway                       # Service name where the ingress should route to, this should be left unchanged
+    port: 8899                                        # Port where the ingress should route to
+    secret: worker-api-gateway-tls                    # SecretName of the tls secret created to be used for ingress
+    tls: true                                         # Flag for set up tls section in ingress
+    rules: []                                         # To customize the whole rules section, if [] it will use the above variables to mount the rules
+    ingress_annotations:                              # Section to customize the annotations for the ingress as needed
+      nginx.ingress.kubernetes.io/rewrite-target: /
+
+# Auto onboarding settings
+auto_onboarding: false                  # If set to true, it will deploy a container that will do the initial setup automatically if correct values are provided
+mddc_import_config: null                # Content of config file to be imported by the onboarding container
+ONBOARDING_USER_NAME: null              # User name of user that will be created by onboarding container (defaults to admin if left unset)
+ONBOARDING_PASSWORD: null               # Password of user that will be created by onboarding container (randomly generated if left unset, can be retrieved from the "onboarding-env" secret)
+ONBOARDING_EMAIL: null                  # Email of user that will be created by onboarding container
+ONBOARDING_FULL_NAME: null              # Full name of user that will be created by onboarding container
+
+## Uncomment if you want to use a private repo (it must already be configured in the cluster as a secret)
+# imagePullSecrets:
+#   - name: regcred
+
+# Docker repo to use, this should be changed when using private images (this string will be prepended to the image name)
+# If a component has "custom_repo: true" then the image name will be formated as "{docker_repo/}image_name" otherwise it will remain unaltered
+mddc_docker_repo: opswat
+
+imagePullPolicy: IfNotPresent
+
+mddc_config_map_env_name: 'mddc-env'
+
+mddc_components:
+  postgres:
+    name: postgres
+    image: postgres:14.17
+    env:
+      - name: POSTGRES_PASSWORD
+        valueFrom:
+          secretKeyRef:
+            name: mddc-common-secret
+            key: POSTGRES_PASSWORD
+      - name: POSTGRES_USER
+        valueFrom:
+          secretKeyRef:
+            name: mddc-common-secret
+            key: POSTGRES_USER
+    ports:
+      - port: 5432
+    is_db: true
+    persistentDir: /var/lib/postgresql/data
+    storage_name: postgres-pvc
+    tls:
+      enabled: false
+
+  rabbitmq:
+    name: rabbitmq
+    image: rabbitmq:3.13.0
+    ports:
+      - port: 5672
+      - port: 15672
+    env:
+      - name: RABBITMQ_DEFAULT_USER
+        valueFrom:
+          secretKeyRef:
+            name: mddc-common-secret
+            key: RABBITMQ_DEFAULT_USER
+      - name: RABBITMQ_DEFAULT_PASS
+        valueFrom:
+          secretKeyRef:
+            name: mddc-common-secret
+            key: RABBITMQ_DEFAULT_PASS
+    extra_labels:
+      aws-type: fargate
+    resources:
+      requests:
+        memory: "1Gi"
+        cpu: "0.5"
+  
+  redis:
+    name: redis
+    image: redis:7.0.5
+    ports:
+      - port: 6379
+    extra_labels:
+      aws-type: fargate
+    resources:
+      requests:
+        memory: "1Gi"
+        cpu: "0.5"
+
+  identity-service:
+    name: identity-service
+    custom_repo: true
+    image: metadefender-distributed-cluster:identity-service-2.1.0-debian-12
+    ports:
+      - port: 8891
+    extra_labels:
+      aws-type: fargate
+    resources:
+      requests:
+        memory: "0.5Gi"
+        cpu: "0.010"
+    
+  file-storage:
+    name: file-storage
+    custom_repo: true
+    image: metadefender-distributed-cluster:file-storage-2.1.0-debian-12
+    ports:
+      - port: 8890
+    extra_labels:
+      aws-type: fargate
+    persistentDir: /opt/opswat/mddc-file-storage
+    storage_name: file-storage-pvc
+    resources:
+      requests:
+        memory: "0.25Gi"
+        cpu: "0.010"
+    initContainers:
+        - name: volume-init
+          image: busybox
+          command: ["sh", "-c", "chmod 777 /opt/opswat/mddc-file-storage"]
+          volumeMounts:
+            - name: file-storage
+              mountPath: /opt/opswat/mddc-file-storage
+
+  control-center:
+    name: control-center
+    custom_repo: true
+    image: metadefender-distributed-cluster:control-center-2.1.0-debian-12
+    ports:
+      - port: 8892
+    extra_labels:
+      aws-type: fargate
+    service_type: LoadBalancer
+    sessionAffinity: ClientIP
+    service_annotations:
+      service.beta.kubernetes.io/aws-load-balancer-type: external
+      service.beta.kubernetes.io/aws-load-balancer-nlb-target-type: ip
+      service.beta.kubernetes.io/aws-load-balancer-scheme: internet-facing  
+    resources:
+      requests:
+        memory: "2Gi"
+        cpu: "0.5"
+    initContainers:
+    - name: wait-for-services
+      image: busybox:latest
+      command: ["/bin/sh", "-c"]
+      args:
+        - |
+          echo "Waiting for identity-service:8891..."
+          until nc -vz identity-service 8891; do
+            echo "$(date) Still waiting for identity-service:8891"
+            sleep 2
+          done
+          echo "identity-service:8891 is up!"
+          echo "Waiting for file-storage:8890..."
+          until nc -vz file-storage 8890; do
+            echo "$(date) Still waiting for file-storage:8890"
+            sleep 2
+          done
+          echo "file-storage:8890 is up!"
+
+
+  worker-api-gateway:
+    name: worker-api-gateway
+    custom_repo: true
+    image: metadefender-distributed-cluster:worker-api-gateway-2.1.0-debian-12
+    ports:
+      - port: 8893
+      - port: 8899
+    extra_labels:
+      aws-type: fargate
+    service_type: LoadBalancer
+    sessionAffinity: ClientIP
+    service_annotations:
+      service.beta.kubernetes.io/aws-load-balancer-type: external
+      service.beta.kubernetes.io/aws-load-balancer-nlb-target-type: ip
+      service.beta.kubernetes.io/aws-load-balancer-scheme: internet-facing  
+    resources:
+      requests:
+        memory: "0.5Gi"
+        cpu: "1.0"
+    hpa:
+      enabled: false
+      minReplicas: 2
+      maxReplicas: 3
+      cpuTargetUtilization: 85
+    initContainers:
+    - name: wait-for-services
+      image: busybox:latest
+      command: ["/bin/sh", "-c"]
+      args:
+        - |
+          echo "Waiting for control-center:8892..."
+          until nc -vz control-center 8892; do
+            echo "$(date) Still waiting for control-center:8892"
+            sleep 3
+          done
+          echo "control-center:8892 is up!"
+
+
+
+  worker-core:
+    name: worker-core
+    custom_repo: true
+    image: metadefender-distributed-cluster:worker-core-2.1.0-debian-12
+    ports:
+      - port: 8893
+    extra_labels:
+      aws-type: fargate
+    resources:
+      requests:
+        memory: "4Gi"                                    # Minimum reserved memory
+        cpu: "4.0"                                       # Minimum reserved cpu
+        ephemeral-storage: "60Gi"
+    hpa:
+      enabled: false
+      minReplicas: 2
+      maxReplicas: 3
+      cpuTargetUtilization: 85
+    initContainers:
+    - name: wait-for-services
+      image: busybox:latest
+      command: ["/bin/sh", "-c"]
+      args:
+        - |
+          echo "Waiting for control-center:8892..."
+          until nc -vz control-center 8892; do
+            echo "$(date) Still waiting for control-center:8892"
+            sleep 3
+          done
+          echo "control-center:8892 is up!"

@@ -13,7 +13,6 @@ In addition to the chart, we also provide a number of values files for specific 
 - `mdcore-azure-aks-values.yml` - for deploying in an Azure environment using AKS
 - `mdcore-azure-gcloud-*.yml` - for deploying in an GCP environment using GKE
 - `mdcore-openshift.yml` - for deploying in an OpenShift environment
-- `mdcore-mdhub-module.yml` - values for deploying the MD Hub stack
 
 ## Installation
 
@@ -65,36 +64,6 @@ After installation MD Core can be exposed in OpenShift by creating a new route i
 - Target port: `8008 -> 8008`
 
 An ingress is also created by default and can be disabled by setting the `core_ingress.enabled` value to `false` .
-
-
-### MD Hub deployment
-Example values for enabling the MD Hub module can be found in the `mdcore-mdhub-module.yml` file. By setting the `ENABLED_MODULES: "mdhub"` value, the chart configures and deploys the following additional pods:
-- redis (open-source caching server)
-- rabbitmq (open-source messaging broker)
-- md-hub (known as MetaDefender Core Hub )
-- md-nas (central file storage server, known as MetaDefender Core NAS)
-
-In addition to enabling the `mdhub` module, the `md-nas` pod also requires an ssl certificate and certificate key that can be configured from the values file:
-```
-CERT_KEY: |
-  <SET_MD_NAS_CERT_KEY>
-CERT: |
-  <SET_MD_NAS_CERT>
-```
-
-The `md-hub` service listens by default on port `8889` as a ClusterIP. Changing the port from the values file also updates the configuration file mounted in the md-hub container.
-```
-core_components:
-  md-hub:
-    ports:
-      - port: 8889
-    service_type: ClusterIP
-```
-Credentials can also be configured in the values file and are saved as secrets, they are randomly generated if left unset. Once configured, the entire MD Core and Hub stack can be deployed with helm:
-```
-helm install my_mdcore ./helm_charts/mdcore -f mdcore-mdhub-module.yml
-```
-Additional MD Hub documentation can be found here: https://docs.opswat.com/mdcore/central-hub-deployment/overview
 
 ## Operational Notes
 The entire deployment can be customized by overwriting the chart's default configuration values. Here are a few point to look out for when changing these values:

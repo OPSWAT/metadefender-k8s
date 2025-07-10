@@ -1,0 +1,22 @@
+# Create an hpa for each component in mddc
+{{ range $component_name, $component := .Values.mddc_components }}
+
+{{ if and (not $component.is_db) $component.hpa }}
+
+{{ if $component.hpa.enabled }}
+---
+apiVersion: autoscaling/v1
+kind: HorizontalPodAutoscaler
+metadata:
+  name: {{ $component.name | quote }}
+spec:
+  minReplicas: {{ $component.hpa.minReplicas }}
+  maxReplicas: {{ $component.hpa.maxReplicas }}
+  targetCPUUtilizationPercentage: {{ $component.hpa.cpuTargetUtilization }}
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: {{ $component.name | quote }}
+{{ end }}
+{{ end }}
+{{ end }}

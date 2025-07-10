@@ -1,7 +1,8 @@
-# Create a deployment for each component in MD Core if it's enabled
 
-{{ range $component_name, $component := .Values.core_components }}
-{{ if or $.Values.deploy_with_core_db (not $component.is_db) }}
+# Create a deployment for each component in mddc
+{{ range $component_name, $component := .Values.mddc_components }}
+
+{{ if or $.Values.deploy_with_mddc_db (not $component.is_db)  }}
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -27,13 +28,15 @@ spec:
       containers:
         - envFrom:
             - configMapRef:
-                name: mdcore-env
-            {{- if $.Values.env }}
-            - configMapRef:
-                name: {{ printf "%s-config" $.Release.Name }}
-            {{- end }}
+                name: {{ $component.name | quote }}
+                optional: true
+            - secretRef:
+                name:  "mddc-common-secret"
+            - secretRef:
+                name: {{ $component.name | quote }}
+                optional: true
           {{ if $component.custom_repo -}}
-          image: {{ printf "%s/%s:%s" $.Values.core_docker_repo $component.image $.Values.BRANCH | quote }}
+          image: {{ printf "%s/%s" $.Values.mddc_docker_repo $component.image | quote }}
           {{- else -}}
           image: {{ $component.image | quote }}
           {{- end }}
@@ -73,21 +76,11 @@ spec:
           securityContext:
             {{- toYaml $component.securityContext | nindent 12 }}
           {{- end }}
-          {{- $tls := default dict $component.tls }}
-          {{- if (or $component.mountConfig $tls.enabled $component.persistentDir $component.extraVolumeMounts)}}
           volumeMounts:
             {{- if $component.mountConfig }}
             - name: {{ $component.mountConfig.configName }}
               mountPath: {{ $component.mountConfig.mountPath }}
               subPath: {{ $component.mountConfig.subPath }}
-            {{ end }}
-            {{- if $tls.enabled }}
-            - name: {{ $component.tls.certSecret }}
-              mountPath: {{ $.Values.MDCORE_CERT_PATH }}/mdcore.crt
-              subPath: {{ $component.tls.certSecretSubPath }}
-            - name: {{ $component.tls.certKeySecret }}
-              mountPath: {{ $.Values.MDCORE_CERT_PATH }}/mdcore.key
-              subPath: {{ $component.tls.certKeySecretSubPath }}
             {{ end }}
             {{- if $component.persistentDir }}
             - name: {{ $component.name }}
@@ -99,14 +92,13 @@ spec:
             {{- if $component.extraVolumeMounts }}
               {{- toYaml $component.extraVolumeMounts | nindent 12 }}
             {{- end }}
-          {{- end }}
           {{- if $component.resources }}
           resources:
             {{- toYaml $component.resources | nindent 12 }}
           {{- end }}
-          {{- if $component.sidecars }}
-            {{- toYaml $component.sidecars | nindent 8 }}
-          {{- end }}
+      {{- if $component.sidecars }}
+        {{- toYaml $component.sidecars | nindent 8 }}
+      {{- end }}
       {{- if $component.initContainers }}
       initContainers:
         {{- toYaml $component.initContainers | nindent 8 }}
@@ -119,22 +111,13 @@ spec:
       {{- if $component.customPodDefinitions }}
         {{- toYaml $component.customPodDefinitions | nindent 6 }}
       {{- end }}
-      {{- if (or $component.mountConfig $tls.enabled $component.persistentDir $component.extraVolumes )}}
       volumes:
         {{- if $component.mountConfig }}
         - name: {{ $component.mountConfig.configName }}
           configMap:
             name: {{ $component.mountConfig.configName }}
-        {{ end }} 
-        {{- if $tls.enabled }}
-        - name: {{ $component.tls.certSecret }}
-          secret:
-            secretName: {{ $component.tls.certSecret }}
-        - name: {{ $component.tls.certKeySecret }}
-          secret:
-            secretName: {{ $component.tls.certKeySecret }}
         {{ end }}
-        {{- if $component.persistentDir }}
+        {{- if (and $component.persistentDir $.Values.persistance_enabled) }}
         {{- if eq $.Values.storage_provisioner "hostPath" }}
         - name: {{ $component.name }}
           hostPath:
@@ -143,19 +126,17 @@ spec:
         {{ else }}
         - name: {{ $component.name }}
           persistentVolumeClaim:
-            {{- if $component.storage_name }}
             claimName: {{ printf "%s" $component.storage_name }}
-            {{ else }}
-            claimName: {{ printf "%s" $.Values.storage_name }}
             {{ end }}
-        {{ end }}
         {{ end }}
         {{- if $component.extraVolumes -}}
           {{- range $volumeLabel, $volume := $component.extraVolumes }}
         -
             {{- toYaml $volume | nindent 10 }}
-          {{- end }}
         {{- end }}
-      {{- end }}
+        {{- end }}
+      hostAliases:
+        {{- toYaml $.Values.mddcHostAliases | nindent 8 }}
+      
 {{ end }}
 {{ end }}
