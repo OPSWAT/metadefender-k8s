@@ -20,7 +20,7 @@ kubectl get pods --no-headers -o custom-columns=":metadata.name" -n $namespace |
 kubectl get all -n $namespace > $sp_name/kubectl_all.txt
 
 # Get the enviroment variables applied on mdss and mdcore
-kubectl get configmap mdcore-env mdss-env mdicapsrv-env -o yaml -n $namespace 2&>1 > $sp_name/configmaps.yaml
+kubectl get configmaps -n $namespace -o yaml > $sp_name/configmaps.yaml
 
 # Get the ingress rules from the namespace
 kubectl get ingress -o yaml -n $namespace 2&>1 > $sp_name/ingress.yaml
