@@ -1,9 +1,30 @@
-# Default values for mdss. These will also be included in the environment of each mdss container
+# Generate secrets for MDSS database username, password, postgres user and password
+mdss_generate_secrets: true
+MDSS_DB_USER: mdss                  # PostgreSQL database username 
+MDSS_DB_PASSWORD: null              # PostgreSQL database password, if not set it will be randomly generated
+MDSS_DB_HOST: postgres-mdss       # Hostname / entrypoint of the database, this value should be changed any if using an external database service
+MDSS_DB_PORT: "5432"              # Port for the PostgreSQL Database
+MDSS_DB_NAME: MDSS                # Database name to use
 
+# Connection string template for the PostgreSQL database, additional db options can be added
+POSTGRESQL_URL: "Host=<MDSS_DB_HOST>;Port=<MDSS_DB_PORT>;Username=<MDSS_DB_USER>;Password=<MDSS_DB_PASSWORD>;Database=<MDSS_DB_NAME>"
+
+# Default values for mdss. These will also be included in the environment of each mdss container
 mdss-common-environment:
+
+  BRANCH: "4.0.0"
   ENABLED_MODULES: "azureblob,amazonsdk,nfs"                                  # Enabled modules by default
   # ENABLED_MODULES: "azureblob,amazonsdk,googlecloud,alibabacloud,azurefiles,smb,box,onedrive,sftp,debug,mft"             # All supported modules
 
+  # PostgreSQL migrations Configuration
+  PGMIGRATIONS_PORT: "27777"
+  PGMIGRATIONS_HOST: "pgmigrations"
+  PGMIGRATIONS_SCRIPTS_PATH: "/pgmigrations/ef_migrations"
+
+  # Skip MongoDB to PostgreSQL migration by default
+  SKIP_MONGO_TO_PG: "yes"
+  
+  # [DEPRECATED] Uncomment only when migrating data from MongoDB
   # This defines the connection string to the db ( should be modified when using an external db)
   MONGO_URL: "mongodb://mongodb:27017/MDCS"
 
@@ -13,7 +34,7 @@ mdss-common-environment:
   MONGO_CA_CERTIFICATE: ""
   MONGO_DB: "MDCS"
   MONGO_MIGRATIONS_HOST: "mongomigrations"
-  MONGO_MIGRATIONS_PORT: "27777"
+  MONGO_MIGRATIONS_PORT: "27778"
 
   RABBITMQ_URI: "amqp://rabbitmq:5672"
   RABBITMQ_HOST: "rabbitmq"
@@ -44,12 +65,7 @@ mdss-common-environment:
   SFTPSERVICE_LISTENING_IP: "0.0.0.0"
   NFSSERVICE_PORT: "5004"
   NFSSERVICE_LISTENING_IP: "0.0.0.0"
-
-  HTTPS_ACTIVE: "no"
   
-  BRANCH: "3.6.1"
-  BUILD_VERSION: "3.6.1.1448"
-
 
   # These variables can be changed to reveal debug information in the application
   LOG_LEVEL: "4"
@@ -202,9 +218,19 @@ mdss-common-environment:
 
   # Maximum number of files when creating a Pdf From Report
   MAXIMUM_FILES_PDF_REPORT: "10000"
-
   # If set to 1, it will log the temporary created files during remediations operations
   LOG_CREATION_OF_TEMP_FILES: "0"
+  
+  SHAREPOINT_MAX_CONCURRENT_REQUESTS: "5"
+  SHAREPOINT_BATCH_INTERVAL_MS: "10000"
+  SHAREPOINT_BATCH_SIZE: "10"
+
+  # Maximum time needed to download a single chunk of data
+  NFS_DOWNLOAD_CHUNK_TIMEOUT_SECONDS: "60"
+
+  # When set to true, allows deletion of the original object after a move remediation action even if some actions failed, 
+  # as long as at least one action succeeded and no actions are pending
+  DELETE_OBJECT_ON_MOVE_REMEDIATION_FAILURE: "false"
   
   # OPSWAT Telemetry Configuration
   ENABLE_TELEMETRY: "no"
@@ -268,6 +294,7 @@ mdss_docker_repo: opswat
 imagePullPolicy: IfNotPresent
 
 mdss_config_map_env_name: 'mdss-env'
+mdss_secret_env_name: 'mdss-postgres-cred'
 mdssHostAliases:                              # Custom hosts entries
   - ip: "10.0.1.16"
     hostnames:
@@ -276,12 +303,12 @@ mdssHostAliases:                              # Custom hosts entries
     - "small.s3-us-west-1.cloudian-sf"
 
 mdss_components:
-  mongodb:
-    name: mongodb
-    image: mongo:7.0
+  postgres-mdss:
+    name: postgres-mdss
+    image: postgres:17
     ports:
-      - port: 27017
-    persistentDir: /data/db
+      - port: 5432
+    persistentDir: /var/lib/postgresql/data 
     is_db: true
     resources:
       requests:
@@ -289,13 +316,26 @@ mdss_components:
         cpu: "0.5"
         ephemeral-storage: "10Gi"
 
+  pgmigrations:
+    name: pgmigrations
+    custom_repo: true
+    image: mdcloudservices_pgmigrations
+    ports:
+      - port: 27777
+    resources:
+      requests:
+        memory: "0.125Gi"
+        cpu: "0.010"
+        ephemeral-storage: "250Mi"
+
   mongomigrations:
     name: mongomigrations
     custom_repo: true
     image: mdcloudservices_mongo-migrations
+    command: ["/bin/sh","-c"]
+    args: ['cd /mongomigrations && sh ./migrations.sh 134']
     ports:
-      - port: 27777
-    persistentDir: /backup
+      - port: 27778
     resources:
       requests:
         memory: "0.125Gi"
@@ -399,18 +439,6 @@ mdss_components:
         cpu: "0.050"
         ephemeral-storage: "0.5Gi"
   
-  securitychecklistservice:
-    name: securitychecklistservice
-    custom_repo: true
-    image: "mdcloudservices_security-checklist"
-    extra_labels:
-      aws-type: fargate
-    resources:
-      requests:
-        memory: "0.125Gi"
-        cpu: "0.010"
-        ephemeral-storage: "0.5Gi"
-
   loadbalancerservice:
     name: loadbalancerservice
     custom_repo: true
@@ -519,6 +547,21 @@ mdss_components:
         memory: "0.25Gi"
         cpu: "0.010"
         ephemeral-storage: "0.5Gi"
+
+# ======================================= MONGOMIGRATIONS MODULE ================================================
+  mongodb:
+    name: mongodb
+    module_name: mongomigrations
+    image: mongo:7.0
+    ports:
+      - port: 27017
+    persistentDir: /data/db
+    is_db: true
+    resources:
+      requests:
+        memory: "2Gi"
+        cpu: "0.5"
+        ephemeral-storage: "10Gi"
 
   # ======================================= AMAZONSDK MODULE ================================================
   discoveryamazonsdkservice:
@@ -1000,4 +1043,3 @@ mdss_components:
         memory: "0.25Gi"
         cpu: "0.010"
         ephemeral-storage: "0.5Gi"
-  
