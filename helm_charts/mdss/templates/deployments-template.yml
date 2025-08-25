@@ -29,6 +29,8 @@ spec:
         - envFrom:
             - configMapRef:
                 name: {{ $.Values.mdss_config_map_env_name | quote }}
+            - secretRef:
+                name: {{ $.Values.mdss_secret_env_name | quote }}
           {{ if $component.custom_repo -}}
           image: {{ printf "%s/%s:%s" $.Values.mdss_docker_repo $component.image (index $.Values "mdss-common-environment").BRANCH | quote }}
           {{- else -}}
