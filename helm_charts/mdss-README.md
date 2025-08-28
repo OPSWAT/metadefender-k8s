@@ -79,9 +79,6 @@ The following table lists the configurable parameters of the Metadefender for se
 
 | Parameter                | Description             | Default        |
 | ------------------------ | ----------------------- | -------------- |
-| `MONGO_URL` | MongoDB connection string, this should be set only when using a remote database service | `"mongodb://mongodb:27017/MDCS"` |
-| `MONGO_MIGRATIONS_HOST` |  | `"mongomigrations"` |
-| `MONGO_MIGRATIONS_PORT` |  | `27777` |
 | `RABBITMQ_HOST` |  | `"rabbitmq"` |
 | `RABBITMQ_PORT` |  | `5672` |
 | `APIGATEWAY_PORT` |  | `8005` |
