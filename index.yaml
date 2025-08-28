@@ -25,6 +25,22 @@ entries:
     version: 0.0.28
   MetaDefender_ICAP_Server:
   - apiVersion: v2
+    appVersion: 5.10.0
+    created: "2025-08-28T07:36:02.796468725Z"
+    description: This is a Helm chart for deploying MetaDefender ICAP Server (https://www.opswat.com/products/metadefender/icap)
+      in a Kubernetes cluster.
+    digest: a56bb79781786ec2bf3a625b8e9c5875dc4e93b8ab94b38b1177a3e42dc0981c
+    home: https://docs.opswat.com/mdicap/installation
+    keywords:
+    - mdicapsrv
+    - icap
+    - MetaDefender ICAP Server
+    name: MetaDefender_ICAP_Server
+    type: application
+    urls:
+    - https://github.com/OPSWAT/metadefender-k8s/releases/download/MetaDefender_ICAP_Server-5.10.0/MetaDefender_ICAP_Server-5.10.0.tgz
+    version: 5.10.0
+  - apiVersion: v2
     appVersion: 5.9.0
     created: "2025-06-11T10:59:45.22406752Z"
     description: This is a Helm chart for deploying MetaDefender ICAP Server (https://www.opswat.com/products/metadefender/icap)
@@ -569,6 +585,18 @@ entries:
     version: 2.3.2
   metadefender_storage_security:
   - apiVersion: v2
+    appVersion: 4.0.1
+    created: "2025-08-28T07:36:02.997196957Z"
+    description: This is a Helm chart for deploying MetaDefender for Secure Storage
+      (https://www.opswat.com/products/metadefender/storage-security) in a Kubernetes
+      cluster
+    digest: fa0a912b0fff297e8ea9a7dd48c684f939f2e67647cb9496bc6af94c03489f2a
+    name: metadefender_storage_security
+    type: application
+    urls:
+    - https://github.com/OPSWAT/metadefender-k8s/releases/download/metadefender_storage_security-4.0.1/metadefender_storage_security-4.0.1.tgz
+    version: 4.0.1
+  - apiVersion: v2
     appVersion: 4.0.0
     created: "2025-08-25T09:57:50.262272056Z"
     description: This is a Helm chart for deploying MetaDefender for Secure Storage
@@ -771,4 +799,4 @@ entries:
     urls:
     - https://github.com/OPSWAT/metadefender-k8s/releases/download/metadefender_storage_security-0.0.28/metadefender_storage_security-0.0.28.tgz
     version: 0.0.28
-generated: "2025-08-25T09:57:50.262543962Z"
+generated: "2025-08-28T07:36:02.997513292Z"
