@@ -1,4 +1,12 @@
 
+## Whether to skip creating secrets - helpful for ArgoCD based deployments
+## where secrets should not be visible in the ArgoCD UI.
+## This would require secrets be created manually. 
+createSecrets:
+  db: true
+  mdcore: true
+  mdcore_license_key: true
+
 ## Uncomment the following lines to set a fixed user and password for the MD Core web interface that will overwrite 
 ## any secret that already exists for these credentials (the secret will be kept when the chart is deleted)
 ## If left unset the following will apply:

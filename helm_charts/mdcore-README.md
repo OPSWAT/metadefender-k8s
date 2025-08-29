@@ -81,6 +81,9 @@ The following table lists the configurable parameters of the Metadefender core c
 
 | Parameter                | Description             | Default        |
 | ------------------------ | ----------------------- | -------------- |
+| `createSecrets.db` | Flag to control the creation of `mdcore-postgres-cred`| `true` |
+| `createSecrets.mdcore` | Flag to control the creation of `mdcore-cred` | `true` |
+| `createSecrets.mdcore_license_key` | Flag to control the creation of `mdcore-license-key` | `true` |
 | `mdcore_user` | Initial admin user for the MD Core web interface | `"admin"` |
 | `mdcore_password` | Initial admin password for the MD Core web interface, if not set it will be randomly generated | `null` |
 | `core_db_user` | PostgreSQL database username | `"postgres"` |
