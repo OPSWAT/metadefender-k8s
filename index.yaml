@@ -202,6 +202,20 @@ entries:
     version: 0.0.29
   metadefender_core:
   - apiVersion: v2
+    appVersion: 5.15.1
+    created: "2025-10-13T16:30:23.240352778Z"
+    description: 'This is a Helm chart for deploying MetaDefender Core (https://www.opswat.com/products/metadefender/core)
+      in a Kubernetes cluster.   Release Notes - Environment variables to migrate
+      processing history (Pre-steps needed) - Environment variables to enable Licensing
+      Cleanup and examples for Role/Rolebinding - Fixed warning of kubernetes.io/ingress.class
+      annotation for AWS and Azure. Added control flag to still use it for GCP '
+    digest: 3501af65394f4e8d6c1f3f05953f4fca912182765674ad31c158a8c2c80a2642
+    name: metadefender_core
+    type: application
+    urls:
+    - https://github.com/OPSWAT/metadefender-k8s/releases/download/metadefender_core-5.15.1/metadefender_core-5.15.1.tgz
+    version: 5.15.1
+  - apiVersion: v2
     appVersion: 5.15.0
     created: "2025-07-10T09:47:51.103846226Z"
     description: 'This is a Helm chart for deploying MetaDefender Core (https://www.opswat.com/products/metadefender/core)
@@ -443,6 +457,18 @@ entries:
     version: 0.0.30
   metadefender_distributed_cluster:
   - apiVersion: v2
+    appVersion: 2.3.0
+    created: "2025-10-13T16:30:23.427992779Z"
+    description: This is a Helm chart for deploying MetaDefender Distributed Cluster
+      (https://www.opswat.com/docs/mdcore/distributed-cluster-deployment) in a Kubernetes
+      cluster
+    digest: 122c720934aeb9f2391df1fe991fd12d6a32c22ff96eb91930650dc3d72d656e
+    name: metadefender_distributed_cluster
+    type: application
+    urls:
+    - https://github.com/OPSWAT/metadefender-k8s/releases/download/metadefender_distributed_cluster-2.3.0/metadefender_distributed_cluster-2.3.0.tgz
+    version: 2.3.0
+  - apiVersion: v2
     appVersion: 2.1.0
     created: "2025-07-10T09:47:51.234708281Z"
     description: This is a Helm chart for deploying MetaDefender Distributed Cluster
@@ -524,6 +550,18 @@ entries:
     version: 3.3.0-0
   metadefender_software_supply_chain:
   - apiVersion: v2
+    appVersion: 2.5.4
+    created: "2025-10-13T16:30:23.606948381Z"
+    description: This is a Helm chart for deploying MetaDefender Software Supply Chain
+      (https://www.opswat.com/products/metadefender/software-supply-chain) in a Kubernetes
+      cluster
+    digest: 8268bff7024873b598f7e7458c6b555694bf5f960ac0251322bc11be1090b4bb
+    name: metadefender_software_supply_chain
+    type: application
+    urls:
+    - https://github.com/OPSWAT/metadefender-k8s/releases/download/metadefender_software_supply_chain-2.5.4/metadefender_software_supply_chain-2.5.4.tgz
+    version: 2.5.4
+  - apiVersion: v2
     appVersion: 2.5.2
     created: "2025-08-25T09:57:50.075161524Z"
     description: This is a Helm chart for deploying MetaDefender Software Supply Chain
@@ -584,6 +622,18 @@ entries:
     - https://github.com/OPSWAT/metadefender-k8s/releases/download/metadefender_software_supply_chain-2.3.2/metadefender_software_supply_chain-2.3.2.tgz
     version: 2.3.2
   metadefender_storage_security:
+  - apiVersion: v2
+    appVersion: 4.1.0
+    created: "2025-10-13T16:30:23.78855629Z"
+    description: This is a Helm chart for deploying MetaDefender for Secure Storage
+      (https://www.opswat.com/products/metadefender/storage-security) in a Kubernetes
+      cluster
+    digest: 9114c4d2d93419e9474be6ecfe399565849b411a8f5ab4c2e9324fbf8c8b512f
+    name: metadefender_storage_security
+    type: application
+    urls:
+    - https://github.com/OPSWAT/metadefender-k8s/releases/download/metadefender_storage_security-4.1.0/metadefender_storage_security-4.1.0.tgz
+    version: 4.1.0
   - apiVersion: v2
     appVersion: 4.0.1
     created: "2025-08-28T07:36:02.997196957Z"
@@ -799,4 +849,4 @@ entries:
     urls:
     - https://github.com/OPSWAT/metadefender-k8s/releases/download/metadefender_storage_security-0.0.28/metadefender_storage_security-0.0.28.tgz
     version: 0.0.28
-generated: "2025-08-28T07:36:02.997513292Z"
+generated: "2025-10-13T16:30:23.788895364Z"
