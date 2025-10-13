@@ -43,9 +43,6 @@ MDCORE_DB_HOST: postgres-core       # Hostname / entrypoint of the database, thi
 MDCORE_DB_PORT: "5432"              # Port for the PostgreSQL Database
 MDCORE_CERT_PATH: "/cert"
 
-RABBITMQ_DEFAULT_USER: rabbitmq
-RABBITMQ_DEFAULT_PASS: null          # RabbitMQ broker password, if not set it will be randomly generated
-
 CERT_KEY: |
   <SET_MD_NAS_CERT_KEY>
 CERT: |
@@ -240,7 +237,7 @@ core_components:
 
   md-core:
     name: md-core
-    image: opswat/metadefendercore-debian:5.15.0        # Overrides the default docker image for the MD Core service, this value can be changed if you want to set a different version of MD Core
+    image: opswat/metadefendercore-debian:5.15.1        # Overrides the default docker image for the MD Core service, this value can be changed if you want to set a different version of MD Core
     replicas: 1                                         # Sets the number of replicas if you want to have multiple MD Core instances
     env:
       - name: MD_USER
@@ -335,7 +332,7 @@ core_components:
         maxSurge: 0
     initContainers:
       - name: check-db-ready
-        image: opswat/metadefendercore-debian:5.15.0
+        image: opswat/metadefendercore-debian:5.15.1
         imagePullPolicy: IfNotPresent
         envFrom:
           - configMapRef:

@@ -12,7 +12,7 @@ POSTGRESQL_URL: "Host=<MDSS_DB_HOST>;Port=<MDSS_DB_PORT>;Username=<MDSS_DB_USER>
 # Default values for mdss. These will also be included in the environment of each mdss container
 mdss-common-environment:
 
-  BRANCH: "4.0.1"
+  BRANCH: "4.1.0"
   ENABLED_MODULES: "azureblob,amazonsdk,nfs"                                  # Enabled modules by default
   # ENABLED_MODULES: "azureblob,amazonsdk,googlecloud,alibabacloud,azurefiles,smb,box,onedrive,sftp,debug,mft"             # All supported modules
 
@@ -55,6 +55,8 @@ mdss-common-environment:
   LICENSINGSERVICE_URL: "http://licensingservice"
   LICENSINGSERVICE_PORT: "5000"
   LICENSINGSERVICE_LISTENING_IP: "0.0.0.0"
+  PRODUCT_NAME: "MetaDefender Storage Security"
+  PRODUCT_NAME_SHORT: "MDSS"
   SMBSERVICE_URL: "http://smbservice"
   SFTPSERVICE_URL: "http://sftpservice"
   NFSSERVICE_URL: "http://nfsservice"
@@ -65,8 +67,8 @@ mdss-common-environment:
   SFTPSERVICE_LISTENING_IP: "0.0.0.0"
   NFSSERVICE_PORT: "5004"
   NFSSERVICE_LISTENING_IP: "0.0.0.0"
+  ALLOW_SSL_CONFIGURATION_FROM_UI: "False"
   
-
   # These variables can be changed to reveal debug information in the application
   LOG_LEVEL: "4"
 
@@ -106,6 +108,7 @@ mdss-common-environment:
   DISCOVERY_SERVICE_SMB_RTP_HANDLING: "0"
   DISCOVERY_SERVICE_SFTP_RTP_HANDLING: "0"
   DISCOVERY_SERVICE_NFS_RTP_HANDLING: "0"
+  DISCOVERY_SERVICE_FTP_RTP_HANDLING: "0"
 
   # This can be changed to the following values 0 - Default, 1 - IgnoreChainErrors, 2 - IgnoreAllErrors
   MD_CORE_CERTIFICATE_VALIDATION: "0"
@@ -851,12 +854,12 @@ mdss_components:
         memory: "0.5Gi"
         cpu: "0.500"
         ephemeral-storage: "0.5Gi"
-  # ======================================= ONEDRIVE MODULE ================================================
-  discoveryonedriveservice:
-    name: discoveryonedriveservice
-    module_name: onedrive
+  # ======================================= GRAPH MODULE ================================================
+  discoverygraphservice:
+    name: discoverygraphservice
+    module_name: graph
     custom_repo: true
-    image: mdcloudservices_discoveryonedrive
+    image: mdcloudservices_discoverygraph
     extra_labels:
       aws-type: fargate
     resources:
@@ -865,11 +868,11 @@ mdss_components:
         cpu: "1.000"
         ephemeral-storage: "0.5Gi"
   
-  remediationsservice-onedrive:
-    name: remediationsservice-onedrive
-    module_name: onedrive
+  remediationsservice-graph:
+    name: remediationsservice-graph
+    module_name: graph
     custom_repo: true
-    image: mdcloudservices_remediationsonedrive
+    image: mdcloudservices_remediationsgraph
     extra_labels:
       aws-type: fargate
     resources:
@@ -878,11 +881,11 @@ mdss_components:
         cpu: "0.100"
         ephemeral-storage: "1Gi"
       
-  storagesservice-onedrive:
-    name: storagesservice-onedrive
-    module_name: onedrive
+  storagesservice-graph:
+    name: storagesservice-graph
+    module_name: graph
     custom_repo: true
-    image: mdcloudservices_storagesonedrive
+    image: mdcloudservices_storagesgraph
     extra_labels:
       aws-type: fargate
     resources:
@@ -891,6 +894,46 @@ mdss_components:
         cpu: "0.010"
         ephemeral-storage: "0.5Gi"
   
+  # ======================================= FTP MODULE ================================================
+  discoveryftpservice:
+    name: discoveryftpservice
+    module_name: ftp
+    custom_repo: true
+    image: mdcloudservices_discoveryftp
+    extra_labels:
+      aws-type: fargate
+    resources:
+      requests:
+        memory: "0.25Gi"
+        cpu: "1.000"
+        ephemeral-storage: "0.5Gi"
+
+  remediationsservice-ftp:
+    name: remediationsservice-ftp
+    module_name: ftp
+    custom_repo: true
+    image: mdcloudservices_remediationsftp
+    extra_labels:
+      aws-type: fargate
+    resources:
+      requests:
+        memory: "0.25Gi"
+        cpu: "0.100"
+        ephemeral-storage: "1Gi"
+  
+  storagesservice-ftp:
+    name: storagesservice-ftp
+    module_name: ftp
+    custom_repo: true
+    image: mdcloudservices_storagesftp
+    extra_labels:
+      aws-type: fargate
+    resources:
+      requests:
+        memory: "0.25Gi"
+        cpu: "0.010"
+        ephemeral-storage: "0.5Gi"
+
   # ======================================= SFTP MODULE ================================================
   discoverysftpservice:
     name: discoverysftpservice
