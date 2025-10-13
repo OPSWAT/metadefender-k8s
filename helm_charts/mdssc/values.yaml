@@ -17,7 +17,8 @@ mdssc-common-environment:
   PRODUCT_NAME_SHORT: "MDSSC"
   EULA_ACCEPTED_AFTER_UPGRADE: "yes"
 
-  ENABLED_MODULES: "github,dockerhub,bitbucket,amazonecr,quay,jfrogcontainer,svn,jfrogbinary,azureacr,gitlabsource,svn"
+  ENABLED_MODULES: ""
+  AVAILABLE_MODULES: "github,dockerhub,bitbucket,svn,amazonecr,quay,jfrogcontainer,jfrogbinary,azureacr,gitlabsource"
 
   # This defines the connection string to the db ( should be modified when using an external db)
   MONGO_URL: "mongodb://mongodb:27017/MDCS"
@@ -54,8 +55,8 @@ mdssc-common-environment:
   RABBITMQ_SCANNING_PREFETCH_COUNT: "20"
 
   HTTPS_ACTIVE: "no"
-  BRANCH: "platform-1.10"          # Set Platform version (image tag)
-  MDSSC_BRANCH: "2.5.2"          # Set MDSSC version (image tag)
+  BRANCH: "platform-1.11"          # Set Platform version (image tag)
+  MDSSC_BRANCH: "2.5.4"          # Set MDSSC version (image tag)
 
   # These variables can be changed to reveal debug information in the application
   LOG_LEVEL: "4"
@@ -77,8 +78,8 @@ mdssc-common-environment:
   # This value is used by the rtp process to decide whether to process all files on storage or only those added after its start up (0 - for new objects only, 1 - for all objects)
   DISCOVERY_SERVICE_SMB_RTP_HANDLING: "0"
 
-  # This can be changed to the following values Default, IgnoreChainErrors, IgnoreAllErrors
-  # MD_CORE_CERTIFICATE_VALIDATION: "IgnoreAllErrors"
+  # This variable sets the SSL validation mode for MD Core. Possible values: Default, IgnoreChainErrors, IgnoreAllErrors.
+  MD_CORE_CERTIFICATE_VALIDATION: "Default"
 
   # This retry value is used only for box operations where the time increases exponentially between retries ( e.g: "the second time it will be 4 minutes instead of two )
   POLLY_LONG_RETRY_BOX: "2"

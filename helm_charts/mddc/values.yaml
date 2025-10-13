@@ -203,7 +203,7 @@ mddc_components:
   identity-service:
     name: identity-service
     custom_repo: true
-    image: metadefender-distributed-cluster:identity-service-2.1.0-debian-12
+    image: metadefender-distributed-cluster:identity-service-2.3.0-debian-12
     ports:
       - port: 8891
     extra_labels:
@@ -216,7 +216,7 @@ mddc_components:
   file-storage:
     name: file-storage
     custom_repo: true
-    image: metadefender-distributed-cluster:file-storage-2.1.0-debian-12
+    image: metadefender-distributed-cluster:file-storage-2.3.0-debian-12
     ports:
       - port: 8890
     extra_labels:
@@ -238,7 +238,7 @@ mddc_components:
   control-center:
     name: control-center
     custom_repo: true
-    image: metadefender-distributed-cluster:control-center-2.1.0-debian-12
+    image: metadefender-distributed-cluster:control-center-2.3.0-debian-12
     ports:
       - port: 8892
     extra_labels:
@@ -276,7 +276,7 @@ mddc_components:
   worker-api-gateway:
     name: worker-api-gateway
     custom_repo: true
-    image: metadefender-distributed-cluster:worker-api-gateway-2.1.0-debian-12
+    image: metadefender-distributed-cluster:worker-api-gateway-2.3.0-debian-12
     ports:
       - port: 8893
       - port: 8899
@@ -315,7 +315,7 @@ mddc_components:
   worker-core:
     name: worker-core
     custom_repo: true
-    image: metadefender-distributed-cluster:worker-core-2.1.0-debian-12
+    image: metadefender-distributed-cluster:worker-core-2.3.0-debian-12
     ports:
       - port: 8893
     extra_labels:
