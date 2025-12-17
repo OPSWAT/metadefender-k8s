@@ -14,9 +14,9 @@ metadata:
   name: identity-service
   namespace: {{ .Release.Namespace }}
 data:
-  MDDC_IDENTITY_SERVICE_DB_HOST: {{ default .Values.env.postgresql_host .Values.env.MDDC_IDENTITY_SERVICE_DB_HOST | quote }}
-  MDDC_IDENTITY_SERVICE_DB_PORT: {{ default .Values.env.postgresql_port .Values.env.MDDC_IDENTITY_SERVICE_DB_HOST | quote }}
-  MDDC_IDENTITY_SERVICE_PORT: {{ default "8891" .Values.env.MDDC_IDENTITY_SERVICE_DB_HOST | quote }}
+  MDDC_IDENTITY_SERVICE_DB_HOST: {{ default (include "mddc.postgresql.host" .) .Values.env.MDDC_IDENTITY_SERVICE_DB_HOST | quote }}
+  MDDC_IDENTITY_SERVICE_DB_PORT: {{ default (include "mddc.postgresql.port" .) .Values.env.MDDC_IDENTITY_SERVICE_DB_PORT | quote }}
+  MDDC_IDENTITY_SERVICE_PORT: {{ default "8891" .Values.env.MDDC_IDENTITY_SERVICE_PORT | quote }}
   LOG_LEVEL: {{ .Values.env.LOG_LEVEL | quote }}
 ---
 apiVersion: v1
@@ -26,6 +26,9 @@ metadata:
   namespace: {{ .Release.Namespace }}
 data:
   MDDC_FILE_STORAGE_PORT: {{ default "8890" .Values.env.MDDC_FILE_STORAGE_PORT | quote }}
+  MDDC_FILE_STORAGE_HOST: {{ default "file-storage" .Values.env.MDDC_FILE_STORAGE_HOST | quote }}
+  MDDC_CONTROL_CENTER_HOST: {{ default "control-center" .Values.env.MDDC_CONTROL_CENTER_HOST | quote }}
+  MDDC_CONTROL_CENTER_PORT: {{ default "8892" .Values.env.MDDC_CONTROL_CENTER_PORT | quote }}
   LOG_LEVEL: {{ .Values.env.LOG_LEVEL | quote }}
 ---
 apiVersion: v1
@@ -36,16 +39,16 @@ metadata:
   annotations:
     "helm.sh/resource-policy": keep
 data:
-  MDDC_LAKE_DB_HOST: {{ default .Values.env.postgresql_host .Values.env.MDDC_LAKE_DB_HOST | quote }}
-  MDDC_LAKE_DB_PORT: {{ default .Values.env.postgresql_port .Values.env.MDDC_LAKE_DB_PORT | quote }}
-  MDDC_WAREHOUSE_DB_HOST: {{ default .Values.env.postgresql_host .Values.env.MDDC_WAREHOUSE_DB_HOST | quote }}
-  MDDC_WAREHOUSE_DB_PORT: {{ default .Values.env.postgresql_port .Values.env.MDDC_WAREHOUSE_DB_PORT | quote }}
-  MDDC_CACHE_HOST: {{ .Values.env.redis_host | quote }}
-  MDDC_CACHE_PORT: {{ .Values.env.redis_port | quote }}
-  MDDC_BROKER_HOST: {{ .Values.env.rabbitmq_host | quote }}
-  MDDC_BROKER_PORT: {{ .Values.env.rabbitmq_port | quote }}
-  MDDC_CONTROL_CENTER_DB_HOST: {{ default .Values.env.postgresql_host .Values.env.MDDC_CONTROL_CENTER_DB_HOST | quote }}
-  MDDC_CONTROL_CENTER_DB_PORT: {{ default .Values.env.postgresql_port .Values.env.MDDC_CONTROL_CENTER_DB_PORT | quote }}
+  MDDC_LAKE_DB_HOST: {{ default (include "mddc.postgresql.host" .) .Values.env.MDDC_LAKE_DB_HOST | quote }}
+  MDDC_LAKE_DB_PORT: {{ default (include "mddc.postgresql.port" .) .Values.env.MDDC_LAKE_DB_PORT | quote }}
+  MDDC_WAREHOUSE_DB_HOST: {{ default (include "mddc.postgresql.host" .) .Values.env.MDDC_WAREHOUSE_DB_HOST | quote }}
+  MDDC_WAREHOUSE_DB_PORT: {{ default (include "mddc.postgresql.port" .) .Values.env.MDDC_WAREHOUSE_DB_PORT | quote }}
+  MDDC_CACHE_HOST: {{ include "mddc.redis.host" . | quote }}
+  MDDC_CACHE_PORT: {{ include "mddc.redis.port" . | quote }}
+  MDDC_BROKER_HOST: {{ include "mddc.rabbitmq.host" . | quote }}
+  MDDC_BROKER_PORT: {{ include "mddc.rabbitmq.port" . | quote }}
+  MDDC_CONTROL_CENTER_DB_HOST: {{ default (include "mddc.postgresql.host" .) .Values.env.MDDC_CONTROL_CENTER_DB_HOST | quote }}
+  MDDC_CONTROL_CENTER_DB_PORT: {{ default (include "mddc.postgresql.port" .) .Values.env.MDDC_CONTROL_CENTER_DB_PORT | quote }}
   MDDC_IDENTITY_SERVICE_HOST: {{ default "identity-service" .Values.env.MDDC_IDENTITY_SERVICE_HOST | quote }}
   MDDC_FILE_STORAGE_HOST: {{ default "file-storage" .Values.env.MDDC_FILE_STORAGE_HOST | quote }}
   MDDC_FILE_STORAGE_PORT: {{ default "8890" .Values.env.MDDC_FILE_STORAGE_PORT | quote }}

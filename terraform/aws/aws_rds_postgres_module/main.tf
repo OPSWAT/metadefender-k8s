@@ -23,7 +23,7 @@ resource "aws_db_instance" "postgres_db" {
   allocated_storage      = 100
   db_subnet_group_name   = var.SUBNET_GROUP_ID
   engine                 = "postgres"
-  engine_version         = "14.11"
+  engine_version         = "17.6"
   identifier             = "${var.MD_CLUSTER_NAME}-postgres-db"
   instance_class         = "db.r6g.xlarge"
   multi_az               = false

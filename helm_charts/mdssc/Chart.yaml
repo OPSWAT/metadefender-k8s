@@ -5,7 +5,7 @@ description: This is a Helm chart for deploying MetaDefender Software Supply Cha
 long_description: |
   This chart can deploy the following depending on the provided values:
   - All MDSSC services in separate pods 
-  - A MongoDB database instance pre-configured to be used by MDSSC
+  - A PostgreSQL database instance pre-configured to be used by MDSSC
 
   ## Installation
   
@@ -27,10 +27,10 @@ long_description: |
 
   ## Operational Notes
   The entire deployment can be customized by overwriting the chart's default configuration values. Here are a few point to look out for when changing these values:
-  - By default, a MongoDB database is deployed alongside the MDSSC deployment
+  - By default, a PostgreSQL database is deployed alongside the MDSSC deployment
   - In a production environment it's recommended to use an external service for the database  and set `deploy_with_mdssc_db` to false in order to not deploy an in-cluster database
 
 type: application
 
-version: 2.5.4
-appVersion: 2.5.4
+version: 3.0.1
+appVersion: 3.0.1

@@ -8,6 +8,10 @@ mkdir $sp_name
 mkdir $sp_name/logs
 kubectl get pods --no-headers -o custom-columns=":metadata.name" -n $namespace | xargs -L 1 -I {} bash -c "kubectl logs -n $namespace --all-containers --ignore-errors {} > $sp_name/logs/{}.log"
 
+# Get the previous logs from all the pods in the namespace (for restarted containers)
+mkdir $sp_name/logs-previous
+kubectl get pods --no-headers -o custom-columns=":metadata.name" -n $namespace | xargs -L 1 -I {} bash -c "kubectl logs -n $namespace --all-containers --ignore-errors --previous {} > $sp_name/logs-previous/{}.log 2>/dev/null || true"
+
 # Get the serilog output files from all the pods in the namespace
 mkdir $sp_name/serilog
 kubectl get pods --no-headers -o custom-columns=":metadata.name" -n $namespace | xargs -L 1 -I {} bash -c "kubectl exec {} -n $namespace -- bash -c \"cat /app/logs/*\" > $sp_name/serilog/{}.log"

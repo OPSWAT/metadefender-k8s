@@ -35,11 +35,6 @@ output "kube_config" {
     sensitive = true
 }
 
-output "db_connections_string" {
-    value = azurerm_cosmosdb_account.mdcs.*.connection_strings
-    sensitive = true
-}
-
 output "db_server_fqdn_postgres" {
     value =  var.deploy_postgres_db ? azurerm_postgresql_flexible_server.postgredb.*.fqdn[0] : null
     sensitive = true

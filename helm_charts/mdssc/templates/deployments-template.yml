@@ -8,11 +8,16 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: {{ $component.name | quote }}
+  labels:
+    product: mdssc
 spec:
   replicas: {{ $component.replicas }}
   selector:
     matchLabels:
       app: {{ $component.name | quote }}
+      {{- if $component.extra_labels }}
+        {{- toYaml $component.extra_labels | nindent 6 }}
+      {{- end }}
   {{- if $component.strategy}}
   strategy:
     {{- toYaml $component.strategy | nindent 4 }}
@@ -21,6 +26,7 @@ spec:
     metadata:
       labels:
         app: {{ $component.name | quote }}
+        product: mdssc
         {{- if $component.extra_labels }}
           {{- toYaml $component.extra_labels | nindent 8 }}
         {{- end }}
@@ -29,6 +35,8 @@ spec:
         - envFrom:
             - configMapRef:
                 name: {{ $.Values.mdssc_config_map_env_name | quote }}
+            - secretRef:
+                name: {{ $.Values.mdssc_secret_env_name | quote }}
           {{ if $component.custom_repo -}}
             {{ if eq $component.is_mdssc true -}}
           image: {{ printf "%s/%s:%s" $.Values.mdssc_docker_repo $component.image (index $.Values "mdssc-common-environment").MDSSC_BRANCH | quote }}

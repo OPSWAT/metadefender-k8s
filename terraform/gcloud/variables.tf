@@ -8,11 +8,6 @@ variable "region" {
   default = "us-central1"
 }
 
-variable "cluster_location" {
-  description = "GKE cluster location that can be either a region or a specific zone"
-  default = "us-central1"
-}
-
 variable "deletion_protection" {
   description = "Protect db instance to be deleted with terraform destroy"
   default = false

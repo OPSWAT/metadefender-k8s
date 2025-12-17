@@ -32,7 +32,7 @@ resource "google_compute_subnetwork" "subnet" {
 resource "google_container_cluster" "primary-autopilot" {
   count    = var.AUTOPILOT_GKE ? 1 : 0
   name     = "mdk8s-${var.cluster_name}-gke"
-  location = var.cluster_location
+  location = var.region
   deletion_protection = false
 
   network    = google_compute_network.vpc_network.name
@@ -45,7 +45,7 @@ resource "google_container_cluster" "primary-autopilot" {
 resource "google_container_cluster" "primary" {
   count    = var.AUTOPILOT_GKE ? 0 : 1
   name     = "mdk8s-${var.cluster_name}-gke"
-  location = var.cluster_location
+  location = var.region
   deletion_protection = false
   
   remove_default_node_pool = true
@@ -59,7 +59,7 @@ resource "google_container_cluster" "primary" {
 resource "google_container_node_pool" "primary_nodes" {
   count      = var.AUTOPILOT_GKE ? 0 : 1
   name       = "${google_container_cluster.primary[0].name}-node-pool"
-  location   = var.cluster_location
+  location   = var.region
   cluster    = google_container_cluster.primary[0].name
   node_count = var.node_count
 
@@ -97,7 +97,7 @@ resource "google_service_networking_connection" "vpc_connection" {
 resource "google_sql_database_instance" "metadefender-db" {
   count  = var.deploy_cloud_sql ? 1 : 0
   name             = "metadefender-db"
-  database_version = "POSTGRES_14"
+  database_version = "POSTGRES_17"
   region           = var.region
 
   depends_on = [google_service_networking_connection.vpc_connection]
@@ -113,6 +113,13 @@ resource "google_sql_database_instance" "metadefender-db" {
     }
   }
 }
+
+# Create the database inside the Cloud SQL instance for MDSS that needs to exist
+resource "google_sql_database" "mdss_db" {
+  name     = "MDSS"
+  instance = google_sql_database_instance.metadefender-db[0].name
+}
+
 
 resource "google_sql_user" "users" {
   count  = var.deploy_cloud_sql ? 1 : 0

@@ -1,5 +1,5 @@
 {{ range $component_name, $component := .Values.mddc_components }}
-{{ if $component.ports }}
+{{ if and (not (eq $component.enabled false)) $component.ports }}
 
 {{ if and (not $.Values.deploy_with_mddc_db) $component.is_db }}
 {{ else }}

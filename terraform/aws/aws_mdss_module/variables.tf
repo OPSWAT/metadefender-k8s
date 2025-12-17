@@ -17,10 +17,6 @@ variable "SUBNET_GROUP_ID" {
 variable "PRIVATE_SUBNETS" {
   type = list(string)
 }
-variable "DEPLOY_MONGO_DB" {
-  type    = bool
-  default = false
-}
 variable "DEPLOY_REDIS" {
   type    = bool
   default = false
@@ -28,17 +24,6 @@ variable "DEPLOY_REDIS" {
 variable "DEPLOY_RABBITMQ" {
   type    = bool
   default = false
-}
-
-variable "MONGO_USERNAME" {
-  type = string
-}
-
-variable "MONGO_PASSWORD" {
-  type = string
-}
-variable "TLS_MONGO_ENABLED" {
-  type = string
 }
 variable "MQ_USERNAME" {
   type = string
