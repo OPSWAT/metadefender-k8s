@@ -60,3 +60,108 @@ Create the name of the service account to use
 {{- default "default" .Values.serviceAccount.name }}
 {{- end }}
 {{- end }}
+
+{{/*
+PostgreSQL configuration with global fallback
+*/}}
+{{- define "mddc.postgresql.host" -}}
+{{- if and .Values.global .Values.global.postgresql .Values.global.postgresql.host -}}
+{{- .Values.global.postgresql.host -}}
+{{- else -}}
+{{- .Values.env.postgresql_host -}}
+{{- end -}}
+{{- end -}}
+
+{{- define "mddc.postgresql.port" -}}
+{{- if and .Values.global .Values.global.postgresql .Values.global.postgresql.port -}}
+{{- .Values.global.postgresql.port -}}
+{{- else -}}
+{{- .Values.env.postgresql_port -}}
+{{- end -}}
+{{- end -}}
+
+{{- define "mddc.postgresql.user" -}}
+{{- if and .Values.global .Values.global.postgresql .Values.global.postgresql.user -}}
+{{- .Values.global.postgresql.user -}}
+{{- else -}}
+{{- .Values.env.postgresql_user -}}
+{{- end -}}
+{{- end -}}
+
+{{- define "mddc.postgresql.password" -}}
+{{- if and .Values.global .Values.global.postgresql .Values.global.postgresql.password -}}
+{{- .Values.global.postgresql.password -}}
+{{- else -}}
+{{- .Values.env.postgresql_password -}}
+{{- end -}}
+{{- end -}}
+
+{{/*
+RabbitMQ configuration with global fallback
+*/}}
+{{- define "mddc.rabbitmq.host" -}}
+{{- if and .Values.global .Values.global.rabbitmq .Values.global.rabbitmq.host -}}
+{{- .Values.global.rabbitmq.host -}}
+{{- else -}}
+{{- .Values.env.rabbitmq_host -}}
+{{- end -}}
+{{- end -}}
+
+{{- define "mddc.rabbitmq.port" -}}
+{{- if and .Values.global .Values.global.rabbitmq .Values.global.rabbitmq.port -}}
+{{- .Values.global.rabbitmq.port -}}
+{{- else -}}
+{{- .Values.env.rabbitmq_port -}}
+{{- end -}}
+{{- end -}}
+
+{{- define "mddc.rabbitmq.user" -}}
+{{- if and .Values.global .Values.global.rabbitmq .Values.global.rabbitmq.user -}}
+{{- .Values.global.rabbitmq.user -}}
+{{- else -}}
+{{- .Values.env.rabbitmq_user -}}
+{{- end -}}
+{{- end -}}
+
+{{- define "mddc.rabbitmq.password" -}}
+{{- if and .Values.global .Values.global.rabbitmq .Values.global.rabbitmq.password -}}
+{{- .Values.global.rabbitmq.password -}}
+{{- else -}}
+{{- .Values.env.rabbitmq_password -}}
+{{- end -}}
+{{- end -}}
+
+{{/*
+Redis configuration with global fallback
+*/}}
+{{- define "mddc.redis.host" -}}
+{{- if and .Values.global .Values.global.redis .Values.global.redis.host -}}
+{{- .Values.global.redis.host -}}
+{{- else -}}
+{{- .Values.env.redis_host -}}
+{{- end -}}
+{{- end -}}
+
+{{- define "mddc.redis.port" -}}
+{{- if and .Values.global .Values.global.redis .Values.global.redis.port -}}
+{{- .Values.global.redis.port -}}
+{{- else -}}
+{{- .Values.env.redis_port -}}
+{{- end -}}
+{{- end -}}
+
+{{- define "mddc.redis.user" -}}
+{{- if and .Values.global .Values.global.redis .Values.global.redis.user -}}
+{{- .Values.global.redis.user -}}
+{{- else -}}
+{{- .Values.env.redis_user -}}
+{{- end -}}
+{{- end -}}
+
+{{- define "mddc.redis.password" -}}
+{{- if and .Values.global .Values.global.redis .Values.global.redis.password -}}
+{{- .Values.global.redis.password -}}
+{{- else -}}
+{{- .Values.env.redis_password -}}
+{{- end -}}
+{{- end -}}

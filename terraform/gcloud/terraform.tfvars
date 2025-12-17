@@ -1,6 +1,5 @@
 # project_id = "<ADD_YOUR_PROJECT_ID>"
 # region = "europe-central2"
-# cluster_location = "europe-central2"
 gcloud_json_key_path = "/path/to/json"
 # node_count = "1"
 # machine_type = "e2-standard-8"

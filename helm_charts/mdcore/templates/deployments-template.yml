@@ -7,6 +7,8 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: {{ $component.name | quote }}
+  labels:
+    product: mdcore
 spec:
   replicas: {{ $component.replicas }}
   selector:
@@ -20,6 +22,7 @@ spec:
     metadata:
       labels:
         app: {{ $component.name | quote }}
+        product: mdcore
         {{- if $component.extra_labels }}
           {{- toYaml $component.extra_labels | nindent 8 }}
         {{- end }}
@@ -130,9 +133,11 @@ spec:
         - name: {{ $component.tls.certSecret }}
           secret:
             secretName: {{ $component.tls.certSecret }}
+            defaultMode: 0755
         - name: {{ $component.tls.certKeySecret }}
           secret:
             secretName: {{ $component.tls.certKeySecret }}
+            defaultMode: 0755
         {{ end }}
         {{- if $component.persistentDir }}
         {{- if eq $.Values.storage_provisioner "hostPath" }}

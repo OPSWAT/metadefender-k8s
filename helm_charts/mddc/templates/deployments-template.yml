@@ -2,12 +2,14 @@
 # Create a deployment for each component in mddc
 {{ range $component_name, $component := .Values.mddc_components }}
 
-{{ if or $.Values.deploy_with_mddc_db (not $component.is_db)  }}
+{{ if and (not (eq $component.enabled false)) (or $.Values.deploy_with_mddc_db (not $component.is_db))  }}
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: {{ $component.name | quote }}
+  labels:
+    product: mddc
 spec:
   replicas: {{ $component.replicas }}
   selector:
@@ -21,6 +23,7 @@ spec:
     metadata:
       labels:
         app: {{ $component.name | quote }}
+        product: mddc
         {{- if $component.extra_labels }}
           {{- toYaml $component.extra_labels | nindent 8 }}
         {{- end }}

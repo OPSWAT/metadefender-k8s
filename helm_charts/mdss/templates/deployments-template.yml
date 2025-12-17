@@ -2,12 +2,14 @@
 # Create a deployment for each component in MDSS
 {{ range $component_name, $component := .Values.mdss_components }}
 
-{{ if and (or $.Values.deploy_with_mdss_db (not $component.is_db)) ( or (not $component.module_name) (contains (print $component.module_name) (index $.Values "mdss-common-environment").ENABLED_MODULES))  }}
+{{ if and (not (eq $component.enabled false)) (or $.Values.deploy_with_mdss_db (not $component.is_db)) ( or (not $component.module_name) (contains (print $component.module_name) (index $.Values "mdss-common-environment").ENABLED_MODULES))  }}
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: {{ $component.name | quote }}
+  labels:
+    product: mdss
 spec:
   replicas: {{ $component.replicas }}
   selector:
@@ -21,6 +23,7 @@ spec:
     metadata:
       labels:
         app: {{ $component.name | quote }}
+        product: "mdss"
         {{- if $component.extra_labels }}
           {{- toYaml $component.extra_labels | nindent 8 }}
         {{- end }}

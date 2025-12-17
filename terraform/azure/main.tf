@@ -1,15 +1,3 @@
-terraform {
-  required_providers {
-    azurerm = {
-      source  = "hashicorp/azurerm"
-      version = "3.94.0"
-    }
-  }
-}
-
-provider "azurerm" {
-  features {}
-}
 # Generate random resource group name
 resource "random_pet" "rg-name" {
   prefix = var.resource_group_name_prefix
@@ -23,7 +11,11 @@ resource "azurerm_resource_group" "k8s" {
 resource "random_id" "log_analytics_workspace_name_suffix" {
   byte_length = 8
 }
-
+resource "random_string" "db_suffix" {
+  length  = 4
+  upper   = false
+  special = false
+}
 resource "azurerm_log_analytics_workspace" "md" {
   # The WorkSpace name has to be unique across the whole of azure, not just the current subscription/tenant.
   name                = "${var.log_analytics_workspace_name}-${random_id.log_analytics_workspace_name_suffix.dec}"
@@ -105,7 +97,13 @@ resource "azurerm_kubernetes_cluster" "k8s" {
     node_count = var.agent_count
     vm_size    = "Standard_F8s_v2"
     vnet_subnet_id = "${azurerm_subnet.subnet.id}"
+    upgrade_settings {
+      drain_timeout_in_minutes      = 0
+      max_surge                     = "10%"
+      node_soak_duration_in_minutes = 0
+    }
   }
+  
 
   service_principal {
     client_id     = var.aks_service_principal_app_id
@@ -129,63 +127,39 @@ resource "azurerm_kubernetes_cluster" "k8s" {
   }
 }
 
-resource "azurerm_cosmosdb_account" "mdcs" {
-  count  = var.deploy_cosmos_db ? 1 : 0
-  name                      = var.cosmos_db_account_name
-  location                  = azurerm_resource_group.k8s.location
-  resource_group_name       = azurerm_resource_group.k8s.name
-  offer_type                = "Standard"
-  kind                      = "MongoDB"
-  enable_automatic_failover = true
-  capabilities {
-    name = "EnableMongo"
-  }
-
-  consistency_policy {
-    consistency_level       = "BoundedStaleness"
-    max_interval_in_seconds = 400
-    max_staleness_prefix    = 200000
-  }
-
-  geo_location {
-    location          = var.failover_location
-    failover_priority = 1
-  }
-
-  geo_location {
-    location          = var.resource_group_location
-    failover_priority = 0
-  }
-
-}
-
-resource "azurerm_cosmosdb_mongo_database" "mongodb" {
-  count  = var.deploy_cosmos_db ? 1 : 0
-  name                = "MDCS"
-  resource_group_name = azurerm_cosmosdb_account.mdcs[0].resource_group_name
-  account_name        = azurerm_cosmosdb_account.mdcs[0].name
-  throughput          = 400
-}
-
 resource "azurerm_postgresql_flexible_server" "postgredb" {
-  count  = var.deploy_postgres_db ? 1 : 0
-  name                = "postgresql-${var.postgres_db_account_name}"
-  location            = azurerm_resource_group.k8s.location
-  resource_group_name = random_pet.rg-name.id
-  version             = "12"
-  delegated_subnet_id    = azurerm_subnet.subnet_db.id
-  private_dns_zone_id    = azurerm_private_dns_zone.priv_zone.id
+  count                = var.deploy_postgres_db ? 1 : 0
 
-  administrator_login          = var.postgres_admin
+  name                 = "postgresql-${var.postgres_db_account_name}-${random_string.db_suffix.result}"
+  location             = azurerm_resource_group.k8s.location
+  resource_group_name  = random_pet.rg-name.id
+  version              = "16"
+  zone                 = "1"
+
+  delegated_subnet_id  = azurerm_subnet.subnet_db.id
+  private_dns_zone_id  = azurerm_private_dns_zone.priv_zone.id
+  public_network_access_enabled = false
+
+  administrator_login    = var.postgres_admin
   administrator_password = var.postgres_password
 
   sku_name   = "GP_Standard_D4s_v3"
   storage_mb = 65536
 
   geo_redundant_backup_enabled = false
-  depends_on = [azurerm_private_dns_zone_virtual_network_link.priv_zone_link]
 
+  depends_on = [
+    azurerm_private_dns_zone_virtual_network_link.priv_zone_link
+  ]
 }
+
+# Create the database inside the PostgreSQL flexible server for MDSS that needs to exist
+resource "azurerm_postgresql_flexible_server_database" "mdss" {
+  count  = var.deploy_postgres_db ? 1 : 0
+  name      = "MDSS" 
+  server_id = azurerm_postgresql_flexible_server.postgredb[0].id
+}
+
 
 resource "azurerm_postgresql_flexible_server_configuration" "postgredbconfig" {
   count  = var.deploy_postgres_db ? 1 : 0

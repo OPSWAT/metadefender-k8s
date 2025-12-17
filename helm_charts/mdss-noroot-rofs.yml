@@ -197,9 +197,9 @@ mdss_components:
         type: RuntimeDefault
       readOnlyRootFilesystem: true
       
-  usermanagementservice:
+  identityservice:
     command: ["/bin/sh","-c"]
-    args: ['/wait-for-it.sh "${LICENSINGSERVICE_HOST}":"${LICENSINGSERVICE_PORT}" -s -t 180 -- dotnet opswat.mdss.usermanagement.service.dll 2>&1']
+    args: ['/wait-for-it.sh "${LICENSINGSERVICE_HOST}":"${LICENSINGSERVICE_PORT}" -s -t 180 -- dotnet opswat.mdss.identity.service.dll 2>&1']
     securityContext:
       allowPrivilegeEscalation: false
       runAsNonRoot: true

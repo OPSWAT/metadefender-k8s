@@ -1,5 +1,5 @@
 {{ range $component_name, $component := .Values.mdss_components }}
-{{ if and $component.ports ( or (not $component.module_name) (contains (print $component.module_name) (index $.Values "mdss-common-environment").ENABLED_MODULES)) }}
+{{ if and (not (eq $component.enabled false)) $component.ports ( or (not $component.module_name) (contains (print $component.module_name) (index $.Values "mdss-common-environment").ENABLED_MODULES)) }}
 
 {{ if and (not $.Values.deploy_with_mdss_db) $component.is_db }}
 {{ else }}

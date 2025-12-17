@@ -16,17 +16,9 @@ variable "postgres_admin" {
 variable "postgres_password" {
   
 }
-
-variable "deploy_cosmos_db" {
-  type    = bool
-  default = false
-}
 variable "deploy_postgres_db" {
   type    = bool
   default = false
-}
-variable "cosmos_db_account_name" {
-  default = "mdss-db-account"
 }
 variable "postgres_db_account_name" {
   default = "mdcore-db"

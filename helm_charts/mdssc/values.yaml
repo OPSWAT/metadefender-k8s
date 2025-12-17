@@ -1,3 +1,15 @@
+# Generate secrets for MDSS database username, password, postgres user and password
+mdssc_generate_secrets: true
+mdssc_secret_env_name: mdssc-postgres-cred  # Name of the secret containing database credentials
+MDSSC_DB_USER: mdssc                  # PostgreSQL database username 
+MDSSC_DB_PASSWORD: null              # PostgreSQL database password, if not set it will be randomly generated
+MDSSC_DB_HOST: postgres-mdssc       # Hostname / entrypoint of the database, this value should be changed any if using an external database service
+MDSSC_DB_PORT: "5432"              # Port for the PostgreSQL Database
+MDSSC_DB_NAME: MDSSC                # Database name to use
+
+# Connection string template for the PostgreSQL database, additional db options can be added
+POSTGRESQL_URL: "Host=<MDSSC_DB_HOST>;Port=<MDSSC_DB_PORT>;Username=<MDSSC_DB_USER>;Password=<MDSSC_DB_PASSWORD>;Database=<MDSSC_DB_NAME>"
+
 # Default values for mdssc. These will also be included in the environment of each mdssc container
 
 mdssc-common-environment:
@@ -20,16 +32,14 @@ mdssc-common-environment:
   ENABLED_MODULES: ""
   AVAILABLE_MODULES: "github,dockerhub,bitbucket,svn,amazonecr,quay,jfrogcontainer,jfrogbinary,azureacr,gitlabsource"
 
-  # This defines the connection string to the db ( should be modified when using an external db)
-  MONGO_URL: "mongodb://mongodb:27017/MDCS"
+  # PostgreSQL migrations Configuration
+  PGMIGRATIONS_PORT: "27777"
+  PGMIGRATIONS_HOST: "pgmigrations"
+  PGMIGRATIONS_SCRIPTS_PATH: "/pgmigrations/ef_migrations"
+  PGMIGRATIONS_SCRIPTS_PATH_400: "/pgmigrations/ef_migrations_400"
 
-  # Some managed mongo db services require ignoring certificate errors 
-  MONGO_SSL_ALLOW_INVALID_CERTIFICATES: "false"
-
-  MONGO_CA_CERTIFICATE: ""
-  MONGO_DB: "MDCS"
-  MONGO_MIGRATIONS_HOST: "mongomigrations"
-  MONGO_MIGRATIONS_PORT: "27777"
+  # Skip MongoDB to PostgreSQL migration by default
+  SKIP_MONGO_TO_PG: "yes"
 
   RABBITMQ_URI: "amqp://rabbitmq:5672"
   RABBITMQ_HOST: "rabbitmq"
@@ -49,14 +59,14 @@ mdssc-common-environment:
   SMBSERVICE_PORT: "5002"
   
   CODE_VERSION: "30a858390ca19fff81f2092f83a32f11c07d4fc8"
-  BUILD_VERSION: "2.5.2.1087"
+  BUILD_VERSION: "3.0.1.1966"
 
   # This can be modified in order to define how many messages can be sent to rabbitmq in parallel.
   RABBITMQ_SCANNING_PREFETCH_COUNT: "20"
 
   HTTPS_ACTIVE: "no"
-  BRANCH: "platform-1.11"          # Set Platform version (image tag)
-  MDSSC_BRANCH: "2.5.4"          # Set MDSSC version (image tag)
+  BRANCH: "platform-2.1"          # Set Platform version (image tag)
+  MDSSC_BRANCH: "3.0.1"          # Set MDSSC version (image tag)
 
   # These variables can be changed to reveal debug information in the application
   LOG_LEVEL: "4"
@@ -220,29 +230,31 @@ mdsscHostAliases:                              # Custom hosts entries
     - "small.s3-us-west-1.cloudian-sf"
 
 mdssc_components:
-  mongodb:
-    name: mongodb
-    image: mongo:8.0
+  postgres-mdssc:
+    name: postgres-mdssc
+    image: postgres:17
     ports:
-      - port: 27017
-    persistentDir: /data/db
+      - port: 5432
+    persistentDir: /var/lib/postgresql/data 
     is_db: true
     resources:
       requests:
-        memory: "2Gi"
-        cpu: "0.5"
+        memory: "6Gi"
+        cpu: "1.5"
+        ephemeral-storage: "50Gi"
 
-  mongomigrations:
-    name: mongomigrations
+  pgmigrations:
+    name: pgmigrations
     custom_repo: true
-    image: mdcloudservices_mongo-migrations
+    is_mdssc: true
+    image: mdssc_pgmigrations
     ports:
       - port: 27777
-    persistentDir: /backup
     resources:
       requests:
         memory: "0.125Gi"
         cpu: "0.010"
+        ephemeral-storage: "2Gi"
 
   rabbitmq:
     name: rabbitmq
@@ -333,28 +345,6 @@ mdssc_components:
     is_mdssc: true
     custom_repo: true
     image: "mdssc_binaries"
-    extra_labels:
-      aws-type: fargate
-    resources:
-      requests:
-        memory: "0.125Gi"
-        cpu: "0.010"
-  dockerhub:
-    name: dockerhub
-    is_mdssc: true
-    custom_repo: true
-    image: "mdssc_dockerhub"
-    extra_labels:
-      aws-type: fargate
-    resources:
-      requests:
-        memory: "0.125Gi"
-        cpu: "0.010"
-  ecr:
-    name: ecr
-    is_mdssc: true
-    custom_repo: true
-    image: "mdssc_ecr"
     extra_labels:
       aws-type: fargate
     resources:

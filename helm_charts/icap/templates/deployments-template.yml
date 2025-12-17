@@ -16,6 +16,8 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: {{ $component.name | quote }}
+  labels:
+    product: icap
 spec:
   replicas: {{ $component.replicas }}
   selector:
@@ -29,6 +31,7 @@ spec:
     metadata:
       labels:
         app: {{ $component.name | quote }}
+        product: icap
         {{- if $component.extra_labels }}
           {{- toYaml $component.extra_labels | nindent 8 }}
         {{- end }}

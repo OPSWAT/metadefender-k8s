@@ -10,6 +10,8 @@ env:
   rabbitmq_password: "<RABBITMQ_DEFAULT_PASS>"
   redis_host: "redis"
   redis_port: "6379"
+  redis_user: "default"
+  redis_password: "<REDIS_PASSWORD>"
   postgresql_host: postgres
   postgresql_port: "5432"
   postgresql_user: "<POSTGRES_USER>"
@@ -167,6 +169,7 @@ mddc_components:
   rabbitmq:
     name: rabbitmq
     image: rabbitmq:3.13.0
+    enabled: true
     ports:
       - port: 5672
       - port: 15672
@@ -191,6 +194,7 @@ mddc_components:
   redis:
     name: redis
     image: redis:7.0.5
+    enabled: true
     ports:
       - port: 6379
     extra_labels:
@@ -203,6 +207,7 @@ mddc_components:
   identity-service:
     name: identity-service
     custom_repo: true
+    enabled: true
     image: metadefender-distributed-cluster:identity-service-2.3.0-debian-12
     ports:
       - port: 8891
@@ -216,6 +221,7 @@ mddc_components:
   file-storage:
     name: file-storage
     custom_repo: true
+    enabled: true
     image: metadefender-distributed-cluster:file-storage-2.3.0-debian-12
     ports:
       - port: 8890
@@ -238,6 +244,7 @@ mddc_components:
   control-center:
     name: control-center
     custom_repo: true
+    enabled: true
     image: metadefender-distributed-cluster:control-center-2.3.0-debian-12
     ports:
       - port: 8892
@@ -276,6 +283,7 @@ mddc_components:
   worker-api-gateway:
     name: worker-api-gateway
     custom_repo: true
+    enabled: true
     image: metadefender-distributed-cluster:worker-api-gateway-2.3.0-debian-12
     ports:
       - port: 8893
@@ -315,6 +323,7 @@ mddc_components:
   worker-core:
     name: worker-core
     custom_repo: true
+    enabled: true
     image: metadefender-distributed-cluster:worker-core-2.3.0-debian-12
     ports:
       - port: 8893
