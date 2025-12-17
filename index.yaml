@@ -566,6 +566,18 @@ entries:
     version: 3.3.0-0
   metadefender_software_supply_chain:
   - apiVersion: v2
+    appVersion: 3.0.1
+    created: "2025-12-17T11:12:23.550534064Z"
+    description: This is a Helm chart for deploying MetaDefender Software Supply Chain
+      (https://www.opswat.com/products/metadefender/software-supply-chain) in a Kubernetes
+      cluster
+    digest: f6cf33a8b25b544e05a63bf4eb124454ec60269e5846c40c0465cebb03f70447
+    name: metadefender_software_supply_chain
+    type: application
+    urls:
+    - https://github.com/OPSWAT/metadefender-k8s/releases/download/metadefender_software_supply_chain-3.0.1/metadefender_software_supply_chain-3.0.1.tgz
+    version: 3.0.1
+  - apiVersion: v2
     appVersion: 2.5.4
     created: "2025-10-13T16:30:23.606948381Z"
     description: This is a Helm chart for deploying MetaDefender Software Supply Chain
@@ -638,6 +650,18 @@ entries:
     - https://github.com/OPSWAT/metadefender-k8s/releases/download/metadefender_software_supply_chain-2.3.2/metadefender_software_supply_chain-2.3.2.tgz
     version: 2.3.2
   metadefender_storage_security:
+  - apiVersion: v2
+    appVersion: 4.2.0
+    created: "2025-12-17T11:12:23.730631559Z"
+    description: This is a Helm chart for deploying MetaDefender for Secure Storage
+      (https://www.opswat.com/products/metadefender/storage-security) in a Kubernetes
+      cluster
+    digest: 2c2f377181c2aebcb2ea012c60ad7e7070389f8b15136934a70e24d7a05f6023
+    name: metadefender_storage_security
+    type: application
+    urls:
+    - https://github.com/OPSWAT/metadefender-k8s/releases/download/metadefender_storage_security-4.2.0/metadefender_storage_security-4.2.0.tgz
+    version: 4.2.0
   - apiVersion: v2
     appVersion: 4.1.0
     created: "2025-10-13T16:30:23.78855629Z"
@@ -865,4 +889,4 @@ entries:
     urls:
     - https://github.com/OPSWAT/metadefender-k8s/releases/download/metadefender_storage_security-0.0.28/metadefender_storage_security-0.0.28.tgz
     version: 0.0.28
-generated: "2025-10-24T12:44:05.848900467Z"
+generated: "2025-12-17T11:12:23.730905923Z"
