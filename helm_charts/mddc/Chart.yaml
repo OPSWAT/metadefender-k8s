@@ -1,18 +1,18 @@
 apiVersion: v2
-name: metadefender_distributed_cluster
-description: This is a Helm chart for deploying MetaDefender Distributed Cluster (https://www.opswat.com/docs/mdcore/distributed-cluster-deployment) in a Kubernetes cluster
+name: metadefender_cluster
+description: This is a Helm chart for deploying MetaDefender Cluster (https://www.opswat.com/docs/mdcluster) in a Kubernetes cluster
 
 long_description: |
   This chart can deploy the following depending on the provided values:
-  - All MetaDefender Distributed Cluster services in separate pods 
-  - A PostgreSQL database instance pre-configured to be used by MetaDefender Distributed Cluster pods
-  - A Redis Cache instance pre-configured to be used by MetaDefender Distributed Cluster pod
-  - A RabbitMQ instance pre-configured to be used by MetaDefender Distributed Cluster pods
+  - All MetaDefender Cluster services in separate pods 
+  - A PostgreSQL database instance pre-configured to be used by MetaDefender Cluster pods
+  - A Redis Cache instance pre-configured to be used by MetaDefender Cluster pod
+  - A RabbitMQ instance pre-configured to be used by MetaDefender Cluster pods
 
   ## Installation
   
   ### From source
-  MetaDefender Distributed Cluster can be installed directly from the source code, here's an example using generic values:
+  MetaDefender Cluster can be installed directly from the source code, here's an example using generic values:
   ```console
   git clone https://github.com/OPSWAT/metadefender-k8s.git metadefender
   cd metadefender/helm_carts
@@ -24,7 +24,7 @@ long_description: |
   ```console
   helm repo add mdk8s https://opswat.github.io/metadefender-k8s/
   helm repo update mdk8s
-  helm install mddc mdk8s/metadefender_distributed_cluster
+  helm install mddc mdk8s/metadefender_cluster
   ```
 
   ## Operational Notes
@@ -34,5 +34,5 @@ long_description: |
 
 type: application
 
-version: 2.3.0
-appVersion: 2.3.0
+version: 2.5.1
+appVersion: 2.5.1

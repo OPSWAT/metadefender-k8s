@@ -82,5 +82,5 @@ data:
   MDDC_CONTROL_CENTER_HOST: {{ default "control-center" .Values.env.MDDC_CONTROL_CENTER_HOST | quote }}
   MDDC_CONTROL_CENTER_PORT: {{ default "8892" .Values.env.MDDC_CONTROL_CENTER_PORT | quote }}
   MDDC_CORE_PORT: {{ default "8008" .Values.env.MDDC_CORE_PORT | quote }}
-  MDDC_LICENSE_DESCRIPTION: {{ default (print .Release.Namespace "K8S Distributed Cluster") .Values.env.MDDC_LICENSE_DESCRIPTION | quote }}
+  MDDC_LICENSE_DESCRIPTION: {{ default (print .Release.Namespace "K8S MetaDefender Cluster") .Values.env.MDDC_LICENSE_DESCRIPTION | quote }}
   LOG_LEVEL: {{ .Values.env.LOG_LEVEL | quote }}

@@ -10,19 +10,19 @@ env:
   rabbitmq_password: "<RABBITMQ_DEFAULT_PASS>"
   redis_host: "redis"
   redis_port: "6379"
-  redis_user: "default"
-  redis_password: "<REDIS_PASSWORD>"
+  #redis_user: "default" # Uncomment if using Redis ACLs
+  #redis_password: "<REDIS_PASSWORD>" # Uncomment if using Redis ACLs
   postgresql_host: postgres
   postgresql_port: "5432"
   postgresql_user: "<POSTGRES_USER>"
   postgresql_password: "<POSTGRES_PASSWORD>"
-  LOG_LEVEL: "debug"
+  LOG_LEVEL: "info"
   connection_key: "<MDDC_CONNCETION_KEY>"
   encryption_key: "<MDDC_ENCRYPTION_KEY>"
   license_key: "<LICENSE_KEY>"
   
   
-# Generate secrets in Kubernetes Cluster for MetaDefender Distributed Cluster username, password, postgres user and password. Set to false in case of inputing the secrets from external secrets
+# Generate secrets in Kubernetes Cluster for MetaDefender Cluster username, password, postgres user and password. Set to false in case of inputing the secrets from external secrets
 mddc_generate_secrets: true
 
 
@@ -208,7 +208,7 @@ mddc_components:
     name: identity-service
     custom_repo: true
     enabled: true
-    image: metadefender-distributed-cluster:identity-service-2.3.0-debian-12
+    image: metadefender-distributed-cluster:identity-service-2.5.1-debian-12
     ports:
       - port: 8891
     extra_labels:
@@ -222,7 +222,7 @@ mddc_components:
     name: file-storage
     custom_repo: true
     enabled: true
-    image: metadefender-distributed-cluster:file-storage-2.3.0-debian-12
+    image: metadefender-distributed-cluster:file-storage-2.5.1-debian-12
     ports:
       - port: 8890
     extra_labels:
@@ -245,7 +245,7 @@ mddc_components:
     name: control-center
     custom_repo: true
     enabled: true
-    image: metadefender-distributed-cluster:control-center-2.3.0-debian-12
+    image: metadefender-distributed-cluster:control-center-2.5.1-debian-12
     ports:
       - port: 8892
     extra_labels:
@@ -284,7 +284,7 @@ mddc_components:
     name: worker-api-gateway
     custom_repo: true
     enabled: true
-    image: metadefender-distributed-cluster:worker-api-gateway-2.3.0-debian-12
+    image: metadefender-distributed-cluster:worker-api-gateway-2.5.1-debian-12
     ports:
       - port: 8893
       - port: 8899
@@ -324,7 +324,7 @@ mddc_components:
     name: worker-core
     custom_repo: true
     enabled: true
-    image: metadefender-distributed-cluster:worker-core-2.3.0-debian-12
+    image: metadefender-distributed-cluster:worker-core-2.5.1-debian-12
     ports:
       - port: 8893
     extra_labels:
