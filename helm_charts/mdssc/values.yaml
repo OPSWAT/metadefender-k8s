@@ -59,14 +59,14 @@ mdssc-common-environment:
   SMBSERVICE_PORT: "5002"
   
   CODE_VERSION: "30a858390ca19fff81f2092f83a32f11c07d4fc8"
-  BUILD_VERSION: "3.0.1.1966"
+  BUILD_VERSION: "3.1.0.1966"
 
   # This can be modified in order to define how many messages can be sent to rabbitmq in parallel.
   RABBITMQ_SCANNING_PREFETCH_COUNT: "20"
 
   HTTPS_ACTIVE: "no"
   BRANCH: "platform-2.1"          # Set Platform version (image tag)
-  MDSSC_BRANCH: "3.0.1"          # Set MDSSC version (image tag)
+  MDSSC_BRANCH: "3.1.0"          # Set MDSSC version (image tag)
 
   # These variables can be changed to reveal debug information in the application
   LOG_LEVEL: "4"
