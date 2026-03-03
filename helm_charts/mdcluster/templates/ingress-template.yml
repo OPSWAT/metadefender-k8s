@@ -1,4 +1,4 @@
-{{- range .Values.mddc_ingress }}
+{{- range .Values.mdcluster_ingress }}
   {{- if .enabled }}
 ---
 kind: Ingress

@@ -1,0 +1,111 @@
+{{- if .Values.mdcluster_generate_configmaps}}
+ 
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: rabbitmq
+  namespace: {{ .Release.Namespace }}
+data:
+  RABBITMQ_DEFAULT_USER: {{ .Values.env.rabbitmq_host | quote }}
+  RABBITMQ_DEFAULT_PASS: {{ .Values.env.rabbitmq_port | quote }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: identity-service
+  namespace: {{ .Release.Namespace }}
+data:
+  MDCLS_IDENTITY_SERVICE_DB_HOST: {{ default (include "mdcluster.postgresql.host" .) .Values.env.MDCLS_IDENTITY_SERVICE_DB_HOST | quote }}
+  MDCLS_IDENTITY_SERVICE_DB_PORT: {{ default (include "mdcluster.postgresql.port" .) .Values.env.MDCLS_IDENTITY_SERVICE_DB_PORT | quote }}
+  MDCLS_IDENTITY_SERVICE_PORT: {{ default "8891" .Values.env.MDCLS_IDENTITY_SERVICE_PORT | quote }}
+  LOG_LEVEL: {{ .Values.env.LOG_LEVEL | quote }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: file-storage
+  namespace: {{ .Release.Namespace }}
+data:
+  MDCLS_FILE_STORAGE_PORT: {{ default "8890" .Values.env.MDCLS_FILE_STORAGE_PORT | quote }}
+  MDCLS_FILE_STORAGE_HOST: {{ default "file-storage" .Values.env.MDCLS_FILE_STORAGE_HOST | quote }}
+  MDCLS_CONTROL_CENTER_HOST: {{ default "control-center" .Values.env.MDCLS_CONTROL_CENTER_HOST | quote }}
+  MDCLS_CONTROL_CENTER_PORT: {{ default "8892" .Values.env.MDCLS_CONTROL_CENTER_PORT | quote }}
+  LOG_LEVEL: {{ .Values.env.LOG_LEVEL | quote }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: control-center
+  namespace: {{ .Release.Namespace }}
+  annotations:
+    "helm.sh/resource-policy": keep
+data:
+  MDCLS_LAKE_DB_HOST: {{ default (include "mdcluster.postgresql.host" .) .Values.env.MDCLS_LAKE_DB_HOST | quote }}
+  MDCLS_LAKE_DB_PORT: {{ default (include "mdcluster.postgresql.port" .) .Values.env.MDCLS_LAKE_DB_PORT | quote }}
+  MDCLS_WAREHOUSE_DB_HOST: {{ default (include "mdcluster.postgresql.host" .) .Values.env.MDCLS_WAREHOUSE_DB_HOST | quote }}
+  MDCLS_WAREHOUSE_DB_PORT: {{ default (include "mdcluster.postgresql.port" .) .Values.env.MDCLS_WAREHOUSE_DB_PORT | quote }}
+  MDCLS_CACHE_HOST: {{ include "mdcluster.redis.host" . | quote }}
+  MDCLS_CACHE_PORT: {{ include "mdcluster.redis.port" . | quote }}
+  MDCLS_BROKER_HOST: {{ include "mdcluster.rabbitmq.host" . | quote }}
+  MDCLS_BROKER_PORT: {{ include "mdcluster.rabbitmq.port" . | quote }}
+  MDCLS_CONTROL_CENTER_DB_HOST: {{ default (include "mdcluster.postgresql.host" .) .Values.env.MDCLS_CONTROL_CENTER_DB_HOST | quote }}
+  MDCLS_CONTROL_CENTER_DB_PORT: {{ default (include "mdcluster.postgresql.port" .) .Values.env.MDCLS_CONTROL_CENTER_DB_PORT | quote }}
+  MDCLS_IDENTITY_SERVICE_HOST: {{ default "identity-service" .Values.env.MDCLS_IDENTITY_SERVICE_HOST | quote }}
+  MDCLS_IDENTITY_SERVICE_PORT: {{ default "8891" .Values.env.MDCLS_IDENTITY_SERVICE_PORT | quote }}
+  MDCLS_FILE_STORAGE_HOST: {{ default "file-storage" .Values.env.MDCLS_FILE_STORAGE_HOST | quote }}
+  MDCLS_FILE_STORAGE_PORT: {{ default "8890" .Values.env.MDCLS_FILE_STORAGE_PORT | quote }}
+  MDCLS_CERT_PATH: {{ default "/certs" .Values.env.MDCLS_CERT_PATH | quote }}
+  MDCLS_OLMS_HOST: {{ default "" .Values.env.MDCLS_OLMS_HOST | quote }}
+  MDCLS_OLMS_PORT: {{ default "" .Values.env.MDCLS_OLMS_PORT | quote }}
+  MDCLS_OLMS_RULE: {{ default "" .Values.env.MDCLS_OLMS_RULE | quote }}
+  MDCLS_OLMS_SOCKET_PORT: {{ default "" .Values.env.MDCLS_OLMS_SOCKET_PORT | quote }}
+  MDCLS_OLMS_TOKEN: {{ default "" .Values.env.MDCLS_OLMS_TOKEN | quote }}
+  MDCLS_OLMS_DESCRIPTION: {{ default (print .Release.Namespace "K8S MetaDefender Cluster") .Values.env.MDCLS_OLMS_DESCRIPTION | quote }} 
+  LOG_LEVEL: {{ .Values.env.LOG_LEVEL | quote }}
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: worker-api-gateway
+  namespace: {{ .Release.Namespace }}
+  annotations:
+    "helm.sh/resource-policy": keep
+data:
+  MDCLS_WORKER_PORT: {{ default "8893" .Values.env.MDCLS_WORKER_PORT | quote }}
+  MDCLS_CONTROL_CENTER_HOST: {{ default "control-center" .Values.env.MDCLS_CONTROL_CENTER_HOST | quote }}
+  MDCLS_CONTROL_CENTER_PORT: {{ default "8892" .Values.env.MDCLS_CONTROL_CENTER_PORT | quote }}
+  MDCLS_API_GATEWAY_PORT: {{ default "8899" .Values.env.MDCLS_API_GATEWAY_PORT | quote }}
+  LOG_LEVEL: {{ .Values.env.LOG_LEVEL | quote }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: worker-core
+  namespace: {{ .Release.Namespace }}
+  annotations:
+    "helm.sh/resource-policy": keep
+data:
+  MDCLS_WORKER_PORT: {{ default "8893" .Values.env.MDCLS_WORKER_PORT | quote }}
+  MDCLS_CONTROL_CENTER_HOST: {{ default "control-center" .Values.env.MDCLS_CONTROL_CENTER_HOST | quote }}
+  MDCLS_CONTROL_CENTER_PORT: {{ default "8892" .Values.env.MDCLS_CONTROL_CENTER_PORT | quote }}
+  MDCLS_CORE_PORT: {{ default "8008" .Values.env.MDCLS_CORE_PORT | quote }}
+  MDCLS_LICENSE_DESCRIPTION: {{ default (print .Release.Namespace "K8S MetaDefender Cluster") .Values.env.MDCLS_LICENSE_DESCRIPTION | quote }}
+  LOG_LEVEL: {{ .Values.env.LOG_LEVEL | quote }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: worker-callback-service
+  namespace: {{ .Release.Namespace }}
+  annotations:
+    "helm.sh/resource-policy": keep
+data:
+  MDCLS_WORKER_PORT: {{ default "8893" .Values.env.MDCLS_WORKER_PORT | quote }}
+  MDCLS_CONTROL_CENTER_HOST: {{ default "control-center" .Values.env.MDCLS_CONTROL_CENTER_HOST | quote }}
+  MDCLS_CONTROL_CENTER_PORT: {{ default "8892" .Values.env.MDCLS_CONTROL_CENTER_PORT | quote }}
+  MDCLS_CALLBACK_SERVICE_PORT: {{ default "8894" .Values.env.MDCLS_CALLBACK_SERVICE_PORT | quote }}
+  LOG_LEVEL: {{ .Values.env.LOG_LEVEL | quote }}
+
+{{ end }}

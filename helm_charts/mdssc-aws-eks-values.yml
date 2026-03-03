@@ -1,0 +1,24 @@
+# Set to true for each product if the respective database engine should also be deployed
+deploy_with_mdssc_db: true
+
+storage_provisioner: hostPath
+hostPathPrefix: mdssc-storage-<APP_NAMESPACE>
+
+# # Set the service_type to LoadBalancer in order to create an AWS load balancer routing traffic directly to the web interface
+mdssc_components:
+  frontend:
+    service_type: LoadBalancer
+    sessionAffinity: ClientIP
+    service_annotations:
+      service.beta.kubernetes.io/aws-load-balancer-type: external
+      service.beta.kubernetes.io/aws-load-balancer-nlb-target-type: ip
+      service.beta.kubernetes.io/aws-load-balancer-scheme: internet-facing      # change to "internal" for no internet access to the load balancer
+
+# Ingress setting for mdssc
+mdssc_ingress:
+  host: <APP_NAMESPACE>-mdssc.k8s
+  enabled: false
+
+# Docker repo to use, this should be changed when using private images (this string will be prepended to the image name)
+# If a component has "custom_repo: true" then the image name will be formated as "{docker_repo/}image_name{:BRANCH}" otherwise it will remain unaltered
+mdssc_docker_repo: opswat

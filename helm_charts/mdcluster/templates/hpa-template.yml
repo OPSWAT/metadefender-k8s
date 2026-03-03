@@ -1,5 +1,5 @@
-# Create an hpa for each component in mddc
-{{ range $component_name, $component := .Values.mddc_components }}
+# Create an hpa for each component in mdcluster
+{{ range $component_name, $component := .Values.mdcluster_components }}
 
 {{ if and (not $component.is_db) $component.hpa }}
 

@@ -1,9 +1,9 @@
-# Default values for mddc. These will also be included in the environment of each mddc container
+# Default values for mdcluster. These will also be included in the environment of each mdcluster container
 env: 
-  user: "<MDDC_USER>"
-  password: "<MDDC_PASSWORD>"
+  user: "<MDCLUSTER_USER>"
+  password: "<MDCLUSTER_PASSWORD>"
   apikey: null
-  email: "<MDDC_EMAIL>"
+  email: "<MDCLUSTER_EMAIL>"
   rabbitmq_host: "rabbitmq"
   rabbitmq_port: "5672"
   rabbitmq_user: "<RABBITMQ_DEFAULT_USER>"
@@ -17,17 +17,19 @@ env:
   postgresql_user: "<POSTGRES_USER>"
   postgresql_password: "<POSTGRES_PASSWORD>"
   LOG_LEVEL: "info"
-  connection_key: "<MDDC_CONNCETION_KEY>"
-  encryption_key: "<MDDC_ENCRYPTION_KEY>"
+  connection_key: "<MDCLUSTER_CONNECTION_KEY>"
+  encryption_key: "<MDCLUSTER_ENCRYPTION_KEY>"
   license_key: "<LICENSE_KEY>"
   
   
 # Generate secrets in Kubernetes Cluster for MetaDefender Cluster username, password, postgres user and password. Set to false in case of inputing the secrets from external secrets
-mddc_generate_secrets: true
+mdcluster_generate_secrets: true
+# Generate configmaps in Kubernetes Cluster for MetaDefender Cluster. Set to false in case of inputing the configmaps from external parameters store
+mdcluster_generate_configmaps: true
 
 
 # Set to true if the respective database engine should also be deployed
-deploy_with_mddc_db: true                 # Enable or disable the local in-cluster database, set to false when deploying with an external database service
+deploy_with_mdcluster_db: true                 # Enable or disable the local in-cluster database, set to false when deploying with an external database service
 
 # Set to false to not create any volumes or host paths in the deployment, all storage will be ephemeral
 persistance_enabled: true
@@ -41,7 +43,7 @@ pvcList:
   - name: file-storage-pvc  # The name of the PVC.
     enabled: true                       
     labels:                                       # Key-value pairs for categorizing and selecting resources.
-      app: mddc-opswat
+      app: mdcluster-opswat
     annotations:
       #volume.beta.kubernetes.io/storage-class: "standard" #Additional metadata; for example, specifying the storage class. (deprecated it is just an example)
     accessModes:                        # Specifies the desired access modes for the volume. (Common modes ReadWriteOnce, ReadOnlyMany and ReadWriteMany)
@@ -58,7 +60,7 @@ pvcList:
   - name: postgres-pvc  # The name of the PVC.
     enabled: true                       
     labels:                                       # Key-value pairs for categorizing and selecting resources.
-      app: mddc-opswat
+      app: mdcluster-opswat
     annotations:
       #volume.beta.kubernetes.io/storage-class: "standard" #Additional metadata; for example, specifying the storage class. (deprecated it is just an example)
     accessModes:                        # Specifies the desired access modes for the volume. (Common modes ReadWriteOnce, ReadOnlyMany and ReadWriteMany)
@@ -93,11 +95,11 @@ storage_configs: null        # Custom storage yaml, set to null for ephemeral or
 # - hostPath
 # - custom
 storage_provisioner: custom
-hostPathPrefix: mddc-storage-<APP_NAMESPACE>         # This is the absolute path on the node where to keep the database filesystem for persistance, <APP_NAMESPACE> is replaced with the current deployment namespace
+hostPathPrefix: mdcluster-storage-<APP_NAMESPACE>         # This is the absolute path on the node where to keep the database filesystem for persistance, <APP_NAMESPACE> is replaced with the current deployment namespace
 
-# Ingresses settings for mddc
+# Ingresses settings for mdcluster
 
-mddc_ingress:
+mdcluster_ingress:
   - enabled: false                                    # Enable or disable the ingress creation
     name: control-center                              # Name for the ingress component in Kubernetes
     class: nginx                                      # Sets the ingress class, it can be "public" or "nginx" or some other value depending on the ingress controller in the cluster 
@@ -125,7 +127,7 @@ mddc_ingress:
 
 # Auto onboarding settings
 auto_onboarding: false                  # If set to true, it will deploy a container that will do the initial setup automatically if correct values are provided
-mddc_import_config: null                # Content of config file to be imported by the onboarding container
+mdcluster_import_config: null                # Content of config file to be imported by the onboarding container
 ONBOARDING_USER_NAME: null              # User name of user that will be created by onboarding container (defaults to admin if left unset)
 ONBOARDING_PASSWORD: null               # Password of user that will be created by onboarding container (randomly generated if left unset, can be retrieved from the "onboarding-env" secret)
 ONBOARDING_EMAIL: null                  # Email of user that will be created by onboarding container
@@ -137,26 +139,26 @@ ONBOARDING_FULL_NAME: null              # Full name of user that will be created
 
 # Docker repo to use, this should be changed when using private images (this string will be prepended to the image name)
 # If a component has "custom_repo: true" then the image name will be formated as "{docker_repo/}image_name" otherwise it will remain unaltered
-mddc_docker_repo: opswat
+mdcluster_docker_repo: opswat
 
 imagePullPolicy: IfNotPresent
 
-mddc_config_map_env_name: 'mddc-env'
+mdcluster_config_map_env_name: 'mdcluster-env'
 
-mddc_components:
+mdcluster_components:
   postgres:
     name: postgres
-    image: postgres:14.17
+    image: postgres:17.6
     env:
       - name: POSTGRES_PASSWORD
         valueFrom:
           secretKeyRef:
-            name: mddc-common-secret
+            name: mdcluster-common-secret
             key: POSTGRES_PASSWORD
       - name: POSTGRES_USER
         valueFrom:
           secretKeyRef:
-            name: mddc-common-secret
+            name: mdcluster-common-secret
             key: POSTGRES_USER
     ports:
       - port: 5432
@@ -177,12 +179,12 @@ mddc_components:
       - name: RABBITMQ_DEFAULT_USER
         valueFrom:
           secretKeyRef:
-            name: mddc-common-secret
+            name: mdcluster-common-secret
             key: RABBITMQ_DEFAULT_USER
       - name: RABBITMQ_DEFAULT_PASS
         valueFrom:
           secretKeyRef:
-            name: mddc-common-secret
+            name: mdcluster-common-secret
             key: RABBITMQ_DEFAULT_PASS
     extra_labels:
       aws-type: fargate
@@ -208,7 +210,7 @@ mddc_components:
     name: identity-service
     custom_repo: true
     enabled: true
-    image: metadefender-distributed-cluster:identity-service-2.5.1-debian-12
+    image: metadefender-cluster:identity-service-2.5.2-debian-12
     ports:
       - port: 8891
     extra_labels:
@@ -217,17 +219,34 @@ mddc_components:
       requests:
         memory: "0.5Gi"
         cpu: "0.010"
+    initContainers:
+    - name: wait-for-services
+      image: busybox:latest
+      envFrom:
+        - configMapRef:
+            name: identity-service
+            optional: true
+      command: ["/bin/sh", "-c"]
+      args:
+        - |
+          echo "Waiting for postgres..."
+          echo "Using host: $MDCLS_IDENTITY_SERVICE_DB_HOST and port: $MDCLS_IDENTITY_SERVICE_DB_PORT"
+          until nc -vz $MDCLS_IDENTITY_SERVICE_DB_HOST $MDCLS_IDENTITY_SERVICE_DB_PORT; do
+            echo "$(date) Still waiting for $MDCLS_IDENTITY_SERVICE_DB_HOST $MDCLS_IDENTITY_SERVICE_DB_PORT"
+            sleep 2
+          done
+          echo "$MDCLS_IDENTITY_SERVICE_DB_HOST $MDCLS_IDENTITY_SERVICE_DB_PORT is up!"
     
   file-storage:
     name: file-storage
     custom_repo: true
     enabled: true
-    image: metadefender-distributed-cluster:file-storage-2.5.1-debian-12
+    image: metadefender-cluster:file-storage-2.5.2-debian-12
     ports:
       - port: 8890
     extra_labels:
       aws-type: fargate
-    persistentDir: /opt/opswat/mddc-file-storage
+    persistentDir: /opt/opswat/mdcluster-file-storage
     storage_name: file-storage-pvc
     resources:
       requests:
@@ -236,16 +255,17 @@ mddc_components:
     initContainers:
         - name: volume-init
           image: busybox
-          command: ["sh", "-c", "chmod 777 /opt/opswat/mddc-file-storage"]
+          command: ["sh", "-c", "chmod 777 /opt/opswat/mdcluster-file-storage"]
           volumeMounts:
             - name: file-storage
-              mountPath: /opt/opswat/mddc-file-storage
+              mountPath: /opt/opswat/mdcluster-file-storage
+
 
   control-center:
     name: control-center
     custom_repo: true
     enabled: true
-    image: metadefender-distributed-cluster:control-center-2.5.1-debian-12
+    image: metadefender-cluster:control-center-2.5.2-debian-12
     ports:
       - port: 8892
     extra_labels:
@@ -278,24 +298,28 @@ mddc_components:
             sleep 2
           done
           echo "file-storage:8890 is up!"
+          echo "Waiting for redis:6379..."
+          until nc -vz redis 6379; do
+            echo "$(date) Still waiting for redis:6379"
+            sleep 2
+          done
+          echo "redis:6379 is up!"
+          echo "Waiting for rabbitmq:5672..."
+          until nc -vz rabbitmq 5672; do
+            echo "$(date) Still waiting for rabbitmq:5672"
+            sleep 2
+          done
+          echo "rabbitmq:5672 is up!"
 
 
   worker-api-gateway:
     name: worker-api-gateway
     custom_repo: true
     enabled: true
-    image: metadefender-distributed-cluster:worker-api-gateway-2.5.1-debian-12
+    image: metadefender-cluster:worker-api-gateway-2.5.2-debian-12
     ports:
       - port: 8893
       - port: 8899
-    extra_labels:
-      aws-type: fargate
-    service_type: LoadBalancer
-    sessionAffinity: ClientIP
-    service_annotations:
-      service.beta.kubernetes.io/aws-load-balancer-type: external
-      service.beta.kubernetes.io/aws-load-balancer-nlb-target-type: ip
-      service.beta.kubernetes.io/aws-load-balancer-scheme: internet-facing  
     resources:
       requests:
         memory: "0.5Gi"
@@ -316,6 +340,7 @@ mddc_components:
             echo "$(date) Still waiting for control-center:8892"
             sleep 3
           done
+          sleep 30 # Extra wait time to ensure control-center is fully up and running
           echo "control-center:8892 is up!"
 
 
@@ -324,7 +349,7 @@ mddc_components:
     name: worker-core
     custom_repo: true
     enabled: true
-    image: metadefender-distributed-cluster:worker-core-2.5.1-debian-12
+    image: metadefender-cluster:worker-core-2.5.2-debian-12
     ports:
       - port: 8893
     extra_labels:
@@ -350,4 +375,35 @@ mddc_components:
             echo "$(date) Still waiting for control-center:8892"
             sleep 3
           done
+          sleep 30 # Extra wait time to ensure control-center is fully up and running
+          echo "control-center:8892 is up!"
+
+  worker-callback-service:
+    name: worker-callback-service
+    custom_repo: true
+    enabled: true
+    image: metadefender-cluster:worker-callback-service-2.5.2-debian-12
+    ports:
+      - port: 8894
+    resources:
+      requests:
+        memory: "0.5Gi"
+        cpu: "1.0"
+    hpa:
+      enabled: false
+      minReplicas: 2
+      maxReplicas: 3
+      cpuTargetUtilization: 85
+    initContainers:
+    - name: wait-for-services
+      image: busybox:latest
+      command: ["/bin/sh", "-c"]
+      args:
+        - |
+          echo "Waiting for control-center:8892..."
+          until nc -vz control-center 8892; do
+            echo "$(date) Still waiting for control-center:8892"
+            sleep 3
+          done
+          sleep 30 # Extra wait time to ensure control-center is fully up and running 
           echo "control-center:8892 is up!"

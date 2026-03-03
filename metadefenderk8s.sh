@@ -10,6 +10,7 @@ externalDB=false
 # native binaries for your platform
 OS_ARCH=$(echo "$(uname -s|tr '[:upper:]' '[:lower:]'|sed 's/mingw64_nt.*/windows/')-$(uname -m | sed 's/x86_64/amd64/g')" | awk '{print tolower($0)}')
 MDSS="false"
+MDSSC="false"
 MDCORE="false"
 ICAP="false"
 namespace="default"
@@ -41,10 +42,28 @@ redis_host_mdss="redis"
 redis_port_mdss=6379
 k8s_db_mdss=true
 privateconnection=true
+# MDSSC variables (uses PostgreSQL like MDSS)
+externalRabbit_mdssc=false
+externalRedis_mdssc=false
+externalDB_mdssc=false
+db_user_mdssc="mdssc"
+db_password_mdssc=null
+db_host_mdssc="postgres-mdssc"
+db_port_mdssc="5432"
+db_url_mdssc="Host=postgres-mdssc;Port=5432;Username=mdssc;Password=<MDSSC_DB_PASSWORD>;Database=MDSSC"
+rabbit_url_mdssc="amqp://rabbitmq:5672"
+rabbit_Host_mdssc="rabbitmq"
+rabbit_mq_port_mdssc=5672
+rabbit_password_mdssc="guest"
+rabbit_user_mdssc="guest"
+redis_uri_mdssc="redis:6379"
+redis_host_mdssc="redis"
+redis_port_mdssc=6379
+k8s_db_mdssc=true
 # Print the usage message
 function printHelp () {
   echo "Usage: "
-  echo "  metadefenderk8s.sh provision|install|upgrade|destroy|uninstall -l|--location <location> --mdcore|--mdss [-i|--image <image_version>] [--region <region>] [--name <name>] [--namespace <namespace>] [--replicas] "
+  echo "  metadefenderk8s.sh provision|install|upgrade|destroy|uninstall -l|--location <location> --mdcore|--mdss|--mdssc [-i|--image <image_version>] [--region <region>] [--name <name>] [--namespace <namespace>] [--replicas] "
   echo "  metadefenderk8s.sh -h|--help (print this message)"
   echo "    <mode> - one of 'provision', 'install' or 'upgrade'"
   echo "      - 'provision' - Generate resources in the CSP selected in --location"
@@ -54,6 +73,7 @@ function printHelp () {
   echo "      - 'uninstall'  - uninstall the MetaDefender products from the K8S cluster"
   echo "    -l <location> - Cloud Provider or Local Cluster [AWS | Azure | Local (Install only) ] - Required on provision and install mode"
   echo "    -mdss|--mdss - When flag included OPSWAT MDSS will be installed"
+  echo "    -mdssc|--mdssc - When flag included OPSWAT MDSSC (Software Supply Chain) will be installed"
   echo "    -mdcore|--mdcore - When flag included on provision mode it will also install MD Core"
   echo "    -icap|--icap - When flag included on provision mode it will also install ICAP"
   echo "    -i | --image <image_version> - the image version of MD Core to be installed in the K8S Cluster (default: \"$MD_CORE_IMAGE\"). For other MetaDefender products it will install the latest tag"
@@ -69,6 +89,7 @@ function printHelp () {
   echo "	metadefenderk8s.sh provision -l AWS --mdcore"
   echo "	metadefenderk8s.sh provision -l AWS -i 5.1.2 --mdcore"
   echo "	metadefenderk8s.sh provision -l AWS -i 5.1.2 --mdcore --mdss"
+  echo "	metadefenderk8s.sh provision -l AWS -i 5.1.2 --mdcore --mdssc"
   echo "	metadefenderk8s.sh provision -l AWS -i 5.1.2 --mdcore --icap"
   echo
 }
@@ -566,6 +587,274 @@ function ask3rdPartyMDSS () {
   askRabbitMQMDSS
 }
 
+# ============== MDSSC Functions (uses PostgreSQL like MDSS) ==============
+
+function askDBExternalMDSSC () {
+
+    optdb="${LOCATION_PARAM}dbmdss"
+    cloudOptDBMDSSC=${cloudOptions[$optdb]}
+
+    read -p "Create a PostgreSQL DB in K8S or create $LOCATION $cloudOptDBMDSSC? [K8S/External] " ans
+    case "$ans" in
+        k8s | K8S )
+            echo "PostgreSQL db service will be created in K8S"
+            optExtDBSelecMDSSC="K8S"
+            persistent_mdssc=true
+            externalDB_mdssc=false
+            k8s_db_mdssc=true
+            privateconnection_mdssc=false
+        ;;
+        external | External )
+            echo "Creating $LOCATION $cloudOptDBMDSSC and setting db variables"
+            optExtDBSelecMDSSC=$cloudOptDBMDSSC
+            externalDB_mdssc=true
+            k8s_db_mdssc=false
+            read -p "USERNAME for PostgreSQL DB $LOCATION $cloudOptDBMDSSC: " db_user_mdssc
+            read -p "PASSWORD for PostgreSQL DB $LOCATION $cloudOptDBMDSSC: " -s db_password_mdssc
+            echo
+        ;;
+        * )
+            echo "invalid response"
+            askDBExternalMDSSC
+        ;;
+    esac
+
+}
+
+function askOwnDBMDSSC () {
+  read -p "Do you want to set credentials for MetaDefender Software Supply Chain PostgreSQL DB with this script? [Yes/No] " ans
+  case "$ans" in
+    Yes | yes )
+      read -p "USERNAME for PostgreSQL DB: " db_user_mdssc
+      read -p "PASSWORD for PostgreSQL DB: " -s db_password_mdssc
+      echo
+      read -p "Host url for PostgreSQL DB: " db_host_mdssc
+      db_url_mdssc="Host="$db_host_mdssc";Port=5432;Username="$db_user_mdssc";Password="$db_password_mdssc";Database=MDSSC"
+
+    ;;
+    No | no )
+      echo "Edit the following configmap for starting MDSSC services"
+      echo " - POSTGRES_URI in mdssc-env configmap with the connection string"
+    ;;
+    * )
+        echo "invalid response"
+        askOwnDBMDSSC
+    ;;
+  esac
+}
+
+function askDBMDSSC () {
+  
+  if [ "$optDBSelecMDCore" == "Own" ] || [ "$optDBSelecMDCore" == "New" ];then
+
+    echo "Using the same database configuration as MetaDefender Core for MetaDefender Software Supply Chain"
+    optDBSelecMDSSC=$optDBSelecMDCore
+    externalDB_mdssc=$externalDB
+    persistent_mdssc=$persistent
+    k8s_db_mdssc=$k8s_db
+    privateconnection_mdssc=$privateconnection
+  else
+    
+    read -p "Do you have your own or want to create a PostgreSQL DB for MDSSC? [Own/New] " ans
+    case "$ans" in
+      Own | OWN | own )
+        askOwnDBMDSSC
+        optDBSelecMDSSC="Own"
+        externalDB_mdssc=false
+        k8s_db_mdssc=false
+        privateconnection_mdssc=false
+      ;;
+      new | New | NEW)
+          if [ "$LOCATION_PARAM" == "local" ] || [ "${MODE}" == "install" ];then
+            echo "We will create a PostgreSQL db pod in your cluster"
+            optExtDBSelecMDSSC="K8S"
+            persistent_mdssc=true
+            externalDB_mdssc=false
+            k8s_db_mdssc=true
+            privateconnection_mdssc=false
+          else
+            askDBExternalMDSSC
+          fi
+          optDBSelecMDSSC="New"
+      ;;
+      * )
+        echo "invalid response"
+        askDBMDSSC
+      ;;
+    esac
+  fi
+}
+
+function askRedisExternalMDSSC () {
+
+    optdb="${LOCATION_PARAM}redismdss"
+    cloudOptRedisMDSSC=${cloudOptions[$optdb]}
+    if [ "$LOCATION_PARAM" == "aws" ];then
+      read -p "Create a Redis Service in K8S or create $LOCATION $cloudOptRedisMDSSC? [K8S/External] " ans
+      case "$ans" in
+          k8s | K8S )
+              echo "Redis service will be created"
+              optExtRedisSelecMDSSC="K8S"
+              externalRedis_mdssc=false
+          ;;
+          external | External )
+              echo "Creating $LOCATION $cloudOptRedisMDSSC and setting variables"
+              optExtRedisSelecMDSSC=$cloudOptRedisMDSSC
+              externalRedis_mdssc=true
+          ;;
+          * )
+              echo "invalid response"
+              askRedisExternalMDSSC
+          ;;
+      esac
+    else
+        ### Redis with HA only supported in AWS
+        echo "Redis service will be created in K8S"
+        optExtRedisSelecMDSSC="K8S"
+        externalRedis_mdssc=false
+    fi
+
+}
+
+function askOwnRedisMDSSC () {
+  read -p "Do you want to configure the redis URI for MetaDefender Software Supply Chain with this script? [Yes/No] " ans
+  case "$ans" in
+    Yes | yes )
+      read -p "URI for Redis: " redis_uri_mdssc
+    ;;
+    No | no )
+      echo "Edit the following configmap for starting MDSSC services"
+      echo " - CACHE_SERVICE_URI in mdssc-env configmap with the connection string"
+    ;;
+    * )
+        echo "invalid response"
+        askOwnRedisMDSSC
+    ;;
+  esac
+}
+
+
+function askRedisMDSSC () {
+
+  read -p "Do you have your own or want to create a Redis Cache service? [Own/New] " ans
+  case "$ans" in
+    Own | OWN | own )
+      askOwnRedisMDSSC
+      optRedisSelecMDSSC="Own"
+      externalRedis_mdssc=false
+    ;;
+    new | New | NEW)
+        if [ "$LOCATION_PARAM" == "local" ] || [ "${MODE}" == "install" ];then
+          echo "We will create a Redis pod in your cluster"
+          optExtRedisSelecMDSSC="K8S"
+          externalRedis_mdssc=false
+        else
+          askRedisExternalMDSSC
+        fi
+        optRedisSelecMDSSC="New"
+    ;;
+    * )
+      echo "invalid response"
+      askRedisMDSSC
+    ;;
+  esac
+}
+
+function askRabbitExternalMDSSC () {
+
+    optdb="${LOCATION_PARAM}rabbitmdss"
+    cloudOptRabbitMDSSC=${cloudOptions[$optdb]}
+    
+    if [ "$LOCATION_PARAM" == "aws" ];then
+      read -p "Create a Rabbit Service in K8S or create $LOCATION $cloudOptRabbitMDSSC? [K8S/External] " ans
+      case "$ans" in
+        k8s | K8S )
+            echo "Rabbit service will be created in K8S"
+            optExtRabbitSelecMDSSC="K8S"
+            externalRabbit_mdssc=false
+        ;;
+        external | External )
+            echo "Creating $LOCATION $cloudOptRabbitMDSSC and setting variables"
+            optExtRabbitSelecMDSSC=$cloudOptRabbitMDSSC
+            externalRabbit_mdssc=true
+            read -p "USERNAME for Rabbit MQ $LOCATION $cloudOptRabbitMDSSC: " rabbit_user_mdssc
+            read -p "PASSWORD for Rabbit MQ $LOCATION $cloudOptRabbitMDSSC: " -s rabbit_password_mdssc
+            echo
+        ;;
+        * )
+            echo "invalid response"
+            askRabbitExternalMDSSC
+        ;;
+      esac
+    
+    else
+        ### Rabbit MQ with HA only supported in AWS
+        echo "Rabbit service will be created in K8S"
+        optExtRabbitSelecMDSSC="K8S"
+        externalRabbit_mdssc=false
+    fi
+  
+}
+
+function askOwnRabbitMQMDSSC () {
+  read -p "Do you want to configure the credentials for RabbitMQ with this script? [Yes/No] " ans
+  case "$ans" in
+    Yes | yes )
+      read -p "USERNAME for RabbitMQ: " rabbit_user_mdssc
+      read -p "PASSWORD for RabbitMQ: " -s rabbit_password_mdssc
+      echo
+      read -p "Host url for RabbitMQ: " rabbit_host_mdssc
+      rabbit_Host_mdssc=$rabbit_host_mdssc
+    ;;
+    No | no )
+      echo "Edit the following configmap for starting MDSSC services"
+      echo " - RABBITMQ_URI in mdssc-env configmap with the connection string"
+      echo " - RABBITMQ_HOST in mdssc-env configmap with the host"
+      echo " - RABBITMQ_PORT in mdssc-env configmap with the port"
+      echo " - RABBITMQ_DEFAULT_PASS in mdssc-env configmap with the password"
+      echo " - RABBITMQ_DEFAULT_USER in mdssc-env configmap with the username"
+    ;;
+    * )
+        echo "invalid response"
+        askOwnRabbitMQMDSSC
+    ;;
+  esac
+}
+
+function askRabbitMQMDSSC () {
+
+  read -p "Do you have your own or want to create a RabbitMQ service? [Own/New] " ans
+  case "$ans" in
+    Own | OWN | own )
+      askOwnRabbitMQMDSSC
+      optRabbitSelecMDSSC="Own"
+      externalRabbit_mdssc=false
+    ;;
+    new | New | NEW)
+        if [ "$LOCATION_PARAM" == "local" ] || [ "${MODE}" == "install" ];then
+          echo "We will create a Rabbit MQ pod in your cluster"
+          optRabbitSelecMDSSC="K8S"
+          externalRabbit_mdssc=false
+        else
+          askRabbitExternalMDSSC
+        fi
+        optRabbitSelecMDSSC="New"
+    ;;
+    * )
+      echo "invalid response"
+      askRabbitMQMDSSC
+    ;;
+  esac
+}
+
+function ask3rdPartyMDSSC () {
+  askDBMDSSC
+  askRedisMDSSC
+  askRabbitMQMDSSC
+}
+
+# ============== End MDSSC Functions ==============
+
 function askAWSCredentials () {
   echo "ERROR: Please export AWS_ACCESS_KEY_ID & AWS_SECRET_ACCESS_KEY"
   exit 1
@@ -622,6 +911,15 @@ function install(){
       echo " - $optRedisSelecMDSS Redis service $optExtRedisSelecMDSS"
       echo " - $optRabbitSelecMDSS Rabbit service $optExtRabbitSelecMDSS"
     fi
+
+    if [ "${MDSSC}" == "true" ];then
+      ask3rdPartyMDSSC
+      echo "SUMMARY OF SELECTIONS MetaDefender Software Supply Chain: "
+      echo " - $optAccessSelec access to the cluster"
+      echo " - $optDBSelecMDSSC PostgreSQL DB $optExtDBSelecMDSSC"
+      echo " - $optRedisSelecMDSSC Redis service $optExtRedisSelecMDSSC"
+      echo " - $optRabbitSelecMDSSC Rabbit service $optExtRabbitSelecMDSSC"
+    fi
     
     
     askProceed
@@ -637,6 +935,13 @@ function install(){
       cd $SCRIPT_PATH
       cd helm_charts/
       installMDSS
+      cd $SCRIPT_PATH
+    fi
+
+    if [ "${MDSSC}" == "true" ];then
+      cd $SCRIPT_PATH
+      cd helm_charts/
+      installMDSSC
       cd $SCRIPT_PATH
     fi
     
@@ -918,6 +1223,57 @@ function installMDSS () {
 
 }
 
+function installMDSSC () {
+    echo "Starting to install MDSSC (Software Supply Chain) inside the K8S cluster"
+    askProceed
+
+    if [ "$LOCATION_PARAM" == "local" ];then
+      helm upgrade --install mdssc mdssc/ --namespace $namespace --create-namespace \
+      --set mdssc_ingress.enabled=$ingress_enabled
+    elif [ "$LOCATION_PARAM" == "aws" ];then
+      if $externalRabbit_mdssc ;then
+        rabbit_replicas_mdssc=0
+        rabbit_mq_port_mdssc="5671"
+      else
+        rabbit_replicas_mdssc=1
+      fi
+      if $externalRedis_mdssc ;then
+        redis_replicas_mdssc=0
+      else
+        redis_replicas_mdssc=1
+      fi
+
+      helm_file="mdssc-aws-eks-values.yml"
+      if [ "$ipInternal" == "true" ];then
+        ipInternal="nlb-ip"
+      else
+        ipInternal="external"
+      fi
+      helm upgrade --install mdssc mdssc/ \
+      --namespace $namespace \
+      --create-namespace \
+      -f $helm_file \
+      --set mdssc_ingress.enabled=$ingress_enabled \
+      --set POSTGRESQL_URL=$db_url_mdssc \
+      --set MDSSC_DB_USER=$db_user_mdssc \
+      --set MDSSC_DB_PASSWORD=$db_password_mdssc \
+      --set MDSSC_DB_HOST=$db_host_mdssc \
+      --set mdssc-common-environment.RABBITMQ_URI=$rabbit_url_mdssc \
+      --set mdssc-common-environment.RABBITMQ_HOST=$rabbit_Host_mdssc \
+      --set mdssc-common-environment.CACHE_SERVICE_URI=$redis_uri_mdssc \
+      --set mdssc-common-environment.CACHE_SERVICE_URL=$redis_host_mdssc \
+      --set mdssc_components.rabbitmq.replicas=$rabbit_replicas_mdssc \
+      --set mdssc_components.redis.replicas=$redis_replicas_mdssc \
+      --set mdssc_components.frontend.service_annotations."service\.beta\.kubernetes\.io/aws-load-balancer-type"=$ipInternal \
+      --set deploy_with_mdssc_db=$k8s_db_mdssc 
+    else
+      echo "MDSSC is currently only supported on AWS and local deployments"
+      echo "Azure and GCP support for MDSSC is not yet available"
+      exit 1
+    fi
+
+}
+
 function installICAP () {
     echo "Starting to install ICAP inside the K8S cluster"
     if [ -z "${MDICAPSRV_LICENSE_KEY}" ]; then
@@ -1172,6 +1528,10 @@ function provision () {
       ask3rdPartyMDSS
     fi
 
+    if [ "${MDSSC}" == "true" ];then
+      ask3rdPartyMDSSC
+    fi
+
     echo "SUMMARY OF SELECTIONS: "
     echo " - Create cluster $LOCATION $clusterType with $optClusterSelec"
     echo " - $optAccessSelec access to the cluster"
@@ -1180,6 +1540,11 @@ function provision () {
       echo " - (MDSS) $optDBSelecMDSS PostgreSQL DB $optExtDBSelecMDSS"
       echo " - (MDSS) $optRedisSelecMDSS Redis service $optExtRedisSelecMDSS"
       echo " - (MDSS) $optRabbitSelecMDSS Rabbit service $optExtRabbitSelecMDSS"
+    fi
+    if [ "${MDSSC}" == "true" ];then
+      echo " - (MDSSC) $optDBSelecMDSSC PostgreSQL DB $optExtDBSelecMDSSC"
+      echo " - (MDSSC) $optRedisSelecMDSSC Redis service $optExtRedisSelecMDSSC"
+      echo " - (MDSSC) $optRabbitSelecMDSSC Rabbit service $optExtRabbitSelecMDSSC"
     fi
 
     askProceed
@@ -1218,6 +1583,12 @@ function provision () {
       installMDSS
       cd $SCRIPT_PATH
     fi
+    if [ "${MDSSC}" == "true" ];then
+      cd $SCRIPT_PATH
+      cd helm_charts/
+      installMDSSC
+      cd $SCRIPT_PATH
+    fi
     if [ "${ICAP}" == "true" ];then
       cd $SCRIPT_PATH
       cd helm_charts/
@@ -1240,6 +1611,10 @@ function uninstall() {
     if [ "${MDSS}" == "true" ];then
       echo "Uninstalling MDSS helm chart"
       helm uninstall mdss --namespace $namespace
+    fi
+    if [ "${MDSSC}" == "true" ];then
+      echo "Uninstalling MDSSC helm chart"
+      helm uninstall mdssc --namespace $namespace
     fi
     if [ "${ICAP}" == "true" ];then
       echo "Uninstalling ICAP helm chart"
@@ -1319,7 +1694,7 @@ fi
       shift;
       current_arg="$1"
       if [[ "$current_arg" =~ ^-{1,2}.* ]] || [ "$current_arg" == "" ]; then
-        if [ "${opt}" != "--mdss" ] && [ "${opt}" != "--mdcore" ] && [ "${opt}" != "--icap" ];then
+        if [ "${opt}" != "--mdss" ] && [ "${opt}" != "--mdssc" ] && [ "${opt}" != "--mdcore" ] && [ "${opt}" != "--icap" ];then
             echo "ERROR: You may have left an argument blank. Double check your command." 
             exit 1;
         fi
@@ -1357,6 +1732,8 @@ fi
             MDCORE="true";;
         "--mdss") 
             MDSS="true";;
+        "--mdssc") 
+            MDSSC="true";;
         "--icap") 
             ICAP="true";;
         *) 
@@ -1403,7 +1780,7 @@ function checkLocation() {
 checkLocation
 
 #Required flags in all modes
-if [ "${MDCORE}" == "false" ] && [ "${MDSS}" == "false" ] && [ "${ICAP}" == "false" ];then
+if [ "${MDCORE}" == "false" ] && [ "${MDSS}" == "false" ] && [ "${MDSSC}" == "false" ] && [ "${ICAP}" == "false" ];then
     echo "Product flag required in all modes"
     printHelp
     exit 0
@@ -1417,6 +1794,9 @@ if [ "${MODE}" == "provision" ];then
   if [ "${MDSS}" == "true" ];then
         message=${message}" with MDSS";
   fi
+  if [ "${MDSSC}" == "true" ];then
+        message=${message}" with MDSSC";
+  fi
   if [ "${ICAP}" == "true" ];then
         message=${message}" with ICAP";
   fi
@@ -1428,6 +1808,9 @@ if [ "${MODE}" == "install" ];then
   fi
   if [ "${MDSS}" == "true" ];then
         message_install=${message_install}" with MDSS";
+  fi
+  if [ "${MDSSC}" == "true" ];then
+        message_install=${message_install}" with MDSSC";
   fi
   if [ "${ICAP}" == "true" ];then
         message_install=${message_install}" with ICAP";
@@ -1441,6 +1824,9 @@ if [ "${MODE}" == "destroy" ];then
   if [ "${MDSS}" == "true" ];then
         message_destroy=${message_destroy}" with MDSS";
   fi
+  if [ "${MDSSC}" == "true" ];then
+        message_destroy=${message_destroy}" with MDSSC";
+  fi
   if [ "${ICAP}" == "true" ];then
         message_destroy=${message_destroy}" with ICAP";
   fi
@@ -1452,6 +1838,9 @@ if [ "${MODE}" == "uninstall" ];then
   fi
   if [ "${MDSS}" == "true" ];then
         message_uninstall=${message_uninstall}" with MDSS";
+  fi
+  if [ "${MDSSC}" == "true" ];then
+        message_uninstall=${message_uninstall}" with MDSSC";
   fi
   if [ "${ICAP}" == "true" ];then
         message_uninstall=${message_uninstall}" with ICAP";
