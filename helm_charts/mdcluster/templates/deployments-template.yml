@@ -1,15 +1,15 @@
 
-# Create a deployment for each component in mddc
-{{ range $component_name, $component := .Values.mddc_components }}
+# Create a deployment for each component in mdcluster
+{{ range $component_name, $component := .Values.mdcluster_components }}
 
-{{ if and (not (eq $component.enabled false)) (or $.Values.deploy_with_mddc_db (not $component.is_db))  }}
+{{ if and (not (eq $component.enabled false)) (or $.Values.deploy_with_mdcluster_db (not $component.is_db))  }}
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: {{ $component.name | quote }}
   labels:
-    product: mddc
+    product: mdcluster
 spec:
   replicas: {{ $component.replicas }}
   selector:
@@ -23,7 +23,7 @@ spec:
     metadata:
       labels:
         app: {{ $component.name | quote }}
-        product: mddc
+        product: mdcluster
         {{- if $component.extra_labels }}
           {{- toYaml $component.extra_labels | nindent 8 }}
         {{- end }}
@@ -34,12 +34,12 @@ spec:
                 name: {{ $component.name | quote }}
                 optional: true
             - secretRef:
-                name:  "mddc-common-secret"
+                name:  "mdcluster-common-secret"
             - secretRef:
                 name: {{ $component.name | quote }}
                 optional: true
           {{ if $component.custom_repo -}}
-          image: {{ printf "%s/%s" $.Values.mddc_docker_repo $component.image | quote }}
+          image: {{ printf "%s/%s" $.Values.mdcluster_docker_repo $component.image | quote }}
           {{- else -}}
           image: {{ $component.image | quote }}
           {{- end }}
@@ -139,7 +139,7 @@ spec:
         {{- end }}
         {{- end }}
       hostAliases:
-        {{- toYaml $.Values.mddcHostAliases | nindent 8 }}
+        {{- toYaml $.Values.mdclusterHostAliases | nindent 8 }}
       
 {{ end }}
 {{ end }}

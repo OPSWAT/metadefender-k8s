@@ -1,7 +1,7 @@
 {{/*
 Expand the name of the chart.
 */}}
-{{- define "mddc.name" -}}
+{{- define "mdcluster.name" -}}
 {{- default .Chart.Name .Values.nameOverride | trunc 63 | trimSuffix "-" }}
 {{- end }}
 
@@ -10,7 +10,7 @@ Create a default fully qualified app name.
 We truncate at 63 chars because some Kubernetes name fields are limited to this (by the DNS naming spec).
 If release name contains chart name it will be used as a full name.
 */}}
-{{- define "mddc.fullname" -}}
+{{- define "mdcluster.fullname" -}}
 {{- if .Values.fullnameOverride }}
 {{- .Values.fullnameOverride | trunc 63 | trimSuffix "-" }}
 {{- else }}
@@ -26,16 +26,16 @@ If release name contains chart name it will be used as a full name.
 {{/*
 Create chart name and version as used by the chart label.
 */}}
-{{- define "mddc.chart" -}}
+{{- define "mdcluster.chart" -}}
 {{- printf "%s-%s" .Chart.Name .Chart.Version | replace "+" "_" | trunc 63 | trimSuffix "-" }}
 {{- end }}
 
 {{/*
 Common labels
 */}}
-{{- define "mddc.labels" -}}
-helm.sh/chart: {{ include "mddc.chart" . }}
-{{ include "mddc.selectorLabels" . }}
+{{- define "mdcluster.labels" -}}
+helm.sh/chart: {{ include "mdcluster.chart" . }}
+{{ include "mdcluster.selectorLabels" . }}
 {{- if .Chart.AppVersion }}
 app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
 {{- end }}
@@ -45,17 +45,17 @@ app.kubernetes.io/managed-by: {{ .Release.Service }}
 {{/*
 Selector labels
 */}}
-{{- define "mddc.selectorLabels" -}}
-app.kubernetes.io/name: {{ include "mddc.name" . }}
+{{- define "mdcluster.selectorLabels" -}}
+app.kubernetes.io/name: {{ include "mdcluster.name" . }}
 app.kubernetes.io/instance: {{ .Release.Name }}
 {{- end }}
 
 {{/*
 Create the name of the service account to use
 */}}
-{{- define "mddc.serviceAccountName" -}}
+{{- define "mdcluster.serviceAccountName" -}}
 {{- if .Values.serviceAccount.create }}
-{{- default (include "mddc.fullname" .) .Values.serviceAccount.name }}
+{{- default (include "mdcluster.fullname" .) .Values.serviceAccount.name }}
 {{- else }}
 {{- default "default" .Values.serviceAccount.name }}
 {{- end }}
@@ -64,7 +64,7 @@ Create the name of the service account to use
 {{/*
 PostgreSQL configuration with global fallback
 */}}
-{{- define "mddc.postgresql.host" -}}
+{{- define "mdcluster.postgresql.host" -}}
 {{- if and .Values.global .Values.global.postgresql .Values.global.postgresql.host -}}
 {{- .Values.global.postgresql.host -}}
 {{- else -}}
@@ -72,7 +72,7 @@ PostgreSQL configuration with global fallback
 {{- end -}}
 {{- end -}}
 
-{{- define "mddc.postgresql.port" -}}
+{{- define "mdcluster.postgresql.port" -}}
 {{- if and .Values.global .Values.global.postgresql .Values.global.postgresql.port -}}
 {{- .Values.global.postgresql.port -}}
 {{- else -}}
@@ -80,7 +80,7 @@ PostgreSQL configuration with global fallback
 {{- end -}}
 {{- end -}}
 
-{{- define "mddc.postgresql.user" -}}
+{{- define "mdcluster.postgresql.user" -}}
 {{- if and .Values.global .Values.global.postgresql .Values.global.postgresql.user -}}
 {{- .Values.global.postgresql.user -}}
 {{- else -}}
@@ -88,7 +88,7 @@ PostgreSQL configuration with global fallback
 {{- end -}}
 {{- end -}}
 
-{{- define "mddc.postgresql.password" -}}
+{{- define "mdcluster.postgresql.password" -}}
 {{- if and .Values.global .Values.global.postgresql .Values.global.postgresql.password -}}
 {{- .Values.global.postgresql.password -}}
 {{- else -}}
@@ -99,7 +99,7 @@ PostgreSQL configuration with global fallback
 {{/*
 RabbitMQ configuration with global fallback
 */}}
-{{- define "mddc.rabbitmq.host" -}}
+{{- define "mdcluster.rabbitmq.host" -}}
 {{- if and .Values.global .Values.global.rabbitmq .Values.global.rabbitmq.host -}}
 {{- .Values.global.rabbitmq.host -}}
 {{- else -}}
@@ -107,7 +107,7 @@ RabbitMQ configuration with global fallback
 {{- end -}}
 {{- end -}}
 
-{{- define "mddc.rabbitmq.port" -}}
+{{- define "mdcluster.rabbitmq.port" -}}
 {{- if and .Values.global .Values.global.rabbitmq .Values.global.rabbitmq.port -}}
 {{- .Values.global.rabbitmq.port -}}
 {{- else -}}
@@ -115,7 +115,7 @@ RabbitMQ configuration with global fallback
 {{- end -}}
 {{- end -}}
 
-{{- define "mddc.rabbitmq.user" -}}
+{{- define "mdcluster.rabbitmq.user" -}}
 {{- if and .Values.global .Values.global.rabbitmq .Values.global.rabbitmq.user -}}
 {{- .Values.global.rabbitmq.user -}}
 {{- else -}}
@@ -123,7 +123,7 @@ RabbitMQ configuration with global fallback
 {{- end -}}
 {{- end -}}
 
-{{- define "mddc.rabbitmq.password" -}}
+{{- define "mdcluster.rabbitmq.password" -}}
 {{- if and .Values.global .Values.global.rabbitmq .Values.global.rabbitmq.password -}}
 {{- .Values.global.rabbitmq.password -}}
 {{- else -}}
@@ -134,7 +134,7 @@ RabbitMQ configuration with global fallback
 {{/*
 Redis configuration with global fallback
 */}}
-{{- define "mddc.redis.host" -}}
+{{- define "mdcluster.redis.host" -}}
 {{- if and .Values.global .Values.global.redis .Values.global.redis.host -}}
 {{- .Values.global.redis.host -}}
 {{- else -}}
@@ -142,7 +142,7 @@ Redis configuration with global fallback
 {{- end -}}
 {{- end -}}
 
-{{- define "mddc.redis.port" -}}
+{{- define "mdcluster.redis.port" -}}
 {{- if and .Values.global .Values.global.redis .Values.global.redis.port -}}
 {{- .Values.global.redis.port -}}
 {{- else -}}
@@ -150,18 +150,22 @@ Redis configuration with global fallback
 {{- end -}}
 {{- end -}}
 
-{{- define "mddc.redis.user" -}}
+{{- define "mdcluster.redis.user" -}}
+{{- $user := "" -}}
 {{- if and .Values.global .Values.global.redis .Values.global.redis.user -}}
-{{- .Values.global.redis.user -}}
-{{- else -}}
-{{- .Values.env.redis_user -}}
+{{- $user = .Values.global.redis.user -}}
+{{- else if .Values.env.redis_user -}}
+{{- $user = .Values.env.redis_user -}}
 {{- end -}}
+{{- $user -}}
 {{- end -}}
 
-{{- define "mddc.redis.password" -}}
+{{- define "mdcluster.redis.password" -}}
+{{- $password := "" -}}
 {{- if and .Values.global .Values.global.redis .Values.global.redis.password -}}
-{{- .Values.global.redis.password -}}
-{{- else -}}
-{{- .Values.env.redis_password -}}
+{{- $password = .Values.global.redis.password -}}
+{{- else if .Values.env.redis_password -}}
+{{- $password = .Values.env.redis_password -}}
 {{- end -}}
+{{- $password -}}
 {{- end -}}
