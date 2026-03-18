@@ -1,0 +1,11 @@
+
+# Example of custom pod definitions that can be used to set node selectors, tolerations etc.
+icap_components:
+  md_icapsrv:
+    customPodDefinitions:
+      nodeSelector:
+        labelName: labelValue
+      tolerations:
+        - key: "example-key"
+          operator: "Exists"
+          effect: "NoSchedule"

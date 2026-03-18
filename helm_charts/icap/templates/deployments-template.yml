@@ -37,10 +37,6 @@ spec:
         {{- end }}
     spec:
       serviceAccountName: {{ .Values.icap_components.md_icapsrv.service_account_name }}
-      {{- if $.Values.nodeSelector }}
-      nodeSelector:
-        {{- toYaml $.Values.nodeSelector | nindent 8 }}
-      {{- end }}
       containers:
         - envFrom:
             - configMapRef:
@@ -169,6 +165,9 @@ spec:
       {{- if $.Values.imagePullSecrets }}
       imagePullSecrets:
         {{- toYaml $.Values.imagePullSecrets | nindent 8 }}
+      {{- end }}
+      {{- if $component.customPodDefinitions }}
+        {{- toYaml $component.customPodDefinitions | nindent 6 }}
       {{- end }}
       {{- if (or $component.tls.https.enabled $component.tls.icaps.enabled $component.tls.nginxs.enabled $component.import_configuration.enabled  $.Values.storage_configs.enabled $component.trustCertificate.enabled )}}
       volumes:

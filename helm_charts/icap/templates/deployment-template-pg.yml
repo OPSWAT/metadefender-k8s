@@ -40,6 +40,13 @@ spec:
               subPath: {{ $component.name }}
           {{- end }}
       restartPolicy: Always
+      {{- if $.Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml $.Values.imagePullSecrets | nindent 8 }}
+      {{- end }}
+      {{- if $component.customPodDefinitions }}
+        {{- toYaml $component.customPodDefinitions | nindent 6 }}
+      {{- end }}
       {{- if $.Values.storage_configs.enabled }}
       volumes:
         - name: {{ printf "%s-pvc" .Values.storage_configs.storageClassName }}

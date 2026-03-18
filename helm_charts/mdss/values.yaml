@@ -369,7 +369,7 @@ mdss_components:
 
   rabbitmq:
     name: rabbitmq
-    image: rabbitmq:4.2.2-alpine
+    image: rabbitmq:4.2.4-alpine
     enabled: true
     ports:
       - port: 5672
@@ -392,7 +392,7 @@ mdss_components:
   
   redis:
     name: redis
-    image: redis:8.4.0-alpine
+    image: redis:8.6.0-alpine
     enabled: true
     ports:
       - port: 6379
