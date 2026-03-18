@@ -84,6 +84,13 @@ postgres_mdicapsrv:
   ports:
     rest: 5432
   service_type: ClusterIP
+  # customPodDefinitions:
+  #   nodeSelector:
+  #     labelName: labelValue
+  #   tolerations:
+  #     - key: "example-key"
+  #       operator: "Exists"
+  #       effect: "NoSchedule"
 # Docker repo to use, this should be changed when using private images (this string will be prepended to the image name)
 # If a component has "custom_repo: true" then the image name will be formated as "{docker_repo/}image_name{:BRANCH}" otherwise it will remain unaltered
 icap_docker_repo: opswat
@@ -270,6 +277,23 @@ icap_components:
 # If `aws-type` is set to `fargate`, the MD ICAP Server pod will be scheduled on an AWS Fargate virtual node (if a fargate profile is provisioned and configured)
     extra_labels:
       aws-type: fargate
+# Custom pod definitions for the MD ICAP Server pod
+    # customPodDefinitions:
+    #   nodeSelector:
+    #     kubernetes.io/os: linux       # example: pin to Linux nodes
+    #     # agentpool: icappool         # example: pin to a specific node pool
+    #   tolerations:
+    #     - key: "dedicated"
+    #       operator: "Equal"
+    #       value: "icap"
+    #       effect: "NoSchedule"
+    #   affinity:                     # optional, for advanced scheduling
+    #     podAntiAffinity:
+    #       requiredDuringSchedulingIgnoredDuringExecution:
+    #         - labelSelector:
+    #             matchLabels:
+    #               app: md-icapsrv
+    #           topologyKey: kubernetes.io/hostname
     extraVolumeMounts:
     #  - mountPath: <path_to_mount> # for icap migration from sqlite to postgresql needed to mount -> "/opt/mdicapsrv/icap_data/var/lib/mdicapsrv". From version 5.2.0
     #    subPath: md_icapsrv        # subpath with the mounted point
@@ -301,10 +325,6 @@ icap_components:
       rollingUpdate:
         maxSurge: 0
 
-# nodeSelector is the simplest recommended form of node selection constraint. 
-# You can add the nodeSelector field to your Pod specification and specify the node labels you want the target node to have.
-# Kubernetes only schedules the Pod onto nodes that have each of the labels you specify.
-nodeSelector: {}
   ## Autoscaling parameters
   ## @param autoscaling.enabled create an Horizontal Pod Autoscaler
   ## @param autoscaling.minReplicas minimum number of replicas for the HPA
