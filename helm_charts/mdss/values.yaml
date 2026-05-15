@@ -1,3 +1,30 @@
+# =============================================================================
+# Image versions (used as image tags for each component)
+# As of 4.4.0 the single BRANCH tag has been replaced by per-source versions:
+#   mdss_version           applies to images built from md-storage-security
+#   mdplatform_version     applies to images built from md-platform
+#   <integration>_version  applies to images built from md-integrations
+# Each entry in mdss_components may override these via its own `tag:` field.
+# When `tag:` is not set on a component, mdss_version is used as the default.
+# =============================================================================
+mdss_version: "4.4.0"
+mdplatform_version: "2.4.0"
+
+# Per-integration image tags (md-integrations releases each adapter independently)
+alibabacloud_version: "2.1.0"
+amazonsdk_version: "2.1.0"
+azureblob_version: "2.1.0"
+azurefiles_version: "2.1.0"
+box_version: "2.1.0"
+ftp_version: "2.1.0"
+googlecloud_version: "2.1.0"
+graph_version: "2.1.0"
+mft_version: "2.1.0"
+nfs_version: "2.1.0"
+oraclesdk_version: "2.1.0"
+sftp_version: "2.1.0"
+smb_version: "2.1.0"
+
 # Generate secrets for MDSS database username, password, postgres user and password
 mdss_generate_secrets: true
 MDSS_DB_USER: mdss                  # PostgreSQL database username 
@@ -12,7 +39,6 @@ POSTGRESQL_URL: "Host=<MDSS_DB_HOST>;Port=<MDSS_DB_PORT>;Username=<MDSS_DB_USER>
 # Default values for mdss. These will also be included in the environment of each mdss container
 mdss-common-environment:
 
-  BRANCH: "4.3.0"
   ENABLED_MODULES: "azureblob,amazonsdk,nfs"                                  # Enabled modules by default
   # ENABLED_MODULES: "azureblob,amazonsdk,googlecloud,alibabacloud,azurefiles,oraclesdk,smb,box,graph,onedrive,sftp,mft"             # All supported modules
 
@@ -126,7 +152,6 @@ mdss-common-environment:
   # This defines how much time shall pass between remediation retries when encountering failures.
   POLLY_POST_ACTION_RETRY_TIME: "30"
 
-  LOAD_BALANCER_MD_CORE_UNAVAILABLE_TIME: "5"
   WEBCLIENT_HOST: "webclient"
 
   # This variable is used in order to limit the number of blobs we receive from azure per response.
@@ -182,6 +207,11 @@ mdss-common-environment:
   # discovery throttler to stop creating discovery events
   DISCOVERY_THROTTLER_MAX_PENDING_FILES: "5000"
   DISCOVERY_THROTTLER_DELAY_MILLISECONDS: "60000"
+  DISCOVERY_THROTTLER_MAX_DELAY_MINUTES: "10"
+  DISCOVERY_THROTTLER_MAX_RETRY_ATTEMPTS: "10"
+  DISCOVERY_THROTTLER_NOT_SCANNED_MAX_PENDING_FILES: "50000"
+  DISCOVERY_THROTTLER_REMEDIATION_COMPLETED_MAX_PENDING_FILES: "50000"
+  THROTTLE_QUEUE_INTERROGATION_INTERVAL_SECONDS: "30"
   
   # Scanning variables that adjust the load of each scan instance
   SCAN_INSTANCE_QUEUE_THRESHOLD: "400"
@@ -245,14 +275,32 @@ mdss-common-environment:
   DELETE_FILE_VERSIONS_AFTER_REPLACE: "0"
   # time interval between the rtp polling intervals
   RTP_POLLING_INTERVAL_SECONDS: "5"
-  
+
+  # Stuck-state timeouts: how long a file may stay in remediation / idle scan before being marked as failed
+  REMEDIATION_STUCK_TIMEOUT_HOURS: "1"
+  SCAN_STUCK_WHILE_IDLE_TIMEOUT_HOURS: "1"
+
+  # gRPC timeouts (inter-service calls between scanning / discovery / remediations)
+  GRPC_BATCH_TIMEOUT_MINUTES: "30"
+  GRPC_CLIENT_POOLED_CONNECTION_LIFETIME_MINUTES: "5"
+
+  # If "true", scan results for archive entries are persisted in the database; otherwise only the parent file's
+  # result is stored. Disabled by default to keep DB size manageable on large archive scans.
+  STORE_ARCHIVE_SCAN_RESULTS: "false"
+
   # OPSWAT Telemetry Configuration
   ENABLE_TELEMETRY: "no"
   ENABLE_AUTO_INSTRUMENTATION: "no"
   ENABLE_CONSOLE_DEBUG: "no"
   OPTEL_METER_NAME: ""
   OPTEL_ACTIVITY_SOURCENAME: ""
-  OPTEL_COLLECTOR_ENDPOINT: "http://<OPTEL_ADDRESS>:4317"
+  OPTEL_COLLECTOR_ENDPOINT: "https://mdss-telemetry.metadefender.com:4317"
+
+  # Proxy Configuration
+  # Uncomment and set the following variables to configure proxy settings for all services.
+  # HTTP_PROXY: "http://proxy_ip:proxy_port"
+  # HTTPS_PROXY: "https://proxy_ip:proxy_port"
+  # NO_PROXY: "apigateway,commonservices,core,discoveryservice,jobdispatcher,licensingservice,loadbalancerservice,loggingservice,mongodb,mongomigrations,node,notificationservice,pgmigrations,postgres,rabbitmq,redis,remediationsservice,scanningservice,smbservice,storagesservice,identityservice,webclient,workflowmanagerservice,amazonsdk-services,azureblob-services,azurefiles-services,alibabacloud-services,googlecloud-services,box-services,onedrive-services,sftp-services,nfs-services,smb-services,mft-services,ftp-services,graphsdk-services,oraclesdk-services"
 
 
 # Set to true if the respective database engine should also be deployed
@@ -303,7 +351,9 @@ ONBOARDING_FULL_NAME: null              # Full name of user that will be created
 #   - name: regcred
 
 # Docker repo to use, this should be changed when using private images (this string will be prepended to the image name)
-# If a component has "custom_repo: true" then the image name will be formated as "{docker_repo/}image_name{:BRANCH}" otherwise it will remain unaltered
+# If a component has "custom_repo: true" then the image name will be formatted as "{docker_repo/}image_name:{tag}"
+# where {tag} comes from the component's `tag:` field (templated; e.g. "{{ .Values.mdplatform_version }}") and
+# defaults to `mdss_version` when unset. Components without `custom_repo: true` use their literal `image:` value.
 mdss_docker_repo: opswat
 
 imagePullPolicy: IfNotPresent
@@ -408,6 +458,7 @@ mdss_components:
     name: licensingservice
     custom_repo: true
     image: mdcloudservices_licensing
+    tag: "{{ .Values.mdplatform_version }}"
     ports:
       - port: 5000
     extra_labels:
@@ -434,6 +485,7 @@ mdss_components:
     name: scanningservice
     custom_repo: true
     image: mdcloudservices_scanning
+    tag: "{{ .Values.mdplatform_version }}"
     extra_labels:
       aws-type: fargate
     resources:
@@ -446,6 +498,7 @@ mdss_components:
     name: notificationservice
     custom_repo: true
     image: mdcloudservices_notification
+    tag: "{{ .Values.mdplatform_version }}"
     extra_labels:
       aws-type: fargate
     resources:
@@ -458,6 +511,7 @@ mdss_components:
     name: jobdispatcher
     custom_repo: true
     image: mdcloudservices_job-dispatcher
+    tag: "{{ .Values.mdplatform_version }}"
     extra_labels:
       aws-type: fargate
     resources:
@@ -466,22 +520,11 @@ mdss_components:
         cpu: "2.0"
         ephemeral-storage: "7Gi"
   
-  loadbalancerservice:
-    name: loadbalancerservice
-    custom_repo: true
-    image: "mdcloudservices_load-balancer"
-    extra_labels:
-      aws-type: fargate
-    resources:
-      requests:
-        memory: "1.5Gi"
-        cpu: "1.0"
-        ephemeral-storage: "7Gi"
-
   loggingservice:
     name: loggingservice
     custom_repo: true
     image: "mdcloudservices_logging"
+    tag: "{{ .Values.mdplatform_version }}"
     extra_labels:
       aws-type: fargate
     resources:
@@ -567,6 +610,7 @@ mdss_components:
     name: identityservice
     custom_repo: true
     image: mdcloudservices_identityservice
+    tag: "{{ .Values.mdplatform_version }}"
     ports:
       - port: 7001
     extra_labels:
@@ -611,7 +655,9 @@ mdss_components:
   amazonsdk-services:
     name: amazonsdk-services
     module_name: amazonsdk
-    image: opswat/mdintegrations_amazonsdk:stable
+    custom_repo: true
+    image: mdintegrations_amazonsdk
+    tag: "{{ .Values.amazonsdk_version }}"
     extra_labels:
       aws-type: fargate
     resources:
@@ -623,7 +669,9 @@ mdss_components:
   azureblob-services:
     name: azureblob-services
     module_name: azureblob
-    image: opswat/mdintegrations_azureblob:stable
+    custom_repo: true
+    image: mdintegrations_azureblob
+    tag: "{{ .Values.azureblob_version }}"
     extra_labels:
       aws-type: fargate
     resources:
@@ -632,127 +680,54 @@ mdss_components:
         cpu: "4.7"
         ephemeral-storage: "7Gi"
   # ======================================= ALIBABACLOUD MODULE ================================================
-  discoveryalibabacloudservice:
-    name: discoveryalibabacloudservice
+  alibabacloud-services:
+    name: alibabacloud-services
     module_name: alibabacloud
     custom_repo: true
-    image: mdcloudservices_discoveryalibabacloud
+    image: mdintegrations_alibabacloud
+    tag: "{{ .Values.alibabacloud_version }}"
     extra_labels:
       aws-type: fargate
     resources:
       requests:
-        memory: "1.5Gi"
-        cpu: "2.5"
-        ephemeral-storage: "7Gi"
-  
-  remediationsservice-alibabacloud:
-    name: remediationsservice-alibabacloud
-    module_name: alibabacloud
-    custom_repo: true
-    image: mdcloudservices_remediationsalibabacloud
-    extra_labels:
-      aws-type: fargate
-    resources:
-      requests:
-        memory: "6Gi"
-        cpu: "2.0"
-        ephemeral-storage: "7Gi"
-  
-  storagesservice-alibabacloud:
-    name: storagesservice-alibabacloud
-    module_name: alibabacloud
-    custom_repo: true
-    image: mdcloudservices_storagesalibabacloud
-    extra_labels:
-      aws-type: fargate
-    resources:
-      requests:
-        memory: "0.75Gi"
-        cpu: "0.2"
+        memory: "8.25Gi"
+        cpu: "4.7"
         ephemeral-storage: "7Gi"
   # ======================================= GOOGLECLOUD MODULE ================================================
-  discoverygooglecloudservice:
-    name: discoverygooglecloudservice
+  googlecloud-services:
+    name: googlecloud-services
     module_name: googlecloud
     custom_repo: true
-    image: mdcloudservices_discoverygooglecloud
+    image: mdintegrations_googlecloud
+    tag: "{{ .Values.googlecloud_version }}"
     extra_labels:
       aws-type: fargate
     resources:
       requests:
-        memory: "1.5Gi"
-        cpu: "2.5"
-        ephemeral-storage: "7Gi"
-  
-  remediationsservice-googlecloud:
-    name: remediationsservice-googlecloud
-    module_name: googlecloud
-    custom_repo: true
-    image: mdcloudservices_remediationsgooglecloud
-    extra_labels:
-      aws-type: fargate
-    resources:
-      requests:
-        memory: "6Gi"
-        cpu: "2.0"
-        ephemeral-storage: "7Gi"
-  
-  storagesservice-googlecloud:
-    name: storagesservice-googlecloud
-    module_name: googlecloud
-    custom_repo: true
-    image: mdcloudservices_storagesgooglecloud
-    extra_labels:
-      aws-type: fargate
-    resources:
-      requests:
-        memory: "0.75Gi"
-        cpu: "0.2"
+        memory: "8.25Gi"
+        cpu: "4.7"
         ephemeral-storage: "7Gi"
   # ======================================= BOX MODULE ================================================
-  discoveryboxservice:
-    name: discoveryboxservice
+  box-services:
+    name: box-services
     module_name: box
     custom_repo: true
-    image: mdcloudservices_discoverybox
+    image: mdintegrations_box
+    tag: "{{ .Values.box_version }}"
     extra_labels:
       aws-type: fargate
     resources:
       requests:
-        memory: "1.5Gi"
-        cpu: "2.5"
-        ephemeral-storage: "7Gi"
-  
-  remediationsservice-box:
-    name: remediationsservice-box
-    module_name: box
-    custom_repo: true
-    image: mdcloudservices_remediationsbox
-    extra_labels:
-      aws-type: fargate
-    resources:
-      requests:
-        memory: "6Gi"
-        cpu: "2.0"
-        ephemeral-storage: "7Gi"
-      
-  storagesservice-box:
-    name: storagesservice-box
-    module_name: box
-    custom_repo: true
-    image: mdcloudservices_storagesbox
-    extra_labels:
-      aws-type: fargate
-    resources:
-      requests:
-        memory: "0.75Gi"
-        cpu: "0.2"
+        memory: "8.25Gi"
+        cpu: "4.7"
         ephemeral-storage: "7Gi"
   # ======================================= AZUREFILES MODULE ================================================
   azurefiles-services:
     name: azurefiles-services
     module_name: azurefiles
-    image: opswat/mdintegrations_azurefiles:stable
+    custom_repo: true
+    image: mdintegrations_azurefiles
+    tag: "{{ .Values.azurefiles_version }}"
     extra_labels:
       aws-type: fargate
     resources:
@@ -761,50 +736,26 @@ mdss_components:
         cpu: "4.7"
         ephemeral-storage: "7Gi"
   # ======================================= SMB MODULE ================================================
-  discoverysmbservice:
-    name: discoverysmbservice
+  smb-services:
+    name: smb-services
     module_name: smb
     custom_repo: true
-    image: mdcloudservices_discoverysmb
+    image: mdintegrations_smb
+    tag: "{{ .Values.smb_version }}"
     extra_labels:
       aws-type: fargate
     resources:
       requests:
-        memory: "1.5Gi"
-        cpu: "2.5"
+        memory: "8.25Gi"
+        cpu: "4.7"
         ephemeral-storage: "7Gi"
-  
-  remediationsservice-smb:
-    name: remediationsservice-smb
-    module_name: smb
-    custom_repo: true
-    image: mdcloudservices_remediationssmb
-    extra_labels:
-      aws-type: fargate
-    resources:
-      requests:
-        memory: "6Gi"
-        cpu: "2.0"
-        ephemeral-storage: "7Gi"
-  
-  storagesservice-smb:
-    name: storagesservice-smb
-    module_name: smb
-    custom_repo: true
-    image: mdcloudservices_storagessmb
-    extra_labels:
-      aws-type: fargate
-    resources:
-      requests:
-        memory: "0.75Gi"
-        cpu: "0.2"
-        ephemeral-storage: "7Gi"
-  
+
   smbservice:
     name: smbservice
     module_name: smb
     custom_repo: true
-    image: mdcloudservices_smbservice
+    image: mdintegrations_smbservice
+    tag: "{{ .Values.smb_version }}"
     ports:
       - port: 5002
     extra_labels:
@@ -815,130 +766,56 @@ mdss_components:
         cpu: "0.500"
         ephemeral-storage: "7Gi"
   # ======================================= GRAPH MODULE ================================================
-  discoverygraphservice:
-    name: discoverygraphservice
+  graph-services:
+    name: graph-services
     module_name: graph
     custom_repo: true
-    image: mdcloudservices_discoverygraph
+    image: mdintegrations_graph
+    tag: "{{ .Values.graph_version }}"
     extra_labels:
       aws-type: fargate
     resources:
       requests:
-        memory: "1.5Gi"
-        cpu: "2.5"
-        ephemeral-storage: "7Gi"
-  
-  remediationsservice-graph:
-    name: remediationsservice-graph
-    module_name: graph
-    custom_repo: true
-    image: mdcloudservices_remediationsgraph
-    extra_labels:
-      aws-type: fargate
-    resources:
-      requests:
-        memory: "6Gi"
-        cpu: "2.0"
-        ephemeral-storage: "7Gi"
-      
-  storagesservice-graph:
-    name: storagesservice-graph
-    module_name: graph
-    custom_repo: true
-    image: mdcloudservices_storagesgraph
-    extra_labels:
-      aws-type: fargate
-    resources:
-      requests:
-        memory: "0.75Gi"
-        cpu: "0.2"
+        memory: "8.25Gi"
+        cpu: "4.7"
         ephemeral-storage: "7Gi"
   
   # ======================================= FTP MODULE ================================================
-  discoveryftpservice:
-    name: discoveryftpservice
+  ftp-services:
+    name: ftp-services
     module_name: ftp
     custom_repo: true
-    image: mdcloudservices_discoveryftp
+    image: mdintegrations_ftp
+    tag: "{{ .Values.ftp_version }}"
     extra_labels:
       aws-type: fargate
     resources:
       requests:
-        memory: "1.5Gi"
-        cpu: "2.5"
-        ephemeral-storage: "7Gi"
-
-  remediationsservice-ftp:
-    name: remediationsservice-ftp
-    module_name: ftp
-    custom_repo: true
-    image: mdcloudservices_remediationsftp
-    extra_labels:
-      aws-type: fargate
-    resources:
-      requests:
-        memory: "6Gi"
-        cpu: "2.0"
-        ephemeral-storage: "7Gi"
-  
-  storagesservice-ftp:
-    name: storagesservice-ftp
-    module_name: ftp
-    custom_repo: true
-    image: mdcloudservices_storagesftp
-    extra_labels:
-      aws-type: fargate
-    resources:
-      requests:
-        memory: "0.75Gi"
-        cpu: "0.2"
+        memory: "8.25Gi"
+        cpu: "4.7"
         ephemeral-storage: "7Gi"
 
   # ======================================= SFTP MODULE ================================================
-  discoverysftpservice:
-    name: discoverysftpservice
+  sftp-services:
+    name: sftp-services
     module_name: sftp
     custom_repo: true
-    image: mdcloudservices_discoverysftp
+    image: mdintegrations_sftp
+    tag: "{{ .Values.sftp_version }}"
     extra_labels:
       aws-type: fargate
     resources:
       requests:
-        memory: "1.5Gi"
-        cpu: "2.5"
+        memory: "8.25Gi"
+        cpu: "4.7"
         ephemeral-storage: "7Gi"
-  
-  remediationsservice-sftp:
-    name: remediationsservice-sftp
-    module_name: sftp
-    custom_repo: true
-    image: mdcloudservices_remediationssftp
-    extra_labels:
-      aws-type: fargate
-    resources:
-      requests:
-        memory: "6Gi"
-        cpu: "2.0"
-        ephemeral-storage: "7Gi"
-  
-  storagesservice-sftp:
-    name: storagesservice-sftp
-    module_name: sftp
-    custom_repo: true
-    image: mdcloudservices_storagessftp
-    extra_labels:
-      aws-type: fargate
-    resources:
-      requests:
-        memory: "0.75Gi"
-        cpu: "0.2"
-        ephemeral-storage: "7Gi"
-  
+
   sftpservice:
     name: sftpservice
     module_name: sftp
     custom_repo: true
-    image: mdcloudservices_sftpservice
+    image: mdintegrations_sftpservice
+    tag: "{{ .Values.sftp_version }}"
     ports:
       - port: 5003
     extra_labels:
@@ -953,50 +830,26 @@ mdss_components:
         ephemeral-storage: "7Gi"
       
   # ======================================= NFS MODULE ================================================
-  discoverynfsservice:
-    name: discoverynfsservice
+  nfs-services:
+    name: nfs-services
     module_name: nfs
     custom_repo: true
-    image: mdcloudservices_discoverynfs
+    image: mdintegrations_nfs
+    tag: "{{ .Values.nfs_version }}"
     extra_labels:
       aws-type: fargate
     resources:
       requests:
-        memory: "1.5Gi"
-        cpu: "2.5"
+        memory: "8.25Gi"
+        cpu: "4.7"
         ephemeral-storage: "7Gi"
-  
-  remediationsservice-nfs:
-    name: remediationsservice-nfs
-    module_name: nfs
-    custom_repo: true
-    image: mdcloudservices_remediationsnfs
-    extra_labels:
-      aws-type: fargate
-    resources:
-      requests:
-        memory: "6Gi"
-        cpu: "2.0"
-        ephemeral-storage: "7Gi"
-  
-  storagesservice-nfs:
-    name: storagesservice-nfs
-    module_name: nfs
-    custom_repo: true
-    image: mdcloudservices_storagesnfs
-    extra_labels:
-      aws-type: fargate
-    resources:
-      requests:
-        memory: "0.75Gi"
-        cpu: "0.2"
-        ephemeral-storage: "7Gi"
-  
+
   nfsservice:
     name: nfsservice
     module_name: nfs
     custom_repo: true
-    image: mdcloudservices_nfsservice
+    image: mdintegrations_nfsservice
+    tag: "{{ .Values.nfs_version }}"
     ports:
       - port: 5004
     extra_labels:
@@ -1008,81 +861,31 @@ mdss_components:
         ephemeral-storage: "7Gi"
 
  # ======================================= MFT MODULE ================================================
-  discoverymftservice:
-    name: discoverymftservice
+  mft-services:
+    name: mft-services
     module_name: mft
     custom_repo: true
-    image: mdcloudservices_discoverymft
+    image: mdintegrations_mft
+    tag: "{{ .Values.mft_version }}"
     extra_labels:
       aws-type: fargate
     resources:
       requests:
-        memory: "1.5Gi"
-        cpu: "2.5"
-        ephemeral-storage: "7Gi"
-  
-  remediationsservice-mft:
-    name: remediationsservice-mft
-    module_name: mft
-    custom_repo: true
-    image: mdcloudservices_remediationsmft
-    extra_labels:
-      aws-type: fargate
-    resources:
-      requests:
-        memory: "6Gi"
-        cpu: "2.0"
-        ephemeral-storage: "7Gi"
-      
-  storagesservice-mft:
-    name: storagesservice-mft
-    module_name: mft
-    custom_repo: true
-    image: mdcloudservices_storagesmft
-    extra_labels:
-      aws-type: fargate
-    resources:
-      requests:
-        memory: "0.75Gi"
-        cpu: "0.2"
+        memory: "8.25Gi"
+        cpu: "4.7"
         ephemeral-storage: "7Gi"
 
   # ======================================= ORACLE MODULE ================================================
-  discoveryoraclesdkservice:
-    name: discoveryoraclesdkservice
+  oraclesdk-services:
+    name: oraclesdk-services
     module_name: oraclesdk
     custom_repo: true
-    image: mdcloudservices_discoveryoraclesdk
+    image: mdintegrations_oraclesdk
+    tag: "{{ .Values.oraclesdk_version }}"
     extra_labels:
       aws-type: fargate
     resources:
       requests:
-        memory: "1.5Gi"
-        cpu: "2.5"
-        ephemeral-storage: "7Gi"
-
-  remediationsservice-oraclesdk:
-    name: remediationsservice-oraclesdk
-    module_name: oraclesdk
-    custom_repo: true
-    image: mdcloudservices_remediationsoraclesdk
-    extra_labels:
-      aws-type: fargate
-    resources:
-      requests:
-        memory: "6Gi"
-        cpu: "2.0"
-        ephemeral-storage: "7Gi"
-
-  storagesservice-oraclesdk:
-    name: storagesservice-oraclesdk
-    module_name: oraclesdk
-    custom_repo: true
-    image: mdcloudservices_storagesoraclesdk
-    extra_labels:
-      aws-type: fargate
-    resources:
-      requests:
-        memory: "0.75Gi"
-        cpu: "0.2"
+        memory: "8.25Gi"
+        cpu: "4.7"
         ephemeral-storage: "7Gi"

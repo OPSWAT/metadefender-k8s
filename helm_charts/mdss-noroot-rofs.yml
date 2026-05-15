@@ -208,9 +208,8 @@ mdss_components:
         type: RuntimeDefault
       readOnlyRootFilesystem: true
       
-  discoveryamazonsdkservice:
-    command: ["/bin/sh","-c"]
-    args: ['/wait-for-it.sh "${LICENSINGSERVICE_HOST}":"${LICENSINGSERVICE_PORT}" -s -t 180 -- dotnet opswat.mdss.discovery.amazonsdk.service.dll 2>&1']
+  # ======================================= AMAZONSDK MODULE ================================================
+  amazonsdk-services:
     securityContext:
       allowPrivilegeEscalation: false
       runAsNonRoot: true
@@ -218,10 +217,17 @@ mdss_components:
       seccompProfile:
         type: RuntimeDefault
       readOnlyRootFilesystem: true
+    extraVolumeMounts:
+      - mountPath: /tmp
+        name: empty-volume
+      - mountPath: /var/run
+        name: empty-volume
+    extraVolumes:
+      - name: empty-volume
+        emptyDir: {}
       
-  remediationsservice-amazonsdk:
-    command: ["/bin/sh","-c"]
-    args: ['/wait-for-it.sh "${LICENSINGSERVICE_HOST}":"${LICENSINGSERVICE_PORT}" -s -t 180 -- dotnet opswat.mdss.remediations.amazonsdk.service.dll 2>&1']
+  # ======================================= NFS MODULE ================================================
+  nfs-services:
     securityContext:
       allowPrivilegeEscalation: false
       runAsNonRoot: true
@@ -229,66 +235,17 @@ mdss_components:
       seccompProfile:
         type: RuntimeDefault
       readOnlyRootFilesystem: true
-      
-  storagesservice-amazonsdk:
-    command: ["/bin/sh","-c"]
-    args: ['/wait-for-it.sh "${LICENSINGSERVICE_HOST}":"${LICENSINGSERVICE_PORT}" -s -t 180 -- dotnet opswat.mdss.storages.amazonsdk.service.dll 2>&1']
-    securityContext:
-      allowPrivilegeEscalation: false
-      runAsNonRoot: true
-      runAsUser: 200
-      seccompProfile:
-        type: RuntimeDefault
-      readOnlyRootFilesystem: true
-      
-  discoverynfsservice:
-    command: ["/bin/sh","-c"]
-    args: ['/wait-for-it.sh "${LICENSINGSERVICE_HOST}":"${LICENSINGSERVICE_PORT}" -s -t 180 -- dotnet opswat.mdss.discovery.nfs.service.dll 2>&1']
-    securityContext:
-      allowPrivilegeEscalation: false
-      runAsNonRoot: true
-      runAsUser: 200
-      seccompProfile:
-        type: RuntimeDefault
-      readOnlyRootFilesystem: true
-      
-  remediationsservice-nfs:
-    command: ["/bin/sh","-c"]
-    args: ['/wait-for-it.sh "${LICENSINGSERVICE_HOST}":"${LICENSINGSERVICE_PORT}" -s -t 180 -- dotnet opswat.mdss.remediations.nfs.service.dll 2>&1']
-    securityContext:
-      allowPrivilegeEscalation: false
-      runAsNonRoot: true
-      runAsUser: 200
-      seccompProfile:
-        type: RuntimeDefault
-      readOnlyRootFilesystem: true
-      
-  storagesservice-nfs:
-    command: ["/bin/sh","-c"]
-    args: ['/wait-for-it.sh "${LICENSINGSERVICE_HOST}":"${LICENSINGSERVICE_PORT}" -s -t 180 -- dotnet opswat.mdss.storages.nfs.service.dll 2>&1']
-    securityContext:
-      allowPrivilegeEscalation: false
-      runAsNonRoot: true
-      runAsUser: 200
-      seccompProfile:
-        type: RuntimeDefault
-      readOnlyRootFilesystem: true
-      
-  nfsservice:
-    command: ["/bin/sh","-c"]
-    args: ['/wait-for-it.sh "${LICENSINGSERVICE_HOST}":"${LICENSINGSERVICE_PORT}" -s -t 180 -- dotnet opswat.mdss.nfs.service.dll 2>&1']
-    securityContext:
-      allowPrivilegeEscalation: false
-      runAsNonRoot: true
-      runAsUser: 200
-      seccompProfile:
-        type: RuntimeDefault
-      readOnlyRootFilesystem: true
+    extraVolumeMounts:
+      - mountPath: /tmp
+        name: empty-volume
+      - mountPath: /var/run
+        name: empty-volume
+    extraVolumes:
+      - name: empty-volume
+        emptyDir: {}
 
   # ======================================= AZUREBLOB MODULE ================================================
-  discoveryazureblobservice:
-    command: ["/bin/sh","-c"]
-    args: ['/wait-for-it.sh "${LICENSINGSERVICE_HOST}":"${LICENSINGSERVICE_PORT}" -s -t 180 -- dotnet opswat.mdss.discovery.azureblob.service.dll 2>&1']
+  azureblob-services:
     securityContext:
       allowPrivilegeEscalation: false
       runAsNonRoot: true
@@ -296,33 +253,17 @@ mdss_components:
       seccompProfile:
         type: RuntimeDefault
       readOnlyRootFilesystem: true
-
-  remediationsservice-azureblob:
-    command: ["/bin/sh","-c"]
-    args: ['/wait-for-it.sh "${LICENSINGSERVICE_HOST}":"${LICENSINGSERVICE_PORT}" -s -t 180 -- dotnet opswat.mdss.remediations.azureblob.service.dll 2>&1']
-    securityContext:
-      allowPrivilegeEscalation: false
-      runAsNonRoot: true
-      runAsUser: 200
-      seccompProfile:
-        type: RuntimeDefault
-      readOnlyRootFilesystem: true
-      
-  storagesservice-azureblob:
-    command: ["/bin/sh","-c"]
-    args: ['/wait-for-it.sh "${LICENSINGSERVICE_HOST}":"${LICENSINGSERVICE_PORT}" -s -t 180 -- dotnet opswat.mdss.storages.azureblob.service.dll 2>&1']
-    securityContext:
-      allowPrivilegeEscalation: false
-      runAsNonRoot: true
-      runAsUser: 200
-      seccompProfile:
-        type: RuntimeDefault
-      readOnlyRootFilesystem: true
+    extraVolumeMounts:
+      - mountPath: /tmp
+        name: empty-volume
+      - mountPath: /var/run
+        name: empty-volume
+    extraVolumes:
+      - name: empty-volume
+        emptyDir: {}
 
   # ======================================= ALIBABACLOUD MODULE ================================================
-  discoveryalibabacloudservice:
-    command: ["/bin/sh","-c"]
-    args: ['/wait-for-it.sh "${LICENSINGSERVICE_HOST}":"${LICENSINGSERVICE_PORT}" -s -t 180 -- dotnet opswat.mdss.discovery.alibabacloud.service.dll 2>&1']
+  alibabacloud-services:
     securityContext:
       allowPrivilegeEscalation: false
       runAsNonRoot: true
@@ -330,33 +271,17 @@ mdss_components:
       seccompProfile:
         type: RuntimeDefault
       readOnlyRootFilesystem: true
-  
-  remediationsservice-alibabacloud:
-    command: ["/bin/sh","-c"]
-    args: ['/wait-for-it.sh "${LICENSINGSERVICE_HOST}":"${LICENSINGSERVICE_PORT}" -s -t 180 -- dotnet opswat.mdss.remediations.alibabacloud.service.dll 2>&1']
-    securityContext:
-      allowPrivilegeEscalation: false
-      runAsNonRoot: true
-      runAsUser: 200
-      seccompProfile:
-        type: RuntimeDefault
-      readOnlyRootFilesystem: true
-  
-  storagesservice-alibabacloud:
-    command: ["/bin/sh","-c"]
-    args: ['/wait-for-it.sh "${LICENSINGSERVICE_HOST}":"${LICENSINGSERVICE_PORT}" -s -t 180 -- dotnet opswat.mdss.storages.alibabacloud.service.dll 2>&1']
-    securityContext:
-      allowPrivilegeEscalation: false
-      runAsNonRoot: true
-      runAsUser: 200
-      seccompProfile:
-        type: RuntimeDefault
-      readOnlyRootFilesystem: true
+    extraVolumeMounts:
+      - mountPath: /tmp
+        name: empty-volume
+      - mountPath: /var/run
+        name: empty-volume
+    extraVolumes:
+      - name: empty-volume
+        emptyDir: {}
 
   # ======================================= GOOGLECLOUD MODULE ================================================
-  discoverygooglecloudservice:
-    command: ["/bin/sh","-c"]
-    args: ['/wait-for-it.sh "${LICENSINGSERVICE_HOST}":"${LICENSINGSERVICE_PORT}" -s -t 180 -- dotnet opswat.mdss.discovery.googlecloud.service.dll 2>&1']
+  googlecloud-services:
     securityContext:
       allowPrivilegeEscalation: false
       runAsNonRoot: true
@@ -364,33 +289,17 @@ mdss_components:
       seccompProfile:
         type: RuntimeDefault
       readOnlyRootFilesystem: true
-  
-  remediationsservice-googlecloud:
-    command: ["/bin/sh","-c"]
-    args: ['/wait-for-it.sh "${LICENSINGSERVICE_HOST}":"${LICENSINGSERVICE_PORT}" -s -t 180 -- dotnet opswat.mdss.remediations.googlecloud.service.dll 2>&1']
-    securityContext:
-      allowPrivilegeEscalation: false
-      runAsNonRoot: true
-      runAsUser: 200
-      seccompProfile:
-        type: RuntimeDefault
-      readOnlyRootFilesystem: true
-  
-  storagesservice-googlecloud:
-    command: ["/bin/sh","-c"]
-    args: ['/wait-for-it.sh "${LICENSINGSERVICE_HOST}":"${LICENSINGSERVICE_PORT}" -s -t 180 -- dotnet opswat.mdss.storages.googlecloud.service.dll 2>&1']
-    securityContext:
-      allowPrivilegeEscalation: false
-      runAsNonRoot: true
-      runAsUser: 200
-      seccompProfile:
-        type: RuntimeDefault
-      readOnlyRootFilesystem: true
+    extraVolumeMounts:
+      - mountPath: /tmp
+        name: empty-volume
+      - mountPath: /var/run
+        name: empty-volume
+    extraVolumes:
+      - name: empty-volume
+        emptyDir: {}
 
   # ======================================= BOX MODULE ================================================
-  discoveryboxservice:
-    command: ["/bin/sh","-c"]
-    args: ['/wait-for-it.sh "${LICENSINGSERVICE_HOST}":"${LICENSINGSERVICE_PORT}" -s -t 180 -- dotnet opswat.mdss.discovery.box.service.dll 2>&1']
+  box-services:
     securityContext:
       allowPrivilegeEscalation: false
       runAsNonRoot: true
@@ -398,33 +307,17 @@ mdss_components:
       seccompProfile:
         type: RuntimeDefault
       readOnlyRootFilesystem: true
-  
-  remediationsservice-box:
-    command: ["/bin/sh","-c"]
-    args: ['/wait-for-it.sh "${LICENSINGSERVICE_HOST}":"${LICENSINGSERVICE_PORT}" -s -t 180 -- dotnet opswat.mdss.remediations.box.service.dll 2>&1']
-    securityContext:
-      allowPrivilegeEscalation: false
-      runAsNonRoot: true
-      runAsUser: 200
-      seccompProfile:
-        type: RuntimeDefault
-      readOnlyRootFilesystem: true
-      
-  storagesservice-box:
-    command: ["/bin/sh","-c"]
-    args: ['/wait-for-it.sh "${LICENSINGSERVICE_HOST}":"${LICENSINGSERVICE_PORT}" -s -t 180 -- dotnet opswat.mdss.storages.box.service.dll 2>&1']
-    securityContext:
-      allowPrivilegeEscalation: false
-      runAsNonRoot: true
-      runAsUser: 200
-      seccompProfile:
-        type: RuntimeDefault
-      readOnlyRootFilesystem: true
+    extraVolumeMounts:
+      - mountPath: /tmp
+        name: empty-volume
+      - mountPath: /var/run
+        name: empty-volume
+    extraVolumes:
+      - name: empty-volume
+        emptyDir: {}
 
   # ======================================= AZUREFILES MODULE ================================================
-  discoveryazurefilesservice:
-    command: ["/bin/sh","-c"]
-    args: ['/wait-for-it.sh "${LICENSINGSERVICE_HOST}":"${LICENSINGSERVICE_PORT}" -s -t 180 -- dotnet opswat.mdss.discovery.azurefiles.service.dll 2>&1']
+  azurefiles-services:
     securityContext:
       allowPrivilegeEscalation: false
       runAsNonRoot: true
@@ -432,33 +325,17 @@ mdss_components:
       seccompProfile:
         type: RuntimeDefault
       readOnlyRootFilesystem: true
-  
-  remediationsservice-azurefiles:
-    command: ["/bin/sh","-c"]
-    args: ['/wait-for-it.sh "${LICENSINGSERVICE_HOST}":"${LICENSINGSERVICE_PORT}" -s -t 180 -- dotnet opswat.mdss.remediations.azurefiles.service.dll 2>&1']
-    securityContext:
-      allowPrivilegeEscalation: false
-      runAsNonRoot: true
-      runAsUser: 200
-      seccompProfile:
-        type: RuntimeDefault
-      readOnlyRootFilesystem: true
-  
-  storagesservice-azurefiles:
-    command: ["/bin/sh","-c"]
-    args: ['/wait-for-it.sh "${LICENSINGSERVICE_HOST}":"${LICENSINGSERVICE_PORT}" -s -t 180 -- dotnet opswat.mdss.storages.azurefiles.service.dll 2>&1']
-    securityContext:
-      allowPrivilegeEscalation: false
-      runAsNonRoot: true
-      runAsUser: 200
-      seccompProfile:
-        type: RuntimeDefault
-      readOnlyRootFilesystem: true
+    extraVolumeMounts:
+      - mountPath: /tmp
+        name: empty-volume
+      - mountPath: /var/run
+        name: empty-volume
+    extraVolumes:
+      - name: empty-volume
+        emptyDir: {}
 
   # ======================================= SMB MODULE ================================================
-  discoverysmbservice:
-    command: ["/bin/sh","-c"]
-    args: ['/wait-for-it.sh "${LICENSINGSERVICE_HOST}":"${LICENSINGSERVICE_PORT}" -s -t 180 -- dotnet opswat.mdss.discovery.smb.service.dll 2>&1']
+  smb-services:
     securityContext:
       allowPrivilegeEscalation: false
       runAsNonRoot: true
@@ -466,29 +343,15 @@ mdss_components:
       seccompProfile:
         type: RuntimeDefault
       readOnlyRootFilesystem: true
-  
-  remediationsservice-smb:
-    command: ["/bin/sh","-c"]
-    args: ['/wait-for-it.sh "${LICENSINGSERVICE_HOST}":"${LICENSINGSERVICE_PORT}" -s -t 180 -- dotnet opswat.mdss.remediations.smb.service.dll 2>&1']
-    securityContext:
-      allowPrivilegeEscalation: false
-      runAsNonRoot: true
-      runAsUser: 200
-      seccompProfile:
-        type: RuntimeDefault
-      readOnlyRootFilesystem: true
-  
-  storagesservice-smb:
-    command: ["/bin/sh","-c"]
-    args: ['/wait-for-it.sh "${LICENSINGSERVICE_HOST}":"${LICENSINGSERVICE_PORT}" -s -t 180 -- dotnet opswat.mdss.storages.smb.service.dll 2>&1']
-    securityContext:
-      allowPrivilegeEscalation: false
-      runAsNonRoot: true
-      runAsUser: 200
-      seccompProfile:
-        type: RuntimeDefault
-      readOnlyRootFilesystem: true
-  
+    extraVolumeMounts:
+      - mountPath: /tmp
+        name: empty-volume
+      - mountPath: /var/run
+        name: empty-volume
+    extraVolumes:
+      - name: empty-volume
+        emptyDir: {}
+
   smbservice:
     command: ["/bin/sh","-c"]
     args: ['python -u /app/src/server.py "$SMBSERVICE_PORT" 2>&1']
@@ -501,9 +364,7 @@ mdss_components:
       readOnlyRootFilesystem: true
 
   # ======================================= ONEDRIVE MODULE ================================================
-  discoveryonedriveservice:
-    command: ["/bin/sh","-c"]
-    args: ['/wait-for-it.sh "${LICENSINGSERVICE_HOST}":"${LICENSINGSERVICE_PORT}" -s -t 180 -- dotnet opswat.mdss.discovery.onedrive.service.dll 2>&1']
+  onedrive-services:
     securityContext:
       allowPrivilegeEscalation: false
       runAsNonRoot: true
@@ -511,33 +372,18 @@ mdss_components:
       seccompProfile:
         type: RuntimeDefault
       readOnlyRootFilesystem: true
-  
-  remediationsservice-onedrive:
-    command: ["/bin/sh","-c"]
-    args: ['/wait-for-it.sh "${LICENSINGSERVICE_HOST}":"${LICENSINGSERVICE_PORT}" -s -t 180 -- dotnet opswat.mdss.remediations.onedrive.service.dll 2>&1']
-    securityContext:
-      allowPrivilegeEscalation: false
-      runAsNonRoot: true
-      runAsUser: 200
-      seccompProfile:
-        type: RuntimeDefault
-      readOnlyRootFilesystem: true
-      
-  storagesservice-onedrive:
-    command: ["/bin/sh","-c"]
-    args: ['/wait-for-it.sh "${LICENSINGSERVICE_HOST}":"${LICENSINGSERVICE_PORT}" -s -t 180 -- dotnet opswat.mdss.storages.onedrive.service.dll 2>&1']
-    securityContext:
-      allowPrivilegeEscalation: false
-      runAsNonRoot: true
-      runAsUser: 200
-      seccompProfile:
-        type: RuntimeDefault
-      readOnlyRootFilesystem: true
+    extraVolumeMounts:
+      - mountPath: /tmp
+        name: empty-volume
+      - mountPath: /var/run
+        name: empty-volume
+    extraVolumes:
+      - name: empty-volume
+        emptyDir: {}
 
   # ======================================= SFTP MODULE ================================================
-  discoverysftpservice:
-    command: ["/bin/sh","-c"]
-    args: ['/wait-for-it.sh "${LICENSINGSERVICE_HOST}":"${LICENSINGSERVICE_PORT}" -s -t 180 -- dotnet opswat.mdss.discovery.sftp.service.dll 2>&1']
+  # sftpservice (gRPC) is bundled inside sftp-services (supervisord)
+  sftp-services:
     securityContext:
       allowPrivilegeEscalation: false
       runAsNonRoot: true
@@ -545,44 +391,17 @@ mdss_components:
       seccompProfile:
         type: RuntimeDefault
       readOnlyRootFilesystem: true
-  
-  remediationsservice-sftp:
-    command: ["/bin/sh","-c"]
-    args: ['/wait-for-it.sh "${LICENSINGSERVICE_HOST}":"${LICENSINGSERVICE_PORT}" -s -t 180 -- dotnet opswat.mdss.remediations.sftp.service.dll 2>&1']
-    securityContext:
-      allowPrivilegeEscalation: false
-      runAsNonRoot: true
-      runAsUser: 200
-      seccompProfile:
-        type: RuntimeDefault
-      readOnlyRootFilesystem: true
-  
-  storagesservice-sftp:
-    command: ["/bin/sh","-c"]
-    args: ['/wait-for-it.sh "${LICENSINGSERVICE_HOST}":"${LICENSINGSERVICE_PORT}" -s -t 180 -- dotnet opswat.mdss.storages.sftp.service.dll 2>&1']
-    securityContext:
-      allowPrivilegeEscalation: false
-      runAsNonRoot: true
-      runAsUser: 200
-      seccompProfile:
-        type: RuntimeDefault
-      readOnlyRootFilesystem: true
-  
-  sftpservice:
-    command: ["/bin/sh","-c"]
-    args: ['/wait-for-it.sh "${LICENSINGSERVICE_HOST}":"${LICENSINGSERVICE_PORT}" -s -t 180 -- dotnet opswat.mdss.sftp.service.dll 2>&1']
-    securityContext:
-      allowPrivilegeEscalation: false
-      runAsNonRoot: true
-      runAsUser: 200
-      seccompProfile:
-        type: RuntimeDefault
-      readOnlyRootFilesystem: true
+    extraVolumeMounts:
+      - mountPath: /tmp
+        name: empty-volume
+      - mountPath: /var/run
+        name: empty-volume
+    extraVolumes:
+      - name: empty-volume
+        emptyDir: {}
 
   # ======================================= MFT MODULE ================================================
-  discoverymftservice:
-    command: ["/bin/sh","-c"]
-    args: ['/wait-for-it.sh "${LICENSINGSERVICE_HOST}":"${LICENSINGSERVICE_PORT}" -s -t 180 -- dotnet opswat.mdss.discovery.mft.service.dll 2>&1']
+  mft-services:
     securityContext:
       allowPrivilegeEscalation: false
       runAsNonRoot: true
@@ -590,10 +409,17 @@ mdss_components:
       seccompProfile:
         type: RuntimeDefault
       readOnlyRootFilesystem: true
-  
-  remediationsservice-mft:
-    command: ["/bin/sh","-c"]
-    args: ['/wait-for-it.sh "${LICENSINGSERVICE_HOST}":"${LICENSINGSERVICE_PORT}" -s -t 180 -- dotnet opswat.mdss.remediations.mft.service.dll 2>&1']
+    extraVolumeMounts:
+      - mountPath: /tmp
+        name: empty-volume
+      - mountPath: /var/run
+        name: empty-volume
+    extraVolumes:
+      - name: empty-volume
+        emptyDir: {}
+
+  # ======================================= FTP MODULE ================================================
+  ftp-services:
     securityContext:
       allowPrivilegeEscalation: false
       runAsNonRoot: true
@@ -601,10 +427,17 @@ mdss_components:
       seccompProfile:
         type: RuntimeDefault
       readOnlyRootFilesystem: true
-      
-  storagesservice-mft:
-    command: ["/bin/sh","-c"]
-    args: ['/wait-for-it.sh "${LICENSINGSERVICE_HOST}":"${LICENSINGSERVICE_PORT}" -s -t 180 -- dotnet opswat.mdss.storages.mft.service.dll 2>&1']
+    extraVolumeMounts:
+      - mountPath: /tmp
+        name: empty-volume
+      - mountPath: /var/run
+        name: empty-volume
+    extraVolumes:
+      - name: empty-volume
+        emptyDir: {}
+
+  # ======================================= GRAPHSDK MODULE ================================================
+  graphsdk-services:
     securityContext:
       allowPrivilegeEscalation: false
       runAsNonRoot: true
@@ -612,3 +445,29 @@ mdss_components:
       seccompProfile:
         type: RuntimeDefault
       readOnlyRootFilesystem: true
+    extraVolumeMounts:
+      - mountPath: /tmp
+        name: empty-volume
+      - mountPath: /var/run
+        name: empty-volume
+    extraVolumes:
+      - name: empty-volume
+        emptyDir: {}
+
+  # ======================================= ORACLESDK MODULE ================================================
+  oraclesdk-services:
+    securityContext:
+      allowPrivilegeEscalation: false
+      runAsNonRoot: true
+      runAsUser: 200
+      seccompProfile:
+        type: RuntimeDefault
+      readOnlyRootFilesystem: true
+    extraVolumeMounts:
+      - mountPath: /tmp
+        name: empty-volume
+      - mountPath: /var/run
+        name: empty-volume
+    extraVolumes:
+      - name: empty-volume
+        emptyDir: {}

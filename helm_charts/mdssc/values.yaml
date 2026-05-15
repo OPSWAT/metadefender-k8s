@@ -30,7 +30,14 @@ mdssc-common-environment:
   EULA_ACCEPTED_AFTER_UPGRADE: "yes"
 
   ENABLED_MODULES: ""
-  AVAILABLE_MODULES: "github,dockerhub,bitbucket,svn,amazonecr,quay,jfrogcontainer,jfrogbinary,azureacr,gitlabsource"
+  AVAILABLE_MODULES: "github,dockerhub,bitbucket,svn,amazonecr,quay,jfrogcontainer,jfrogbinary,azureacr,gitlabsource,azuredevopssource,directfile,nexusbinary,gitea"
+
+  # This variable is used to define the context URL for SPDX v3 json documents
+  SPDX_V3_CONTEXT_URL: "https://spdx.github.io/spdx-spec/v3.0.1/rdf/spdx-context.jsonld"
+  # Number of seconds after an archive is placed in (/tmp) before it becomes eligible for deletion (ArchiveExtraction discovery)
+  SCAN_TMP_ARCHIVE_RETENTION_SECONDS: "3600"
+  # Enables/disables copying the entire Git commit history when performing cross-domain operations
+  CROSS_DOMAIN_COPY_ENTIRE_GIT_COMMIT_HISTORY: "true"
 
   # PostgreSQL migrations Configuration
   PGMIGRATIONS_PORT: "27777"
@@ -59,14 +66,14 @@ mdssc-common-environment:
   SMBSERVICE_PORT: "5002"
   
   CODE_VERSION: "30a858390ca19fff81f2092f83a32f11c07d4fc8"
-  BUILD_VERSION: "3.2.0.1966"
+  BUILD_VERSION: "3.3.0.1"
 
   # This can be modified in order to define how many messages can be sent to rabbitmq in parallel.
   RABBITMQ_SCANNING_PREFETCH_COUNT: "20"
 
   HTTPS_ACTIVE: "no"
-  BRANCH: "platform-2.1"          # Set Platform version (image tag)
-  MDSSC_BRANCH: "3.2.0"          # Set MDSSC version (image tag)
+  BRANCH: "platform-2.1.1"          # Set Platform version (image tag)
+  MDSSC_BRANCH: "3.3.0"          # Set MDSSC version (image tag)
 
   # These variables can be changed to reveal debug information in the application
   LOG_LEVEL: "4"
@@ -258,7 +265,7 @@ mdssc_components:
 
   rabbitmq:
     name: rabbitmq
-    image: rabbitmq:4.0.4-management-alpine
+    image: rabbitmq:4.1.2-management-alpine
     ports:
       - port: 5672
       - port: 15672
@@ -278,7 +285,7 @@ mdssc_components:
   
   redis:
     name: redis
-    image: redis:7.4.1-alpine
+    image: redis:8.2.1-alpine
     ports:
       - port: 6379
     extra_labels:

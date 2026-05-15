@@ -35,7 +35,9 @@ spec:
             - secretRef:
                 name: {{ $.Values.mdss_secret_env_name | quote }}
           {{ if $component.custom_repo -}}
-          image: {{ printf "%s/%s:%s" $.Values.mdss_docker_repo $component.image (index $.Values "mdss-common-environment").BRANCH | quote }}
+          {{- $tag := $.Values.mdss_version -}}
+          {{- if $component.tag -}}{{- $tag = tpl $component.tag $ -}}{{- end -}}
+          image: {{ printf "%s/%s:%s" $.Values.mdss_docker_repo $component.image $tag | quote }}
           {{- else -}}
           image: {{ $component.image | quote }}
           {{- end }}

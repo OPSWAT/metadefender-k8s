@@ -13,7 +13,7 @@ spec:
     spec:
       containers:
         - name: auto-onboarding
-          image: {{ printf "%s/mdcloudservices_auto-onboarding:%s" $.Values.mdss_docker_repo (index $.Values "mdss-common-environment").BRANCH | quote }}
+          image: {{ printf "%s/mdcloudservices_auto-onboarding:%s" $.Values.mdss_docker_repo $.Values.mdss_version | quote }}
           command: ["/bin/bash", "-c"]
           args:
             - |
