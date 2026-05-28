@@ -61,6 +61,8 @@ The following table lists the configurable parameters of the Metadefender_softwa
 | `mdssc-common-environment.LICENSINGSERVICE_HOST` |  | `"licensingservice"` |
 | `mdssc-common-environment.LICENSINGSERVICE_URL` |  | `"http://licensingservice"` |
 | `mdssc-common-environment.LICENSINGSERVICE_PORT` |  | `"5000"` |
+| `mdssc-common-environment.IDENTITY_SERVICE_URL` |  | `"http://identityservice"` |
+| `mdssc-common-environment.IDENTITY_SERVICE_PORT` |  | `"7001"` |
 | `mdssc-common-environment.SMBSERVICE_URL` |  | `"http://smbservice"` |
 | `mdssc-common-environment.SMBSERVICE_PORT` |  | `"5002"` |
 | `mdssc-common-environment.CODE_VERSION` |  | `"30a858390ca19fff81f2092f83a32f11c07d4fc8"` |
@@ -179,6 +181,13 @@ The following table lists the configurable parameters of the Metadefender_softwa
 | `mdssc_components.licensingservice.extra_labels.aws-type` |  | `"fargate"` |
 | `mdssc_components.licensingservice.resources.requests.memory` |  | `"0.125Gi"` |
 | `mdssc_components.licensingservice.resources.requests.cpu` |  | `"0.010"` |
+| `mdssc_components.identityservice.name` |  | `"identityservice"` |
+| `mdssc_components.identityservice.custom_repo` |  | `true` |
+| `mdssc_components.identityservice.image` |  | `"mdcloudservices_identityservice"` |
+| `mdssc_components.identityservice.ports` |  | `[{"port": 7001}]` |
+| `mdssc_components.identityservice.extra_labels.aws-type` |  | `"fargate"` |
+| `mdssc_components.identityservice.resources.requests.memory` |  | `"0.25Gi"` |
+| `mdssc_components.identityservice.resources.requests.cpu` |  | `"0.100"` |
 | `mdssc_components.frontend.name` |  | `"frontend"` |
 | `mdssc_components.frontend.is_mdssc` |  | `true` |
 | `mdssc_components.frontend.custom_repo` |  | `true` |
@@ -289,12 +298,6 @@ The following table lists the configurable parameters of the Metadefender_softwa
 | `mdssc_components.loadbalancerservice.extra_labels.aws-type` |  | `"fargate"` |
 | `mdssc_components.loadbalancerservice.resources.requests.memory` |  | `"0.25Gi"` |
 | `mdssc_components.loadbalancerservice.resources.requests.cpu` |  | `"0.100"` |
-| `mdssc_components.usermanagementservice.name` |  | `"usermanagementservice"` |
-| `mdssc_components.usermanagementservice.custom_repo` |  | `true` |
-| `mdssc_components.usermanagementservice.image` |  | `"mdcloudservices_usermanagement"` |
-| `mdssc_components.usermanagementservice.extra_labels.aws-type` |  | `"fargate"` |
-| `mdssc_components.usermanagementservice.resources.requests.memory` |  | `"0.25Gi"` |
-| `mdssc_components.usermanagementservice.resources.requests.cpu` |  | `"0.010"` |
 
 
 

@@ -15,12 +15,17 @@ POSTGRESQL_URL: "Host=<MDSSC_DB_HOST>;Port=<MDSSC_DB_PORT>;Username=<MDSSC_DB_US
 mdssc-common-environment:
 
   DISCOVERY_STRATEGY: "ImageArchiveDiscovery"
-  BITBUCKET_DISCOVERY_STRATEGY: "ImageArchiveDiscovery"
+  BITBUCKET_DISCOVERY_STRATEGY: "ArchiveExtractionDiscovery"
   BITBUCKET_RATE_LIMIT_RETRY_WAIT_MINUTES: "15"
 
-  GITLAB_DISCOVERY_STRATEGY: "ImageArchiveDiscovery"
+  GITLAB_DISCOVERY_STRATEGY: "ArchiveExtractionDiscovery"
   SVN_DISCOVERY_STRATEGY: "RegularDiscovery"
   GITLAB_RATE_LIMIT_RETRY_WAIT_MINUTES: "5"
+
+  MDSSC_GRPC_PORT: "5051"
+
+  # Route gRPC (.NET HTTP/2) through system proxy when required (often behind corporate proxies).
+  GRPC_CHANNEL_USE_PROXY: "false"
 
   # This should only be used for troubleshooting, requests are proxy passed by NGINX
   API_DEV_PORT: "8001 "
@@ -30,14 +35,24 @@ mdssc-common-environment:
   EULA_ACCEPTED_AFTER_UPGRADE: "yes"
 
   ENABLED_MODULES: ""
-  AVAILABLE_MODULES: "github,dockerhub,bitbucket,svn,amazonecr,quay,jfrogcontainer,jfrogbinary,azureacr,gitlabsource,azuredevopssource,directfile,nexusbinary,gitea"
+  AVAILABLE_MODULES: "github,dockerhub,bitbucket,svn,amazonecr,quay,jfrogcontainer,jfrogbinary,azureacr,gitlabsource,azuredevopssource,directfile,nexusbinary,gitea,harbor"
 
   # This variable is used to define the context URL for SPDX v3 json documents
   SPDX_V3_CONTEXT_URL: "https://spdx.github.io/spdx-spec/v3.0.1/rdf/spdx-context.jsonld"
+
+  MDSSC_DETAILED_TRACE_LOGGING: "false"
+
+  DIRECT_FILE_UPLOAD_SIZE_MB: "128"
+  DIRECT_FILE_BUFFER_SIZE_KB: "128"
   # Number of seconds after an archive is placed in (/tmp) before it becomes eligible for deletion (ArchiveExtraction discovery)
   SCAN_TMP_ARCHIVE_RETENTION_SECONDS: "3600"
   # Enables/disables copying the entire Git commit history when performing cross-domain operations
   CROSS_DOMAIN_COPY_ENTIRE_GIT_COMMIT_HISTORY: "true"
+
+  SCAN_WAITS_FOR_EXTERNAL_PROCESSING: "true"
+  SCAN_WAITS_FOR_ARCHIVE_COMPLETION: "true"
+  MDSSC_INCLUDE_DIRECT_SCANS_IN_VIEWS: "true"
+  STORE_ARCHIVE_SCAN_RESULTS: "true"
 
   # PostgreSQL migrations Configuration
   PGMIGRATIONS_PORT: "27777"
@@ -62,18 +77,20 @@ mdssc-common-environment:
   LICENSINGSERVICE_HOST: "licensingservice"
   LICENSINGSERVICE_URL: "http://licensingservice"
   LICENSINGSERVICE_PORT: "5000"
+  IDENTITY_SERVICE_URL: "http://identityservice"
+  IDENTITY_SERVICE_PORT: "7001"
   SMBSERVICE_URL: "http://smbservice"
   SMBSERVICE_PORT: "5002"
   
   CODE_VERSION: "30a858390ca19fff81f2092f83a32f11c07d4fc8"
-  BUILD_VERSION: "3.3.0.1"
+  BUILD_VERSION: "3.3.1.0"
 
   # This can be modified in order to define how many messages can be sent to rabbitmq in parallel.
   RABBITMQ_SCANNING_PREFETCH_COUNT: "20"
 
   HTTPS_ACTIVE: "no"
-  BRANCH: "platform-2.1.1"          # Set Platform version (image tag)
-  MDSSC_BRANCH: "3.3.0"          # Set MDSSC version (image tag)
+  BRANCH: "platform-2.3"          # Set Platform version (image tag)
+  MDSSC_BRANCH: "3.3.1"          # Set MDSSC version (image tag)
 
   # These variables can be changed to reveal debug information in the application
   LOG_LEVEL: "4"
@@ -308,6 +325,19 @@ mdssc_components:
         memory: "0.125Gi"
         cpu: "0.010"
 
+  identityservice:
+    name: identityservice
+    custom_repo: true
+    image: mdcloudservices_identityservice
+    ports:
+      - port: 7001
+    extra_labels:
+      aws-type: fargate
+    resources:
+      requests:
+        memory: "0.25Gi"
+        cpu: "0.100"
+
   # ======================================= MDSSC MODULE ================================================ # 
 
   frontend:
@@ -481,14 +511,3 @@ mdssc_components:
       requests:
         memory: "0.25Gi"
         cpu: "0.100"
-
-  usermanagementservice:
-    name: usermanagementservice
-    custom_repo: true
-    image: mdcloudservices_usermanagement
-    extra_labels:
-      aws-type: fargate
-    resources:
-      requests:
-        memory: "0.25Gi"
-        cpu: "0.010"

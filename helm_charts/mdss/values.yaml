@@ -7,22 +7,22 @@
 # Each entry in mdss_components may override these via its own `tag:` field.
 # When `tag:` is not set on a component, mdss_version is used as the default.
 # =============================================================================
-mdss_version: "4.4.0"
-mdplatform_version: "2.4.0"
+mdss_version: "4.4.2"
+mdplatform_version: "2.5.0"
 
 # Per-integration image tags (md-integrations releases each adapter independently)
 alibabacloud_version: "2.1.0"
 amazonsdk_version: "2.1.0"
 azureblob_version: "2.1.0"
 azurefiles_version: "2.1.0"
-box_version: "2.1.0"
+box_version: "2.1.1"
 ftp_version: "2.1.0"
 googlecloud_version: "2.1.0"
-graph_version: "2.1.0"
+graph_version: "2.1.1"
 mft_version: "2.1.0"
 nfs_version: "2.1.0"
 oraclesdk_version: "2.1.0"
-sftp_version: "2.1.0"
+sftp_version: "2.1.1"
 smb_version: "2.1.0"
 
 # Generate secrets for MDSS database username, password, postgres user and password
