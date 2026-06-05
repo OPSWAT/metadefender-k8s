@@ -358,6 +358,9 @@ mdss_docker_repo: opswat
 
 imagePullPolicy: IfNotPresent
 
+# Default securityContext applied to all containers. Can be overridden per-component via mdss_components.<name>.securityContext
+securityContext: {}
+
 mdss_config_map_env_name: 'mdss-env'
 mdss_secret_env_name: 'mdss-postgres-cred'
 mdssHostAliases:                              # Custom hosts entries

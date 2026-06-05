@@ -13,8 +13,8 @@ kind: Ingress
 metadata:
   name: ingress-rule-a
   annotations:
-    nginx.ingress.kubernetes.io/rewrite-target: /$1
-    nginx.ingress.kubernetes.io/ometascan-pass: "<ICAP_URL>"                  # Replace with the address and port of an existing ICAP instace, for example, if ICAP is running in the same cluster: http://<ICAP_SERVICE_NAME>.<ICAP_NAMESPACE>.svc.cluster.local:<ICAP_PORT> 
+    nginx.org/rewrite-target: /$1
+    nginx.org/ometascan-pass: "<ICAP_URL>"                  # Replace with the address and port of an existing ICAP instace, for example, if ICAP is running in the same cluster: http://<ICAP_SERVICE_NAME>.<ICAP_NAMESPACE>.svc.cluster.local:<ICAP_PORT> 
 spec:
   rules:
     - host: <TARGET_HOSTNAME>

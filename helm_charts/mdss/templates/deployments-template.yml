@@ -73,9 +73,13 @@ spec:
           args:
             {{- toYaml $component.args | nindent 12 }}
           {{- end }}
-          {{- if $component.securityContext }}
+          {{- $secCtx := $.Values.securityContext }}
+          {{- if hasKey $component "securityContext" }}
+            {{- $secCtx = $component.securityContext }}
+          {{- end }}
+          {{- if $secCtx }}
           securityContext:
-            {{- toYaml $component.securityContext | nindent 12 }}
+            {{- toYaml $secCtx | nindent 12 }}
           {{- end }}
           volumeMounts:
             - name: appsettings
@@ -95,6 +99,20 @@ spec:
             {{ end }}
             {{- if $component.extraVolumeMounts }}
               {{- toYaml $component.extraVolumeMounts | nindent 12 }}
+            {{- end }}
+            {{- $rofs := false }}
+            {{- if hasKey $component "securityContext" }}
+              {{- if $component.securityContext }}
+                {{- $rofs = dig "readOnlyRootFilesystem" false $component.securityContext }}
+              {{- end }}
+            {{- else if $.Values.securityContext }}
+              {{- $rofs = dig "readOnlyRootFilesystem" false $.Values.securityContext }}
+            {{- end }}
+            {{- if $rofs }}
+            - name: tmp
+              mountPath: /tmp
+            - name: vartmp
+              mountPath: /var/tmp
             {{- end }}
           {{- if $component.resources }}
           resources:
@@ -147,6 +165,20 @@ spec:
         -
             {{- toYaml $volume | nindent 10 }}
         {{- end }}
+        {{- end }}
+        {{- $rofs := false }}
+        {{- if hasKey $component "securityContext" }}
+          {{- if $component.securityContext }}
+            {{- $rofs = dig "readOnlyRootFilesystem" false $component.securityContext }}
+          {{- end }}
+        {{- else if $.Values.securityContext }}
+          {{- $rofs = dig "readOnlyRootFilesystem" false $.Values.securityContext }}
+        {{- end }}
+        {{- if $rofs }}
+        - name: tmp
+          emptyDir: {}
+        - name: vartmp
+          emptyDir: {}
         {{- end }}
       hostAliases:
         {{- toYaml $.Values.mdssHostAliases | nindent 8 }}
