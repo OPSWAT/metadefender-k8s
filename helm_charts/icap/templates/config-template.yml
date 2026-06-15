@@ -61,6 +61,10 @@ data:
   https_proxy: "{{ .Values.proxy.https_proxy }}"
   NO_PROXY: "{{ .Values.proxy.no_proxy }}"
 {{- end }}
+# Set additional environment variables for the MD ICAP Server container
+{{- range $key, $val := .Values.env }}
+  {{ $key }}: {{ $val | quote }}
+{{- end }}
 # # Uncomment for make ConfigMap for import configuration
 ---
 {{- if .Values.icap_components.md_icapsrv.import_configuration.enabled }}

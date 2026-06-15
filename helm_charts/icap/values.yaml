@@ -95,6 +95,15 @@ postgres_mdicapsrv:
 # If a component has "custom_repo: true" then the image name will be formated as "{docker_repo/}image_name{:BRANCH}" otherwise it will remain unaltered
 icap_docker_repo: opswat
 
+# Set additional environment variables for the MD ICAP Server container.
+# Each entry is added to the mdicapsrv-env ConfigMap as-is.
+# NOTE: do not repeat a key that is already set in the ConfigMap (e.g. LOG_LEVEL,
+# REST_PORT, DB_HOST), as that would create a duplicate ConfigMap key.
+env:
+  # MD ICAP Server config applied via ICAP_CONF_JSON. Each JSON key is a
+  # "<section>/<setting>" path written into the ICAP Server config file.
+  ICAP_CONF_JSON: '{"internal/sso_cross_instance_enabled":"true"}'
+
 icap_container_persistent: false     # To enable for mounting icap path /opt/mdicapsrv/icap_data/var/lib/mdicapsrv using below storage_configs pvc
 
 # Example using a PVC with dynamic provisioning from an existing storage class for postgres_mdicapsrv container
@@ -154,7 +163,7 @@ icap_components:
     name: md-icapsrv
     custom_repo: true
     # Overrides the default docker image for the MD ICAP Server service, this value can be changed if you want to set a different version of MD ICAP Server
-    image: metadefendericapsrv-debian:5.13.0-4
+    image: metadefendericapsrv-debian:5.14.0
     # Warning: When to use this feature!
     # Sets the number of replicas if you want to have multiple MD ICAP Server instances
     replicas: 1
