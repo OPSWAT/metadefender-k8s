@@ -589,6 +589,7 @@ mdss_components:
         memory: "3Gi"
         cpu: "1.5"
         ephemeral-storage: "7Gi"
+    sessionAffinity: ClientIP
 
   webclient:
     name: webclient

@@ -12,6 +12,9 @@ data:
   DB_PORT:   {{ .Values.MDCORE_DB_PORT   | quote }}
   ACTIVATION_SERVER: {{ .Values.activation_server }}
   CERT_PATH: {{ .Values.MDCORE_CERT_PATH   | quote }}
+  {{- if .Values.STORAGE_PATH }}
+  STORAGE_PATH: {{ .Values.STORAGE_PATH | quote }}
+  {{- end }}
 ---
 # add config-map for mdcore-import-zip-config
 {{- if and ($.Values.CONFIG_IMPORT_FILE) ($.Values.CONFIG_IMPORT_PASSWORD) }}

@@ -4,26 +4,24 @@ kind: Ingress
 apiVersion: networking.k8s.io/v1
 metadata:
   name: core-ingress
+  {{- if or (and (not .Values.core_ingress.spec_className) .Values.core_ingress.class) .Values.core_ingress.ingress_annotations }}
   annotations:
-    {{ if not .Values.core_ingress.spec_className }}
+    {{- if and (not .Values.core_ingress.spec_className) .Values.core_ingress.class }}
     kubernetes.io/ingress.class: {{ .Values.core_ingress.class }}
-    {{ end }}
-    ingress.kubernetes.io/rewrite-target: /
+    {{- end }}
     {{- if .Values.core_ingress.ingress_annotations }}
-      {{- toYaml .Values.core_ingress.ingress_annotations | nindent 4 }}
-    {{ end }}
-    {{ if and (.Values.core_ingress.tls) (eq .Values.core_ingress.class "nginx") }}
-    nginx.ingress.kubernetes.io/backend-protocol: HTTPS
-    {{ end }}
+    {{- toYaml .Values.core_ingress.ingress_annotations | nindent 4 }}
+    {{- end }}
+  {{- end }}
 
 spec:
-  {{ if .Values.core_ingress.spec_className }}
+  {{- if and .Values.core_ingress.spec_className .Values.core_ingress.class }}
   ingressClassName: {{ .Values.core_ingress.class }}
-  {{ end }}
-  {{ if .Values.core_ingress.rules }}
-  rules: 
+  {{- end }}
+  {{- if .Values.core_ingress.rules }}
+  rules:
     {{- toYaml .Values.core_ingress.rules | nindent 4 }}
-  {{ else }}
+  {{- else }}
   rules:
   - host: {{ .Values.core_ingress.host | replace "<APP_NAMESPACE>" .Release.Namespace }}
     http:
@@ -35,11 +33,11 @@ spec:
               name: {{ .Values.core_ingress.service }}
               port:
                 number: {{ .Values.core_ingress.port }}
-  {{ end }}
-  {{ if .Values.core_ingress.tls }}
+  {{- end }}
+  {{- if .Values.core_ingress.tls }}
   tls:
   - hosts:
     - {{ .Values.core_ingress.host | replace "<APP_NAMESPACE>" .Release.Namespace }}
     secretName: {{ .Values.core_ingress.secret }}
-  {{ end }}
-{{ end }}
+  {{- end }}
+{{- end }}

@@ -43,78 +43,74 @@ MDCORE_DB_HOST: postgres-core       # Hostname / entrypoint of the database, thi
 MDCORE_DB_PORT: "5432"              # Port for the PostgreSQL Database
 MDCORE_CERT_PATH: "/cert"
 
-CERT_KEY: |
-  <SET_MD_NAS_CERT_KEY>
-CERT: |
-  <SET_MD_NAS_CERT>
+# Path inside the MD Core container for sanitized, DLP-processed, and quarantined files.
+# Must match core_components.md-core.persistentDir when file storage persistence is enabled.
+# See https://www.opswat.com/docs/mdcore/container-deployment/docker-image-published-on-opswat-docker-hub
+STORAGE_PATH: "/metadefendercore"
 
 
 # Set to true if the respective database engine should also be deployed
 deploy_with_core_db: true           # Enable or disable the local in-cluster PostgreSQL database
 
+# Generate secrets for MD Core username, password, postgres user and password
+mdcore_generate_secrets: true
 
+# Generate mdcore-stack-configs secret which pass IGNITION_JSON to the MD Core container
+IGNITION_JSON: false
 ############# STORAGE CONFIGURATION ##################
-### There are three ways to configure it that can be interchangables. The PVC to use is selected with storage_name added to the component under core_components section ###
-### 1. Using PVC section with specific variables to inject to the storage template a single PVC ###
-### 2. Using PVC as List with specific variables to inject to the storage template multiple PVCs ###
-### 3. Using the storage_configs where the whole PVC kind is injected to the template (for a single PVC)   ###
- 
+# Component persistence:
+# - postgres-core: database files at /var/lib/postgresql/data (external DB: set deploy_with_core_db: false)
+# - md-core: sanitized/DLP/quarantined files via STORAGE_PATH (set persistentDir: null for fully stateless md-core)
+#
+# storage_provisioner:
+# - hostPath: node directory per component under hostPathPrefix (default; no PVC mount in pods)
+# - custom (or any non-hostPath value): mount PVC; set each component's storage_name to the PVC name
+#
+# PVC configuration (pick one format):
+# 1. List (recommended): one entry per PVC — postgres-core and md-core-storage below
+# 2. Single object: set pvc.enabled, pvc.name, etc. (postgres only)
+# 3. storage_configs: inject full PVC manifests
+
 pvc:
-  enabled: true
-  name: postgres-core                             # The name of the PVC.
-  labels:                                       # Key-value pairs for categorizing and selecting resources.
-    app: my-app
-  annotations:
-    #volume.beta.kubernetes.io/storage-class: "standard" #Additional metadata; for example, specifying the storage class. (deprecated it is just an example)
-  accessModes:                        # Specifies the desired access modes for the volume. (Common modes ReadWriteOnce, ReadOnlyMany and ReadWriteMany)
-    - ReadWriteOnce
-  resources:
-    requests:
-      storage: 100Gi              # The amount of storage requested.
-  storageClassName: default    # The name of the StorageClass to use for dynamic provisioning. If omitted, the default StorageClass is used.
-  volumeMode: Filesystem        # Defines whether the volume is presented as a filesystem (Filesystem) or a raw block device (Block).
-  #selector:                     # A label query over volumes to consider for binding. Useful for static provisioning.
-  #  matchLabels:
-  #    type: local         
-  #volumeName: example-pv        #  Specifies the name of an existing PersistentVolume to bind to. This is typically used in static provisioning scenarios.
+  - name: postgres-core
+    enabled: true
+    labels:
+      app: mdcore-opswat
+    annotations: {}
+    accessModes:
+      - ReadWriteOnce
+    resources:
+      requests:
+        storage: 100Gi
+    storageClassName: default
+    volumeMode: Filesystem
+  - name: md-core-storage
+    enabled: false              # enable this when required storage for sanitized, DLP-processed, and quarantined files
+    labels:
+      app: mdcore-opswat
+    annotations: {}
+    accessModes:
+      - ReadWriteOnce
+    resources:
+      requests:
+        storage: 100Gi
+    storageClassName: default
+    volumeMode: Filesystem
 
-
-### PVC supports list to create multiple PVCs
+### Single PVC object format (alternative to the list above) — postgres only:
 #pvc:
-#  - name: metadefendercore-pvc  # The name of the PVC.
-#    enabled: true                       
-#    labels:                                       # Key-value pairs for categorizing and selecting resources.
-#      app: mdcore-opswat
-#    annotations:
-#      #volume.beta.kubernetes.io/storage-class: "standard" #Additional metadata; for example, specifying the storage class. (deprecated it is just an example)
-#    accessModes:                        # Specifies the desired access modes for the volume. (Common modes ReadWriteOnce, ReadOnlyMany and ReadWriteMany)
-#      - ReadWriteOnce
-#    resources:
-#      requests:
-#        storage: 50Gi              # The amount of storage requested.
-#    storageClassName: gp2    # The name of the StorageClass to use for dynamic provisioning. If omitted, the default StorageClass is used.
-#    volumeMode: Filesystem        # Defines whether the volume is presented as a filesystem (Filesystem) or a raw block device (Block).
-#    #selector:                     # A label query over volumes to consider for binding. Useful for static provisioning.
-#    #  matchLabels:
-#    #    type: local         
-#    #volumeName: example-pv        #  Specifies the name of an existing PersistentVolume to bind to. This is typically used in static provisioning scenarios.
-#  - name: postgres-pvc  # The name of the PVC.
-#    enabled: false                       
-#    labels:                                       # Key-value pairs for categorizing and selecting resources.
-#      app: mdcore-opswat
-#    annotations:
-#      #volume.beta.kubernetes.io/storage-class: "standard" #Additional metadata; for example, specifying the storage class. (deprecated it is just an example)
-#    accessModes:                        # Specifies the desired access modes for the volume. (Common modes ReadWriteOnce, ReadOnlyMany and ReadWriteMany)
-#      - ReadWriteOnce
-#    resources:
-#      requests:
-#        storage: 100Gi              # The amount of storage requested.
-#    storageClassName: gp2    # The name of the StorageClass to use for dynamic provisioning. If omitted, the default StorageClass is used.
-#    volumeMode: Filesystem        # Defines whether the volume is presented as a filesystem (Filesystem) or a raw block device (Block).
-#    #selector:                     # A label query over volumes to consider for binding. Useful for static provisioning.
-#    #  matchLabels:
-#    #    type: local         
-#    #volumeName: example-pv        #  Specifies the name of an existing PersistentVolume to bind to. This is typically used in static provisioning scenarios.
+#  enabled: true
+#  name: postgres-core
+#  labels:
+#    app: mdcore-opswat
+#  annotations: {}
+#  accessModes:
+#    - ReadWriteOnce
+#  resources:
+#    requests:
+#      storage: 100Gi
+#  storageClassName: default
+#  volumeMode: Filesystem
 
 
 storage_configs: null        # Custom storage yaml, set to null for ephemeral or hostPath storage
@@ -132,29 +128,28 @@ storage_configs: null        # Custom storage yaml, set to null for ephemeral or
 #           storage: 1Gi
 #       storageClassName: <SET_STORAGE_CLASS_NAME>
 
-# Generate secrets for MD Core username, password, postgres user and password
-mdcore_generate_secrets: true
 
 # Available storage providers:
-# - hostPath: doesn't use any PVCs in the pod definitions and just mounts a path on the host starting with the hostPathPrefix
-# - custom: mounts from the PVC named as the storage_name value and uses component name as the subpath
+# - hostPath: mounts a path on the node under hostPathPrefix/<component-name> (no PVC in pod spec)
+# - custom: mounts the PVC named in each component's storage_name (with subPath = component name)
 storage_provisioner: hostPath       # Type of storage to use in the pod definition
-storage_name: pvc-name              # Name of the PVC to use in the pod definition
-hostPathPrefix: mdcore-storage-<APP_NAMESPACE>      # The absolute path on the node where to keep the database filesystem for persistance
+storage_name: pvc-name              # Fallback PVC name when a component has no storage_name
+hostPathPrefix: mdcore-storage-<APP_NAMESPACE>      # Node path prefix for hostPath persistence
 
 ### Ingress Configuration
-### 1. Using core_ingress section with specific variables to inject to the ingress template (a single ingress) ###
+### Optional Kubernetes Ingress for MD Core. Disabled by default; use LoadBalancer service or your own ingress/route instead.
+### When enabled, set `class` and `ingress_annotations` for your cluster's ingress controller (e.g. AWS ALB, GCE).
 core_ingress:
   host: <APP_NAMESPACE>-mdcore.k8s       # Hostname for the publicly accessible ingress, the `<APP_NAMESPACE>` string will be replaced with the namespace where the chart is deployed
   service: md-core                  # Service name where the ingress should route to, this should be left unchanged
   port: 8008                        # Port where the ingress should route to
   enabled: false                    # Enable or disable the ingress creation
-  spec_className: true              # true -> for adding class as spec || false -> for adding class as annotation. false for GKE as it needs to be as annotation.
-  class: ngnix                      # Sets the ingress class (For AWS alb, for GKE gce)
+  spec_className: true              # true -> ingressClassName in spec; false -> kubernetes.io/ingress.class annotation (required for some GKE setups)
+  class: ""                         # Ingress class name; required when enabled (e.g. alb, gce). See cloud-specific values files for examples.
   tls: false                        # Flag for set up tls section in ingress
   secret: mdcore-tls                # SecretName of the tls secret created to be used for ingress
-  ingress_annotations: 
-    nginx.ingress.kubernetes.io/affinity: cookie     # To set affinity when having more than one pod running behind the ingress
+  ingress_annotations: null         # Controller-specific annotations; see mdcore-aws-eks-values.yml for ALB examples
+  rules: []                         # Optional: override the entire rules section; leave empty to use host/service/port above
 
 
 ## Uncomment if you want to use a private repo (it must already be configured in the cluster as a secret)
@@ -206,13 +201,39 @@ env:                                                            # Set additional
   MDCORE_CERT_PASSPHRASE: ""
   MDCORE_SSL_PROTOCOLS: ""
   MDCORE_SSL_ADVANCED_CONFIGS: ""
+  # Config import on container startup (import a settings export .zip mounted into the pod)
+  MDCORE_CONFIG_IMPORT_FILE: ""       # Path/filename of the config .zip to import at startup (leave empty to disable import). The deployment is expected to mount the ZIP file via a ConfigMap or a volume moun
+  MDCORE_CONFIG_IMPORT_PASSWORD: ""   # Password protecting the config .zip (leave empty if the package is not encrypted)
+  MDCORE_IMPORT_FORCE_UPDATE_YARA: "" # Set to "true" to force-update YARA rules on import (leave empty to keep the default behavior)
 
-hpa:
+# KEDA autoscaling for the md-core Deployment based on MD Core scan slot usage.
+# Requires KEDA to be installed in the cluster. Reference: https://keda.sh/
+# Each scaled pod consumes one MD Core license activation. Ensure your license has enough activations for `keda.maxReplicas`.
+keda:
   deployment: md-core
   enabled: false
   minReplicas: 1
   maxReplicas: 3
-  cpuTargetUtilization: 85
+  pollingInterval: 30
+  cooldownPeriod: 300
+
+  # KEDA polls this endpoint from inside the cluster and extracts raw slot counts.
+  # If null, the chart uses: http://<keda.deployment>.<release-namespace>.svc.cluster.local:<MDCORE_REST_PORT>/stat/nodes
+  # To inspect the API response, call /stat/nodes with the mdcore-api-key secret:
+  # curl -H "apikey: <mdcore-api-key>" http://<md-core-service>:8008/stat/nodes
+  url: null
+  availableSlotsValueLocation: "statuses.0.scan_queue_details.available_slots"
+  totalSlotsValueLocation: "statuses.0.scan_queue_details.total_scan_queue"
+
+  # The formula returns used-slot percentage. The default target of 80 means
+  # scaling starts when available slot percentage drops below 20%.
+  formula: "total_slots > 0 ? ((total_slots - available_slots) * 100) / total_slots : 0"
+  targetValue: "80"
+
+  authenticationName: md-core-api-auth
+  apiKeySecretName: mdcore-api-key
+  apiKeySecretKey: value
+  apiKeyHeader: apikey
 
 core_components:
   postgres-core:
@@ -232,14 +253,14 @@ core_components:
     ports:
       - port: 5432
     is_db: true
-    persistentDir: /var/lib/postgresql/data
-    storage_name: postgres-core
+    #persistentDir: /var/lib/postgresql/data
+    #storage_name: postgres-core
     tls:
       enabled: false
 
   md-core:
     name: md-core
-    image: opswat/metadefendercore-debian:5.19.0        # Overrides the default docker image for the MD Core service, this value can be changed if you want to set a different version of MD Core
+    image: opswat/metadefendercore-debian:5.20.0        # Overrides the default docker image for the MD Core service, this value can be changed if you want to set a different version of MD Core
     replicas: 1                                         # Sets the number of replicas if you want to have multiple MD Core instances
     env:
       - name: MD_USER
@@ -284,14 +305,8 @@ core_components:
           secretKeyRef:
             name: mdcore-postgres-cred
             key: password
-      - name: IGNITION_JSON
-        valueFrom: 
-          secretKeyRef:
-            name: mdcore-stack-configs
-            key: IGNITION_JSON
-    #  - name: LOG_PATH
-    #    value: /home/metascan/$(MD_INSTANCE_NAME)
-    #persistentDir: /home/metascan
+    #persistentDir: /metadefendercore
+    #storage_name: md-core-storage
     tls:
       enabled: false
       certSecret: mdcore-tls-cert
@@ -334,7 +349,7 @@ core_components:
         maxSurge: 0
     initContainers:
       - name: check-db-ready
-        image: opswat/metadefendercore-debian:5.19.0
+        image: opswat/metadefendercore-debian:5.20.0
         imagePullPolicy: IfNotPresent
         envFrom:
           - configMapRef:

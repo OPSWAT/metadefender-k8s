@@ -1,0 +1,67 @@
+{{- if $.Values.keda.enabled }}
+{{- $kedaUrl := $.Values.keda.url | default (printf "http://%s.%s.svc.cluster.local:%s/stat/nodes" ($.Values.keda.deployment | default "md-core") $.Release.Namespace ($.Values.MDCORE_REST_PORT | default "8008")) }}
+---
+apiVersion: keda.sh/v1alpha1
+kind: TriggerAuthentication
+metadata:
+  name: {{ $.Values.keda.authenticationName | default "md-core-api-auth" | quote }}
+  namespace: {{ $.Release.Namespace | quote }}
+  labels:
+    app: {{ $.Values.keda.deployment | default "md-core" }}
+    product: mdcore
+spec:
+  secretTargetRef:
+    - parameter: apiKey
+      name: {{ $.Values.keda.apiKeySecretName | default "mdcore-api-key" | quote }}
+      key: {{ $.Values.keda.apiKeySecretKey | default "value" | quote }}
+---
+apiVersion: keda.sh/v1alpha1
+kind: ScaledObject
+metadata:
+  name: {{ $.Values.keda.deployment | default "md-core" | quote }}
+  namespace: {{ $.Release.Namespace | quote }}
+  labels:
+    app: {{ $.Values.keda.deployment | default "md-core" }}
+    product: mdcore
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: {{ $.Values.keda.deployment | default "md-core" | quote }}
+  minReplicaCount: {{ $.Values.keda.minReplicas }}
+  maxReplicaCount: {{ $.Values.keda.maxReplicas }}
+  {{- if eq (int $.Values.keda.minReplicas) 0 }}
+  pollingInterval: {{ $.Values.keda.pollingInterval }}
+  cooldownPeriod: {{ $.Values.keda.cooldownPeriod }}
+  {{- end }}
+  advanced:
+    scalingModifiers:
+      metricType: AverageValue
+      target: {{ $.Values.keda.targetValue | quote }}
+      formula: {{ $.Values.keda.formula | quote }}
+  triggers:
+    - type: metrics-api
+      name: available_slots
+      metadata:
+        url: {{ $kedaUrl | quote }}
+        format: json
+        valueLocation: {{ $.Values.keda.availableSlotsValueLocation | quote }}
+        targetValue: "1"
+        authMode: apiKey
+        method: header
+        keyParamName: {{ $.Values.keda.apiKeyHeader | default "apikey" | quote }}
+      authenticationRef:
+        name: {{ $.Values.keda.authenticationName | default "md-core-api-auth" | quote }}
+    - type: metrics-api
+      name: total_slots
+      metadata:
+        url: {{ $kedaUrl | quote }}
+        format: json
+        valueLocation: {{ $.Values.keda.totalSlotsValueLocation | quote }}
+        targetValue: "1"
+        authMode: apiKey
+        method: header
+        keyParamName: {{ $.Values.keda.apiKeyHeader | default "apikey" | quote }}
+      authenticationRef:
+        name: {{ $.Values.keda.authenticationName | default "md-core-api-auth" | quote }}
+{{- end }}

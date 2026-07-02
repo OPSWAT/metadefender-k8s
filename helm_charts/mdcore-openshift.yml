@@ -69,6 +69,8 @@ core_components:
   md-core:
     name: md-core
     replicas: 1
+    #persistentDir: /metadefendercore
+    #storage_name: md-core-storage
     # service_type: LoadBalancer          # Set to LoadBalancer or NodePort to expose MD Core directly from the service
     # resources:
     #   requests:

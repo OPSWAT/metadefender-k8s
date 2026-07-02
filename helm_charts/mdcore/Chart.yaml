@@ -4,9 +4,11 @@ description: |
   This is a Helm chart for deploying MetaDefender Core (https://www.opswat.com/products/metadefender/core) in a Kubernetes cluster. 
 
   Release Notes
-  - Environment variables to migrate processing history (Pre-steps needed)
-  - Environment variables to enable Licensing Cleanup and examples for Role/Rolebinding
-  - Fixed warning of kubernetes.io/ingress.class annotation for AWS and Azure. Added control flag to still use it for GCP
+  - MD Core file storage: STORAGE_PATH with persistent volume mount for sanitized/DLP/quarantined files
+  - KEDA autoscaling based on MD Core scan slot usage
+  - Config import on startup: MDCORE_CONFIG_IMPORT_FILE, MDCORE_CONFIG_IMPORT_PASSWORD and MDCORE_IMPORT_FORCE_UPDATE_YARA to import a settings export .zip mounted into the pod
+  - Optional IGNITION_JSON bootstrap to configure MD Core without requiring mdcore-stack-configs
+  - Removed retired NGINX-specific ingress defaults (ingress disabled by default, ingress class typo fixed)
 
 
 long_description: |
@@ -49,5 +51,5 @@ long_description: |
   
 type: application
 
-version: 5.19.0
-appVersion: 5.19.0
+version: 5.20.0
+appVersion: 5.20.0
