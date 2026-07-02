@@ -25,6 +25,22 @@ entries:
     version: 0.0.28
   MetaDefender_ICAP_Server:
   - apiVersion: v2
+    appVersion: 5.14.1
+    created: "2026-07-02T11:18:04.7324226Z"
+    description: This is a Helm chart for deploying MetaDefender ICAP Server (https://www.opswat.com/products/metadefender/icap)
+      in a Kubernetes cluster.
+    digest: 29e5bc04dcc59572c57baf0bf7de117d6588b8c151f1cb3b17ba51d479ba4961
+    home: https://docs.opswat.com/mdicap/installation
+    keywords:
+    - mdicapsrv
+    - icap
+    - MetaDefender ICAP Server
+    name: MetaDefender_ICAP_Server
+    type: application
+    urls:
+    - https://github.com/OPSWAT/metadefender-k8s/releases/download/MetaDefender_ICAP_Server-5.14.1/MetaDefender_ICAP_Server-5.14.1.tgz
+    version: 5.14.1
+  - apiVersion: v2
     appVersion: 5.14.0
     created: "2026-06-15T08:26:01.85892266Z"
     description: This is a Helm chart for deploying MetaDefender ICAP Server (https://www.opswat.com/products/metadefender/icap)
@@ -288,6 +304,24 @@ entries:
     - https://github.com/OPSWAT/metadefender-k8s/releases/download/metadefender_cluster-2.5.1/metadefender_cluster-2.5.1.tgz
     version: 2.5.1
   metadefender_core:
+  - apiVersion: v2
+    appVersion: 5.20.0
+    created: "2026-07-02T11:18:04.913965755Z"
+    description: 'This is a Helm chart for deploying MetaDefender Core (https://www.opswat.com/products/metadefender/core)
+      in a Kubernetes cluster.   Release Notes - MD Core file storage: STORAGE_PATH
+      with persistent volume mount for sanitized/DLP/quarantined files - KEDA autoscaling
+      based on MD Core scan slot usage - Config import on startup: MDCORE_CONFIG_IMPORT_FILE,
+      MDCORE_CONFIG_IMPORT_PASSWORD and MDCORE_IMPORT_FORCE_UPDATE_YARA to import
+      a settings export .zip mounted into the pod - Optional IGNITION_JSON bootstrap
+      to configure MD Core without requiring mdcore-stack-configs - Removed retired
+      NGINX-specific ingress defaults (ingress disabled by default, ingress class
+      typo fixed) '
+    digest: 7ec6e821f4315476ef9de54f73a117b63db4fff44df0f416b309d62195625206
+    name: metadefender_core
+    type: application
+    urls:
+    - https://github.com/OPSWAT/metadefender-k8s/releases/download/metadefender_core-5.20.0/metadefender_core-5.20.0.tgz
+    version: 5.20.0
   - apiVersion: v2
     appVersion: 5.19.0
     created: "2026-06-05T14:36:08.046540034Z"
@@ -1128,4 +1162,4 @@ entries:
     urls:
     - https://github.com/OPSWAT/metadefender-k8s/releases/download/metadefender_storage_security-0.0.28/metadefender_storage_security-0.0.28.tgz
     version: 0.0.28
-generated: "2026-06-15T08:26:01.859302089Z"
+generated: "2026-07-02T11:18:05.064929252Z"
