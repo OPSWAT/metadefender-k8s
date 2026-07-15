@@ -95,12 +95,10 @@ spec:
               subPath: {{ $component.mountConfig.subPath }}
             {{ end }}
             {{- if $tls.enabled }}
-            - name: {{ $component.tls.certSecret }}
-              mountPath: {{ $.Values.MDCORE_CERT_PATH }}/mdcore.crt
-              subPath: {{ $component.tls.certSecretSubPath }}
-            - name: {{ $component.tls.certKeySecret }}
-              mountPath: {{ $.Values.MDCORE_CERT_PATH }}/mdcore.key
-              subPath: {{ $component.tls.certKeySecretSubPath }}
+            # Cert dir is seeded by the mdcore-cert-perms initContainer (see below) so the
+            # entrypoint's activate_https finds a 0755 dir + 0755 <name>.crt/<name>.key.
+            - name: mdcore-cert
+              mountPath: {{ $.Values.MDCORE_CERT_PATH }}
             {{ end }}
             {{- if $component.persistentDir }}
             - name: {{ $component.name }}
@@ -120,9 +118,37 @@ spec:
           {{- if $component.sidecars }}
             {{- toYaml $component.sidecars | nindent 8 }}
           {{- end }}
-      {{- if $component.initContainers }}
+      {{- if (or $component.initContainers $tls.enabled) }}
       initContainers:
+        {{- if $tls.enabled }}
+        - name: mdcore-cert-perms
+          {{ if $component.custom_repo -}}
+          image: {{ printf "%s/%s:%s" $.Values.core_docker_repo $component.image $.Values.BRANCH | quote }}
+          {{- else -}}
+          image: {{ $component.image | quote }}
+          {{- end }}
+          imagePullPolicy: {{ $.Values.imagePullPolicy }}
+          command:
+            - sh
+            - -c
+            - >
+              mkdir -p {{ $.Values.MDCORE_CERT_PATH }} &&
+              cp -L /mdcore-cert-src/crt/{{ $component.tls.certSecretSubPath }} {{ $.Values.MDCORE_CERT_PATH }}/mdcore.crt &&
+              cp -L /mdcore-cert-src/key/{{ $component.tls.certKeySecretSubPath }} {{ $.Values.MDCORE_CERT_PATH }}/mdcore.key &&
+              chmod 0755 {{ $.Values.MDCORE_CERT_PATH }} {{ $.Values.MDCORE_CERT_PATH }}/mdcore.crt {{ $.Values.MDCORE_CERT_PATH }}/mdcore.key
+          volumeMounts:
+            - name: {{ $component.tls.certSecret }}
+              mountPath: /mdcore-cert-src/crt
+              readOnly: true
+            - name: {{ $component.tls.certKeySecret }}
+              mountPath: /mdcore-cert-src/key
+              readOnly: true
+            - name: mdcore-cert
+              mountPath: {{ $.Values.MDCORE_CERT_PATH }}
+        {{- end }}
+        {{- if $component.initContainers }}
         {{- toYaml $component.initContainers | nindent 8 }}
+        {{- end }}
       {{- end }}
       restartPolicy: Always
       {{- if $.Values.imagePullSecrets }}
@@ -140,14 +166,18 @@ spec:
             name: {{ $component.mountConfig.configName }}
         {{ end }} 
         {{- if $tls.enabled }}
+        # Secret sources are read by the mdcore-cert-perms initContainer and copied into the
+        # mdcore-cert emptyDir. We do not mount the secrets into the cert dir directly because
+        # subPath mounts ignore defaultMode (files land 0644) and whole-secret tmpfs mounts are
+        # dir mode 1777; the entrypoint's lexicographic "perms < 755" check rejects both.
         - name: {{ $component.tls.certSecret }}
           secret:
             secretName: {{ $component.tls.certSecret }}
-            defaultMode: 0755
         - name: {{ $component.tls.certKeySecret }}
           secret:
             secretName: {{ $component.tls.certKeySecret }}
-            defaultMode: 0755
+        - name: mdcore-cert
+          emptyDir: {}
         {{ end }}
         {{- if $component.persistentDir }}
         {{- if eq $.Values.storage_provisioner "hostPath" }}
