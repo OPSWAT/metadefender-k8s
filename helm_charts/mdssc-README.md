@@ -69,8 +69,8 @@ The following table lists the configurable parameters of the Metadefender_softwa
 | `mdssc-common-environment.BUILD_VERSION` |  | `"3.4.1.369"` |
 | `mdssc-common-environment.RABBITMQ_SCANNING_PREFETCH_COUNT` |  | `"20"` |
 | `mdssc-common-environment.HTTPS_ACTIVE` |  | `"no"` |
-| `mdssc-common-environment.BRANCH` | Set Platform version (image tag) | `"3.4.1"` |
-| `mdssc-common-environment.MDSSC_BRANCH` | Set MDSSC version (image tag) | `"stable"` |
+| `mdssc-common-environment.BRANCH` | Set Platform version (image tag) | `"platform-2.5.1"` |
+| `mdssc-common-environment.MDSSC_BRANCH` | Set MDSSC version (image tag) | `"4.0.0"` |
 | `mdssc-common-environment.LOG_LEVEL` |  | `"4"` |
 | `mdssc-common-environment.APP_LOG_LEVEL` |  | `"INFORMATION"` |
 | `mdssc-common-environment.SMB_SHORT_DEADLINE` |  | `"5"` |
@@ -250,54 +250,18 @@ The following table lists the configurable parameters of the Metadefender_softwa
 | `mdssc_components.containers.extra_labels.aws-type` |  | `"fargate"` |
 | `mdssc_components.containers.resources.requests.memory` |  | `"0.125Gi"` |
 | `mdssc_components.containers.resources.requests.cpu` |  | `"0.010"` |
-| `mdssc_components.workflowmanagerservice.name` |  | `"workflowmanagerservice"` |
-| `mdssc_components.workflowmanagerservice.custom_repo` |  | `true` |
-| `mdssc_components.workflowmanagerservice.image` |  | `"mdcloudservices_workflowmanager"` |
-| `mdssc_components.workflowmanagerservice.extra_labels.aws-type` |  | `"fargate"` |
-| `mdssc_components.workflowmanagerservice.resources.requests.memory` |  | `"0.25Gi"` |
-| `mdssc_components.workflowmanagerservice.resources.requests.cpu` |  | `"0.100"` |
-| `mdssc_components.loggingservice.name` |  | `"loggingservice"` |
-| `mdssc_components.loggingservice.custom_repo` |  | `true` |
-| `mdssc_components.loggingservice.image` |  | `"mdcloudservices_logging"` |
-| `mdssc_components.loggingservice.extra_labels.aws-type` |  | `"fargate"` |
-| `mdssc_components.loggingservice.resources.requests.memory` |  | `"0.25Gi"` |
-| `mdssc_components.loggingservice.resources.requests.cpu` |  | `"0.050"` |
-| `mdssc_components.remediationsservice.name` |  | `"remediationsservice"` |
-| `mdssc_components.remediationsservice.custom_repo` |  | `true` |
-| `mdssc_components.remediationsservice.image` |  | `"mdcloudservices_remediations"` |
-| `mdssc_components.remediationsservice.extra_labels.aws-type` |  | `"fargate"` |
-| `mdssc_components.remediationsservice.resources.requests.memory` |  | `"0.25Gi"` |
-| `mdssc_components.remediationsservice.resources.requests.cpu` |  | `"0.100"` |
-| `mdssc_components.storagesservice.name` |  | `"storagesservice"` |
-| `mdssc_components.storagesservice.custom_repo` |  | `true` |
-| `mdssc_components.storagesservice.image` |  | `"mdcloudservices_storages"` |
-| `mdssc_components.storagesservice.extra_labels.aws-type` |  | `"fargate"` |
-| `mdssc_components.storagesservice.resources.requests.memory` |  | `"0.25Gi"` |
-| `mdssc_components.storagesservice.resources.requests.cpu` |  | `"0.010"` |
-| `mdssc_components.discoveryservice.name` |  | `"discoveryservice"` |
-| `mdssc_components.discoveryservice.custom_repo` |  | `true` |
-| `mdssc_components.discoveryservice.image` |  | `"mdcloudservices_discovery"` |
-| `mdssc_components.discoveryservice.extra_labels.aws-type` |  | `"fargate"` |
-| `mdssc_components.discoveryservice.resources.requests.memory` |  | `"0.5Gi"` |
-| `mdssc_components.discoveryservice.resources.requests.cpu` |  | `"1.000"` |
-| `mdssc_components.scanningservice.name` |  | `"scanningservice"` |
-| `mdssc_components.scanningservice.custom_repo` |  | `true` |
-| `mdssc_components.scanningservice.image` |  | `"mdcloudservices_scanning"` |
-| `mdssc_components.scanningservice.extra_labels.aws-type` |  | `"fargate"` |
-| `mdssc_components.scanningservice.resources.requests.memory` |  | `"1Gi"` |
-| `mdssc_components.scanningservice.resources.requests.cpu` |  | `"0.500"` |
-| `mdssc_components.jobdispatcher.name` |  | `"jobdispatcher"` |
-| `mdssc_components.jobdispatcher.custom_repo` |  | `true` |
-| `mdssc_components.jobdispatcher.image` |  | `"mdcloudservices_job-dispatcher"` |
-| `mdssc_components.jobdispatcher.extra_labels.aws-type` |  | `"fargate"` |
-| `mdssc_components.jobdispatcher.resources.requests.memory` |  | `"0.25Gi"` |
-| `mdssc_components.jobdispatcher.resources.requests.cpu` |  | `"0.050"` |
-| `mdssc_components.loadbalancerservice.name` |  | `"loadbalancerservice"` |
-| `mdssc_components.loadbalancerservice.custom_repo` |  | `true` |
-| `mdssc_components.loadbalancerservice.image` |  | `"mdcloudservices_load-balancer"` |
-| `mdssc_components.loadbalancerservice.extra_labels.aws-type` |  | `"fargate"` |
-| `mdssc_components.loadbalancerservice.resources.requests.memory` |  | `"0.25Gi"` |
-| `mdssc_components.loadbalancerservice.resources.requests.cpu` |  | `"0.100"` |
+| `mdssc_components.md-platform.name` |  | `"md-platform"` |
+| `mdssc_components.md-platform.custom_repo` |  | `true` |
+| `mdssc_components.md-platform.image` | Consolidated platform image (job-dispatcher, logging, scanning, notification) | `"mdcloudservices_mdplatform"` |
+| `mdssc_components.md-platform.extra_labels.aws-type` |  | `"fargate"` |
+| `mdssc_components.md-platform.resources.requests.memory` |  | `"2Gi"` |
+| `mdssc_components.md-platform.resources.requests.cpu` |  | `"1.500"` |
+| `mdssc_components.common-services.name` |  | `"common-services"` |
+| `mdssc_components.common-services.custom_repo` |  | `true` |
+| `mdssc_components.common-services.image` | Consolidated common image (discovery, remediations, storages, workflowmanager) | `"mdcloudservices_commonservices"` |
+| `mdssc_components.common-services.extra_labels.aws-type` |  | `"fargate"` |
+| `mdssc_components.common-services.resources.requests.memory` |  | `"1.5Gi"` |
+| `mdssc_components.common-services.resources.requests.cpu` |  | `"1.500"` |
 
 
 

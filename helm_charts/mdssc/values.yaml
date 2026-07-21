@@ -14,15 +14,23 @@ POSTGRESQL_URL: "Host=<MDSSC_DB_HOST>;Port=<MDSSC_DB_PORT>;Username=<MDSSC_DB_US
 
 mdssc-common-environment:
 
+  ARCHIVE_PERFORMANCE_MODE: "true"
+  
   DISCOVERY_STRATEGY: "ImageArchiveDiscovery"
   BITBUCKET_DISCOVERY_STRATEGY: "ArchiveExtractionDiscovery"
   BITBUCKET_RATE_LIMIT_RETRY_WAIT_MINUTES: "15"
 
   GITLAB_DISCOVERY_STRATEGY: "ArchiveExtractionDiscovery"
   SVN_DISCOVERY_STRATEGY: "RegularDiscovery"
+  CONTAINER_DISCOVERY_STRATEGY: "ArchiveExtractionDiscovery"
   GITLAB_RATE_LIMIT_RETRY_WAIT_MINUTES: "5"
 
   MDSSC_GRPC_PORT: "5051"
+
+  # Shared root for archive/bundle staging and the gRPC Download jail. The discovery pipeline
+  # writes staged files here, and the Download service rejects any request whose canonicalized
+  # path is not strictly inside this root. Leaving it blank fails closed (all downloads denied).
+  MDSSC_OBJECT_DATA_ROOT: "/tmp/mdssc-object-data"
 
   # Route gRPC (.NET HTTP/2) through system proxy when required (often behind corporate proxies).
   GRPC_CHANNEL_USE_PROXY: "false"
@@ -54,6 +62,12 @@ mdssc-common-environment:
   MDSSC_INCLUDE_DIRECT_SCANS_IN_VIEWS: "true"
   STORE_ARCHIVE_SCAN_RESULTS: "true"
 
+  # Monitored files: artifact store root, recurring rescan cadence, and watch-folder polling
+  MDSSC_MONITORED_FILES_ROOT: "/var/lib/mdssc/monitored"
+  MDSSC_MONITORED_FILES_RESCAN_INTERVAL_SECONDS: "120"
+  MDSSC_MONITORED_FILES_WATCH_ROOT: "/app/monitored-watch"
+  MDSSC_MONITORED_FILES_WATCH_INTERVAL_SECONDS: "30"
+
   # PostgreSQL migrations Configuration
   PGMIGRATIONS_PORT: "27777"
   PGMIGRATIONS_HOST: "pgmigrations"
@@ -83,14 +97,14 @@ mdssc-common-environment:
   SMBSERVICE_PORT: "5002"
   
   CODE_VERSION: "30a858390ca19fff81f2092f83a32f11c07d4fc8"
-  BUILD_VERSION: "3.3.1.0"
+  BUILD_VERSION: "4.0.0.0"
 
   # This can be modified in order to define how many messages can be sent to rabbitmq in parallel.
   RABBITMQ_SCANNING_PREFETCH_COUNT: "20"
 
   HTTPS_ACTIVE: "no"
-  BRANCH: "platform-2.3"          # Set Platform version (image tag)
-  MDSSC_BRANCH: "3.3.1"          # Set MDSSC version (image tag)
+  BRANCH: "platform-2.5.1"          # Set Platform version (image tag)
+  MDSSC_BRANCH: "4.0.0"          # Set MDSSC version (image tag)
 
   # These variables can be changed to reveal debug information in the application
   LOG_LEVEL: "4"
@@ -365,9 +379,18 @@ mdssc_components:
     is_mdssc: true
     custom_repo: true
     image: mdssc_api
+    # Persistent artifact store for monitored files (hostPath/PVC)
+    persistentDir: /var/lib/mdssc/monitored
     env:
       - name: ASPNETCORE_URLS
         value: http://+
+    extraVolumeMounts:
+      - name: monitored-watch
+        mountPath: /app/monitored-watch
+    extraVolumes:
+      monitored-watch:
+        name: monitored-watch
+        emptyDir: {}
     ports:
       - port: 443
       - port: 80
@@ -422,92 +445,31 @@ mdssc_components:
           memory: "0.125Gi"
           cpu: "0.010"
 
-  # ======================================= MDSS COMMON MODULE ================================================ # 
-      
-  workflowmanagerservice:
-    name: workflowmanagerservice
-    custom_repo: true
-    image: mdcloudservices_workflowmanager
-    extra_labels:
-      aws-type: fargate
-    resources:
-      requests:
-        memory: "0.25Gi"
-        cpu: "0.100"
+  # ======================================= MDSS PLATFORM MODULE ================================================ #
+  # As of platform-2.5 the individual platform services are consolidated into two bundled images:
+  #   md-platform     -> job-dispatcher, logging, scanning, notification
+  #   common-services -> discovery, remediations, storages, workflowmanager
+  # licensingservice and identityservice remain separate (defined above).
+  # All four platform images share the BRANCH tag.
 
-  loggingservice:
-    name: loggingservice
+  md-platform:
+    name: md-platform
     custom_repo: true
-    image: "mdcloudservices_logging"
+    image: mdcloudservices_mdplatform
     extra_labels:
       aws-type: fargate
     resources:
       requests:
-        memory: "0.25Gi"
-        cpu: "0.050"
+        memory: "2Gi"
+        cpu: "1.500"
 
-  remediationsservice:
-    name: remediationsservice
+  common-services:
+    name: common-services
     custom_repo: true
-    image: mdcloudservices_remediations
+    image: mdcloudservices_commonservices
     extra_labels:
       aws-type: fargate
     resources:
       requests:
-        memory: "0.25Gi"
-        cpu: "0.100"
-  
-  storagesservice:
-    name: storagesservice
-    custom_repo: true
-    image: mdcloudservices_storages
-    extra_labels:
-      aws-type: fargate
-    resources:
-      requests:
-        memory: "0.25Gi"
-        cpu: "0.010"
-
-  discoveryservice:
-    name: discoveryservice
-    custom_repo: true
-    image: mdcloudservices_discovery
-    extra_labels:
-      aws-type: fargate
-    resources:
-      requests:
-        memory: "0.5Gi"
-        cpu: "1.000"
-
-  scanningservice:
-    name: scanningservice
-    custom_repo: true
-    image: mdcloudservices_scanning
-    extra_labels:
-      aws-type: fargate
-    resources:
-      requests:
-        memory: "1Gi"
-        cpu: "0.500"
-        
-  jobdispatcher:
-    name: jobdispatcher
-    custom_repo: true
-    image: mdcloudservices_job-dispatcher
-    extra_labels:
-      aws-type: fargate
-    resources:
-      requests:
-        memory: "0.25Gi"
-        cpu: "0.050"
-  
-  loadbalancerservice:
-    name: loadbalancerservice
-    custom_repo: true
-    image: "mdcloudservices_load-balancer"
-    extra_labels:
-      aws-type: fargate
-    resources:
-      requests:
-        memory: "0.25Gi"
-        cpu: "0.100"
+        memory: "1.5Gi"
+        cpu: "1.500"
