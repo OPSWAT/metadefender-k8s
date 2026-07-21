@@ -755,6 +755,18 @@ entries:
     version: 3.3.0-0
   metadefender_software_supply_chain:
   - apiVersion: v2
+    appVersion: 4.0.0
+    created: "2026-07-21T16:53:35.691780467Z"
+    description: This is a Helm chart for deploying MetaDefender Software Supply Chain
+      (https://www.opswat.com/products/metadefender/software-supply-chain) in a Kubernetes
+      cluster
+    digest: 6441b56e369ac2355f1456d32459f50d5fb2fcfb5b8d7ce57d57b69b956c51c5
+    name: metadefender_software_supply_chain
+    type: application
+    urls:
+    - https://github.com/OPSWAT/metadefender-k8s/releases/download/metadefender_software_supply_chain-4.0.0/metadefender_software_supply_chain-4.0.0.tgz
+    version: 4.0.0
+  - apiVersion: v2
     appVersion: 3.3.1
     created: "2026-05-28T17:19:27.16726877Z"
     description: This is a Helm chart for deploying MetaDefender Software Supply Chain
@@ -1162,4 +1174,4 @@ entries:
     urls:
     - https://github.com/OPSWAT/metadefender-k8s/releases/download/metadefender_storage_security-0.0.28/metadefender_storage_security-0.0.28.tgz
     version: 0.0.28
-generated: "2026-07-02T11:18:05.064929252Z"
+generated: "2026-07-21T16:53:35.692151569Z"
