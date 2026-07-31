@@ -8,7 +8,14 @@ keywords:
   - mdicapsrv
   - icap
   - MetaDefender ICAP Server
-description: This is a Helm chart for deploying MetaDefender ICAP Server (https://www.opswat.com/products/metadefender/icap) in a Kubernetes cluster.
+description: |
+  This is a Helm chart for deploying MetaDefender ICAP Server (https://www.opswat.com/products/metadefender/icap) in a Kubernetes cluster.
+
+  Release Notes
+  - Non-root security context applied by default to MD ICAP Server, the PostgreSQL container and the database wait init container (runAsNonRoot, no privilege escalation, RuntimeDefault seccomp profile)
+  - Zero-downtime rolling updates for MD ICAP Server: maxSurge 1 / maxUnavailable 0
+  - Optional PodDisruptionBudget for MD ICAP Server via `podDisruptionBudget.enabled` and `podDisruptionBudget.minAvailable` (disabled by default, effective with 2 or more replicas)
+  - The in-cluster PostgreSQL service is no longer created when `postgres_mdicapsrv.enabled` is false
 long_description: |
   This chart can deploy the following depending on the provided values:
   - One or more MD ICAP Server instances 

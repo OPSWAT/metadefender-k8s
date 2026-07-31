@@ -1,0 +1,74 @@
+{{- $root := . -}}
+{{- $name := "identity-service" -}}
+{{- $cfg := index .Values $name | default dict -}}
+{{- $svc := $cfg.service | default dict -}}
+{{- $svcName := .Values.env.IDENTITY_HOST | default $name -}}
+{{- $probeDefaults := dict
+    "startup"   (dict "periodSeconds" 5 "failureThreshold" 60)
+    "liveness"  (dict "periodSeconds" 5 "timeoutSeconds" 10 "failureThreshold" 5)
+    "readiness" (dict "periodSeconds" 5 "timeoutSeconds" 10 "failureThreshold" 5) -}}
+---
+# Identity Service: Deployment + ClusterIP Service.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ $name | quote }}
+  labels:
+    app: {{ $name | quote }}
+    product: {{ include "mdcls.productName" . | quote }}
+spec:
+  # Singleton: exactly one Identity Service at a time (not configurable).
+  replicas: 1
+  selector:
+    matchLabels:
+      app: {{ $name | quote }}
+      product: {{ include "mdcls.productName" . | quote }}
+  template:
+    metadata:
+      labels:
+        product: {{ include "mdcls.productName" . | quote }}
+        app: {{ $name | quote }}
+    spec:
+      {{- if $cfg.terminationGracePeriodSeconds }}
+      terminationGracePeriodSeconds: {{ $cfg.terminationGracePeriodSeconds }}
+      {{- end }}
+      {{- if or $cfg.nodeSelector $cfg.affinity $cfg.tolerations }}
+      {{- include "mdcls.scheduling" $cfg | nindent 6 }}
+      {{- end }}
+      containers:
+        - name: {{ $name | quote }}
+          image: {{ include "mdcls.image" (dict "root" $root "name" $name "version" $cfg.version) | quote }}
+          imagePullPolicy: {{ $cfg.imagePullPolicy | default .Values.imagePullPolicy | quote }}
+          {{- include "mdcls.probes" (dict "defaults" $probeDefaults "overrides" $cfg.probes) | nindent 10 }}
+          {{- if $cfg.resources }}
+          resources:
+            {{- toYaml $cfg.resources | nindent 12 }}
+          {{- end }}
+          envFrom:
+            - configMapRef:
+                name: {{ include "config-map-name" $root }}
+            - secretRef:
+                name: {{ include "secrets-map-name" $root }}
+      {{- if .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml .Values.imagePullSecrets | nindent 8 }}
+      {{- end }}
+---
+# Service name is IDENTITY_HOST (the DNS name other services use).
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ $svcName | quote }}
+  labels:
+    app: {{ $name | quote }}
+    product: {{ include "mdcls.productName" . | quote }}
+spec:
+  {{- if $svc.type }}
+  type: {{ $svc.type }}
+  {{- end }}
+  selector:
+    app: {{ $name | quote }}
+  ports:
+    - name: identity-service-rest-port
+      port: {{ $root.Values.env.IDENTITY_PORT }}
+      targetPort: {{ $root.Values.env.IDENTITY_LISTEN_PORT }}

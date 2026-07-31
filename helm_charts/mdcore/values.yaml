@@ -59,31 +59,36 @@ mdcore_generate_secrets: true
 IGNITION_JSON: false
 ############# STORAGE CONFIGURATION ##################
 # Component persistence:
-# - postgres-core: database files at /var/lib/postgresql/data (external DB: set deploy_with_core_db: false)
+# - postgres-core: database files under /var/lib/postgresql (external DB: set deploy_with_core_db: false)
 # - md-core: sanitized/DLP/quarantined files via STORAGE_PATH (set persistentDir: null for fully stateless md-core)
 #
 # storage_provisioner:
 # - hostPath: node directory per component under hostPathPrefix (default; no PVC mount in pods)
 # - custom (or any non-hostPath value): mount PVC; set each component's storage_name to the PVC name
 #
-# PVC configuration (pick one format):
-# 1. List (recommended): one entry per PVC — postgres-core and md-core-storage below
-# 2. Single object: set pvc.enabled, pvc.name, etc. (postgres only)
+# PVC configuration:
+# 1. pvc (single map): the postgres-core PVC. Toggle with pvc.enabled (e.g. --set pvc.enabled=false).
+# 2. pvcList (list): additional PVCs, e.g. md-core-storage. One entry per PVC.
 # 3. storage_configs: inject full PVC manifests
+# Note: pvc is intentionally a map (not a list) so map-form overrides like --set pvc.enabled=...
+# continue to work. Put extra PVCs in pvcList; do not re-add postgres-core there (avoids duplicates).
 
 pvc:
-  - name: postgres-core
-    enabled: true
-    labels:
-      app: mdcore-opswat
-    annotations: {}
-    accessModes:
-      - ReadWriteOnce
-    resources:
-      requests:
-        storage: 100Gi
-    storageClassName: default
-    volumeMode: Filesystem
+  name: postgres-core
+  enabled: false              # default off: postgres uses hostPath (storage_provisioner) as in 5.19.0. Set true (+ storage_provisioner != hostPath) to provision a PVC instead.
+  labels:
+    app: mdcore-opswat
+  annotations: {}
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 100Gi
+  storageClassName: default
+  volumeMode: Filesystem
+
+# Additional PVCs beyond postgres-core. Each entry is rendered when its `enabled` is true.
+pvcList:
   - name: md-core-storage
     enabled: false              # enable this when required storage for sanitized, DLP-processed, and quarantined files
     labels:
@@ -96,21 +101,6 @@ pvc:
         storage: 100Gi
     storageClassName: default
     volumeMode: Filesystem
-
-### Single PVC object format (alternative to the list above) — postgres only:
-#pvc:
-#  enabled: true
-#  name: postgres-core
-#  labels:
-#    app: mdcore-opswat
-#  annotations: {}
-#  accessModes:
-#    - ReadWriteOnce
-#  resources:
-#    requests:
-#      storage: 100Gi
-#  storageClassName: default
-#  volumeMode: Filesystem
 
 
 storage_configs: null        # Custom storage yaml, set to null for ephemeral or hostPath storage
@@ -201,6 +191,10 @@ env:                                                            # Set additional
   MDCORE_CERT_PASSPHRASE: ""
   MDCORE_SSL_PROTOCOLS: ""
   MDCORE_SSL_ADVANCED_CONFIGS: ""
+  # Splunk log forwarding settings (configures MD Core's [splunk] ignition section)
+  SPLUNK_SERVER: ""                   # Splunk forwarder address, format: <udp|tcp|tcps>://<ip>:<port> (leave empty to disable Splunk integration)
+  SPLUNK_LOG_LEVEL: ""                # Splunk log verbosity: info, extinfo, debug, warning, error
+  SPLUNK_ALLOW_SELF_SIGNED_CERT: ""   # Set to "true" to accept a self-signed TLS certificate when using tcps
   # Config import on container startup (import a settings export .zip mounted into the pod)
   MDCORE_CONFIG_IMPORT_FILE: ""       # Path/filename of the config .zip to import at startup (leave empty to disable import). The deployment is expected to mount the ZIP file via a ConfigMap or a volume moun
   MDCORE_CONFIG_IMPORT_PASSWORD: ""   # Password protecting the config .zip (leave empty if the package is not encrypted)
@@ -238,7 +232,7 @@ keda:
 core_components:
   postgres-core:
     name: postgres-core
-    image: postgres:14.8
+    image: postgres:18
     env:
       - name: POSTGRES_PASSWORD
         valueFrom:
@@ -253,14 +247,17 @@ core_components:
     ports:
       - port: 5432
     is_db: true
-    #persistentDir: /var/lib/postgresql/data
-    #storage_name: postgres-core
+    # Postgres 18 moved the volume mount to the home dir (/var/lib/postgresql) and
+    # PGDATA to a version-scoped subdir (/var/lib/postgresql/18/docker). Mount at
+    # the home dir and let PGDATA default. See LMS-50532 / docker-library/postgres#1259.
+    persistentDir: /var/lib/postgresql
+    storage_name: postgres-core
     tls:
       enabled: false
 
   md-core:
     name: md-core
-    image: opswat/metadefendercore-debian:5.20.0        # Overrides the default docker image for the MD Core service, this value can be changed if you want to set a different version of MD Core
+    image: opswat/metadefendercore-debian:5.21.0        # Overrides the default docker image for the MD Core service, this value can be changed if you want to set a different version of MD Core
     replicas: 1                                         # Sets the number of replicas if you want to have multiple MD Core instances
     env:
       - name: MD_USER
@@ -349,7 +346,7 @@ core_components:
         maxSurge: 0
     initContainers:
       - name: check-db-ready
-        image: opswat/metadefendercore-debian:5.20.0
+        image: opswat/metadefendercore-debian:5.21.0
         imagePullPolicy: IfNotPresent
         envFrom:
           - configMapRef:

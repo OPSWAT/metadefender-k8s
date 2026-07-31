@@ -1,0 +1,53 @@
+# override-values.yaml — copy to override-values.yaml, fill in the
+# placeholders below, and install with:
+#   helm install md-cluster-services ./md-cluster-services -f override-values.yaml
+#   helm install md-cluster-instances ./md-cluster-instances -f override-values.yaml
+#
+# Do not commit the filled-in copy — it contains real credentials.
+
+# --- Images -----------------------------------------------------------------
+DOCKER_REPO: 'opswat/metadefendercluster-debian'  # <DOCKER_REPO>:<service>-<MDCLS_VERSION>
+MDCLS_VERSION: '2.8.0'
+imagePullPolicy: IfNotPresent
+# imagePullSecrets:
+#   - name: regcred
+
+# --- Workers: replica count per instance type ------------------------------
+workers:
+  ometascan:
+    replicas: 1
+  api-gateway:
+    replicas: 1
+  callback-service:
+    replicas: 1
+
+secrets:
+  # --- Required: no working default ---
+  CONTROL_CENTER_ENCRYPTION_KEY: '<32-character-key>'  # must be EXACTLY 32 characters
+  ADMIN_APIKEY: '<control-center-api-key>'
+
+  # --- Shared connection keys (must match across services that talk to each other) ---
+  IDENTITY_CONNECTION_KEY: '<key>'
+  FILE_STORAGE_CONNECTION_KEY: '<key>'
+  WORKER_CONNECTION_KEY: '<key>'
+
+  # --- Bootstrap administrator account ---
+  ADMIN_USER: '<admin-account>'
+  ADMIN_PASSWORD: '<admin-password>'
+  ADMIN_EMAIL: '<admin-email>'
+
+  # --- Optional ---
+  LICENSE_KEY: ''   # when set, deployed MD Core instances are activated automatically
+
+# --- Persistence (recommended: see "Production configuration" in README.md) ---
+postgres:
+  enabled: true
+  persistence:
+    enabled: true
+    size: 100Gi
+
+file-storage:
+  replicas: 1
+  persistence:
+    enabled: true
+    size: 100Gi

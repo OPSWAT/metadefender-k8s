@@ -62,6 +62,10 @@ spec:
         {{- end }}
           {{- end }}
           imagePullPolicy: {{ $component.imagePullPolicy }}
+          {{- if $component.securityContext }}
+          securityContext:
+            {{- toYaml $component.securityContext | nindent 12 }}
+          {{- end }}
           {{- if $.Values.healthcheck.enabled }}
           {{- if $component.livenessProbe }}
           livenessProbe:
@@ -75,10 +79,6 @@ spec:
             periodSeconds: {{ $component.livenessProbe.periodSeconds }}
             timeoutSeconds: {{ $component.livenessProbe.timeoutSeconds }}
             failureThreshold: {{ $component.livenessProbe.failureThreshold }}
-          {{- end }}
-          {{- if $component.securityContext }}
-          securityContext:
-            {{- toYaml $component.securityContext | nindent 12 }}
           {{- end }}
           {{- if $component.readinessProbe }}
           readinessProbe:

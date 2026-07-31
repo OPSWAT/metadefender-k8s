@@ -7,23 +7,23 @@
 # Each entry in mdss_components may override these via its own `tag:` field.
 # When `tag:` is not set on a component, mdss_version is used as the default.
 # =============================================================================
-mdss_version: "4.5.0"
-mdplatform_version: "2.6.0"
+mdss_version: "4.5.1"
+mdplatform_version: "2.6.1"
 
 # Per-integration image tags (md-integrations releases each adapter independently)
-alibabacloud_version: "2.2.0"
-amazonsdk_version: "2.2.0"
-azureblob_version: "2.2.0"
-azurefiles_version: "2.2.0"
-box_version: "2.2.0"
-ftp_version: "2.2.0"
-googlecloud_version: "2.2.0"
-graph_version: "2.2.0"
-mft_version: "2.2.0"
-nfs_version: "2.2.0"
-oraclesdk_version: "2.2.0"
-sftp_version: "2.2.0"
-smb_version: "2.2.0"
+alibabacloud_version: "2.3.0"
+amazonsdk_version: "2.3.0"
+azureblob_version: "2.3.0"
+azurefiles_version: "2.3.0"
+box_version: "2.3.0"
+ftp_version: "2.3.0"
+googlecloud_version: "2.3.0"
+graph_version: "2.3.0"
+mft_version: "2.3.0"
+nfs_version: "2.3.0"
+oraclesdk_version: "2.3.0"
+sftp_version: "2.3.0"
+smb_version: "2.3.0"
 
 # Generate secrets for MDSS database username, password, postgres user and password
 mdss_generate_secrets: true
@@ -307,6 +307,8 @@ mdss-common-environment:
   # Kill switch: set to true to skip the scan-overlap check and allow scans that overlap an
   # already-running scan (restores pre-overlap-feature behaviour). Default false (check enabled).
   SKIP_SCAN_OVERLAP_CHECK: "false"
+
+  SCANNING_AUTOSCALER_ENABLED: "true"
 
   # Data Retention Job Run Intervals
 

@@ -55,7 +55,9 @@ resource "azurerm_subnet" "subnet_db" {
   resource_group_name  = azurerm_resource_group.k8s.name
   virtual_network_name = azurerm_virtual_network.vnet.name
   address_prefixes     = ["192.168.4.0/24"]
-  service_endpoints    = ["Microsoft.Storage"]
+  service_endpoint {
+    service = "Microsoft.Storage"
+  }
   delegation {
     name = "fs"
     service_delegation {
@@ -72,10 +74,9 @@ resource "azurerm_private_dns_zone" "priv_zone" {
 }
 
 resource "azurerm_private_dns_zone_virtual_network_link" "priv_zone_link" {
-  name                  = "${var.postgres_db_account_name}.com"
-  private_dns_zone_name = azurerm_private_dns_zone.priv_zone.name
-  virtual_network_id    = azurerm_virtual_network.vnet.id
-  resource_group_name   = azurerm_resource_group.k8s.name
+  name                = "${var.postgres_db_account_name}.com"
+  private_dns_zone_id = azurerm_private_dns_zone.priv_zone.id
+  virtual_network_id  = azurerm_virtual_network.vnet.id
 }
 
 resource "azurerm_kubernetes_cluster" "k8s" {
@@ -108,6 +109,10 @@ resource "azurerm_kubernetes_cluster" "k8s" {
   service_principal {
     client_id     = var.aks_service_principal_app_id
     client_secret = var.aks_service_principal_client_secret
+  }
+
+  node_provisioning_profile {
+    mode = "Manual"
   }
 
   network_profile {

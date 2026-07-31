@@ -80,7 +80,7 @@ The entire deployment can be customized by overwriting the chart's default confi
 | Component | Persistent data | Default mount | Environment variable |
 | --------- | ----------------- | ------------- | -------------------- |
 | `md-core` | Sanitized, DLP-processed, and quarantined files | `STORAGE_PATH` (`/metadefendercore`) | `STORAGE_PATH` (from `mdcore-env` ConfigMap) |
-| `postgres-core` | PostgreSQL database | `/var/lib/postgresql/data` | N/A (use external DB in production) |
+| `postgres-core` | PostgreSQL database | `/var/lib/postgresql` (PGDATA is a version-scoped subdir) | N/A (use external DB in production) |
 
 - **Default (`storage_provisioner: hostPath`)**: Each component with `persistentDir` gets a dedicated directory on the node under `hostPathPrefix/<component-name>`. Pods can be recreated; data survives on the same node.
 - **PVC mode**: Set `storage_provisioner` to `custom` (or any value other than `hostPath`). Ensure each component's `storage_name` matches a PVC from the `pvc` list (for example `postgres-core` and `md-core-storage`).
@@ -194,7 +194,7 @@ The following table lists the configurable parameters of the Metadefender core c
 | `core_components.postgres-core.env` |  | `[{"name": "POSTGRES_PASSWORD", "valueFrom": {"secretKeyRef": {"name": "mdcore-postgres-cred", "key": "password"}}}, {"name": "POSTGRES_USER", "valueFrom": {"secretKeyRef": {"name": "mdcore-postgres-cred", "key": "user"}}}]` |
 | `core_components.postgres-core.ports` |  | `[{"port": 5432}]` |
 | `core_components.postgres-core.is_db` |  | `true` |
-| `core_components.postgres-core.persistentDir` |  | `"/var/lib/postgresql/data"` |
+| `core_components.postgres-core.persistentDir` | Volume mount at postgres home dir; PGDATA (version-scoped subdir) lives under it | `"/var/lib/postgresql"` |
 | `core_components.postgres-core.storage_name` | PVC name when not using hostPath | `"postgres-core"` |
 | `core_components.md-core.persistentDir` | Mount path for MD Core file storage; set to `null` for stateless | `"/metadefendercore"` |
 | `core_components.md-core.storage_name` | PVC name when not using hostPath | `"md-core-storage"` |

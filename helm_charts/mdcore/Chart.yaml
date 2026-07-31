@@ -4,11 +4,8 @@ description: |
   This is a Helm chart for deploying MetaDefender Core (https://www.opswat.com/products/metadefender/core) in a Kubernetes cluster. 
 
   Release Notes
-  - MD Core file storage: STORAGE_PATH with persistent volume mount for sanitized/DLP/quarantined files
-  - KEDA autoscaling based on MD Core scan slot usage
-  - Config import on startup: MDCORE_CONFIG_IMPORT_FILE, MDCORE_CONFIG_IMPORT_PASSWORD and MDCORE_IMPORT_FORCE_UPDATE_YARA to import a settings export .zip mounted into the pod
-  - Optional IGNITION_JSON bootstrap to configure MD Core without requiring mdcore-stack-configs
-  - Removed retired NGINX-specific ingress defaults (ingress disabled by default, ingress class typo fixed)
+  - Splunk log forwarding: SPLUNK_SERVER, SPLUNK_LOG_LEVEL and SPLUNK_ALLOW_SELF_SIGNED_CERT to configure MD Core's [splunk] ignition section
+  - In-cluster PostgreSQL bumped to postgres:18; the postgres-core data volume is now mounted at /var/lib/postgresql (PG18 home dir) with PGDATA left to default
 
 
 long_description: |
@@ -51,5 +48,5 @@ long_description: |
   
 type: application
 
-version: 5.20.0
-appVersion: 5.20.0
+version: 5.21.0
+appVersion: 5.21.0

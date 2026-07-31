@@ -8,9 +8,52 @@
 
 {{ end }}
 
+{{/* Single postgres-core PVC (map form). Kept as a map so map-form overrides like
+     --set pvc.enabled=... keep working. A stray slice passed to pvc is tolerated below. */}}
+{{- if and .Values.pvc (not (kindIs "slice" .Values.pvc)) }}
+{{ if .Values.pvc.enabled }}
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ .Values.pvc.name }}
+  labels:
+    {{- range $key, $value := .Values.pvc.labels }}
+    {{ $key }}: {{ $value | quote }}
+    {{- end }}
+  annotations:
+    {{- range $key, $value := .Values.pvc.annotations }}
+    {{ $key }}: {{ $value | quote }}
+    {{- end }}
+spec:
+  accessModes:
+    {{- range .Values.pvc.accessModes }}
+    - {{ . | quote }}
+    {{- end }}
+  resources:
+    requests:
+      storage: {{ .Values.pvc.resources.requests.storage }}
+  storageClassName: {{ .Values.pvc.storageClassName | quote }}
+  volumeMode: {{ .Values.pvc.volumeMode | quote }}
+  {{- if .Values.pvc.selector }}
+  selector:
+    matchLabels:
+      {{- range $key, $value := .Values.pvc.selector.matchLabels }}
+      {{ $key }}: {{ $value | quote }}
+      {{- end }}
+  {{- end }}
+  {{- if .Values.pvc.volumeName }}
+  volumeName: {{ .Values.pvc.volumeName | quote }}
+  {{- end }}
+{{ end }}
+{{- end }}
+
+{{/* Additional PVCs (list form). Backward-compatible: a list passed to pvc is also honored. */}}
+{{- $pvcList := .Values.pvcList }}
 {{- if kindIs "slice" .Values.pvc }}
-  # The value is a list
-{{- range $i, $pvc := .Values.pvc }}
+{{- $pvcList = concat (default (list) .Values.pvc) (default (list) .Values.pvcList) }}
+{{- end }}
+{{- range $i, $pvc := $pvcList }}
 {{ if $pvc.enabled }}
 ---
 apiVersion: v1
@@ -49,44 +92,4 @@ spec:
   {{- end }}
 
 {{ end }}
-{{- end }}
-
-{{- else }}
-  # The value is not a list
-{{ if $.Values.pvc.enabled }}
----
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  name: {{ .Values.pvc.name }}
-  labels:
-    {{- range $key, $value := .Values.pvc.labels }}
-    {{ $key }}: {{ $value | quote }}
-    {{- end }}
-  annotations:
-    {{- range $key, $value := .Values.pvc.annotations }}
-    {{ $key }}: {{ $value | quote }}
-    {{- end }}
-spec:
-  accessModes:
-    {{- range .Values.pvc.accessModes }}
-    - {{ . | quote }}
-    {{- end }}
-  resources:
-    requests:
-      storage: {{ .Values.pvc.resources.requests.storage }}
-  storageClassName: {{ .Values.pvc.storageClassName | quote }}
-  volumeMode: {{ .Values.pvc.volumeMode | quote }}
-  {{- if .Values.pvc.selector }}
-  selector:
-    matchLabels:
-      {{- range $key, $value := .Values.pvc.selector.matchLabels }}
-      {{ $key }}: {{ $value | quote }}
-      {{- end }}
-  {{- end }}
-  {{- if .Values.pvc.volumeName }}
-  volumeName: {{ .Values.pvc.volumeName | quote }}
-  {{- end }}
-{{ end }}
-
 {{- end }}

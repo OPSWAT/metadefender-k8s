@@ -31,6 +31,10 @@ spec:
           env:
             {{- toYaml $component.env | nindent 12 }}
           name: "postgres-mdicapsrv"
+          {{- if $component.securityContext }}
+          securityContext:
+            {{- toYaml $component.securityContext | nindent 12 }}
+          {{- end }}
           ports:
             - containerPort: {{ $component.ports.rest }}
           {{- if $.Values.storage_configs.enabled }}

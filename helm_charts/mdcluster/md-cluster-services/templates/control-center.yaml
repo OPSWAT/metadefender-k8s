@@ -1,0 +1,118 @@
+{{- $root := . -}}
+{{- $name := "control-center" -}}
+{{- $cfg := index .Values $name | default dict -}}
+{{- $svc := $cfg.service | default dict -}}
+{{- $svcName := .Values.env.CONTROL_CENTER_HOST | default $name -}}
+{{- /*
+Build FILE_STORAGE_SERVICES = "<host>:<port>,..." for every file-storage
+replica. Each replica is a stable StatefulSet pod addressed as
+file-storage-<ordinal>.<FILE_STORAGE_SERVICE_NAMESPACE>:<FILE_STORAGE_LISTEN_PORT>.
+*/ -}}
+{{- $fsReplicas := int ((index .Values "file-storage" | default dict).replicas | default 1) -}}
+{{- $fsPort := required "env.FILE_STORAGE_LISTEN_PORT is required to build FILE_STORAGE_SERVICES" .Values.env.FILE_STORAGE_LISTEN_PORT -}}
+{{- $fsNamespace := .Values.env.FILE_STORAGE_SERVICE_NAMESPACE | default "file-storage" -}}
+{{- $fsHosts := list -}}
+{{- range $i := until $fsReplicas -}}
+{{- $fsHosts = append $fsHosts (printf "file-storage-%d.%s:%v" $i $fsNamespace $fsPort) -}}
+{{- end -}}
+{{- $fileStorageServices := join "," $fsHosts -}}
+{{- $probeDefaults := dict
+    "startup"   (dict "periodSeconds" 5 "failureThreshold" 60)
+    "liveness"  (dict "periodSeconds" 5 "timeoutSeconds" 10 "failureThreshold" 5)
+    "readiness" (dict "periodSeconds" 5 "timeoutSeconds" 10 "failureThreshold" 5) -}}
+---
+# Control Center: Deployment + Service.
+# Structural details are fixed here; values.yaml exposes only operational knobs.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ $name | quote }}
+  labels:
+    app: {{ $name | quote }}
+    product: {{ include "mdcls.productName" . | quote }}
+spec:
+  # Singleton: exactly one Control Center at a time (not configurable).
+  replicas: 1
+  selector:
+    matchLabels:
+      app: {{ $name | quote }}
+      product: {{ include "mdcls.productName" . | quote }}
+  # Recreate-style rollout: never run two Control Centers at once.
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+      maxSurge: 0
+  template:
+    metadata:
+      labels:
+        product: {{ include "mdcls.productName" . | quote }}
+        app: {{ $name | quote }}
+    spec:
+      {{- if $cfg.terminationGracePeriodSeconds }}
+      terminationGracePeriodSeconds: {{ $cfg.terminationGracePeriodSeconds }}
+      {{- end }}
+      {{- if or $cfg.nodeSelector $cfg.affinity $cfg.tolerations }}
+      {{- include "mdcls.scheduling" $cfg | nindent 6 }}
+      {{- end }}
+      containers:
+        - name: {{ $name | quote }}
+          image: {{ include "mdcls.image" (dict "root" $root "name" $name "version" $cfg.version) | quote }}
+          imagePullPolicy: {{ $cfg.imagePullPolicy | default .Values.imagePullPolicy | quote }}
+          {{- include "mdcls.probes" (dict "defaults" $probeDefaults "overrides" $cfg.probes) | nindent 10 }}
+          volumeMounts:
+            - name: installers
+              mountPath: /app/installers
+              readOnly: true
+          {{- if $cfg.resources }}
+          resources:
+            {{- toYaml $cfg.resources | nindent 12 }}
+          {{- end }}
+          envFrom:
+            - configMapRef:
+                name: {{ include "config-map-name" $root }}
+            - secretRef:
+                name: {{ include "secrets-map-name" $root }}
+          env:
+            # Per-replica file-storage endpoints, derived from file-storage.replicas.
+            - name: FILE_STORAGE_SERVICES
+              value: {{ $fileStorageServices | quote }}
+      # Stage the bundled installers onto the shared volume before start.
+      initContainers:
+        - name: installers
+          image: {{ include "mdcls.image" (dict "root" $root "name" "installers" "version" $cfg.version) | quote }}
+          imagePullPolicy: {{ $cfg.imagePullPolicy | default .Values.imagePullPolicy | quote }}
+          env:
+            - name: TARGET_DIR
+              value: /app/installers
+          volumeMounts:
+            - name: installers
+              mountPath: /app/installers
+      {{- if .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml .Values.imagePullSecrets | nindent 8 }}
+      {{- end }}
+      volumes:
+        - name: installers
+          emptyDir: {}
+---
+# ClusterIP/NodePort/LoadBalancer per .service.type (default NodePort).
+# Service name is CONTROL_CENTER_HOST (the DNS name other services use).
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ $svcName | quote }}
+  labels:
+    app: {{ $name | quote }}
+    product: {{ include "mdcls.productName" . | quote }}
+spec:
+  type: {{ $svc.type | default "NodePort" }}
+  selector:
+    app: {{ $name | quote }}
+  ports:
+    - name: control-center-rest-port
+      port: {{ $root.Values.env.CONTROL_CENTER_PORT }}
+      targetPort: {{ $root.Values.env.CONTROL_CENTER_LISTEN_PORT }}
+      {{- if $svc.nodePort }}
+      nodePort: {{ $svc.nodePort }}
+      {{- end }}

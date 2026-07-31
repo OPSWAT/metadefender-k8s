@@ -1,0 +1,69 @@
+apiVersion: v2
+name: md-cluster-instances
+description: MetaDefender Cluster worker instances (ometascan, api-gateway, callback-service, ...).
+
+long_description: |
+  This chart deploys the worker half of MetaDefender Cluster
+  (https://www.opswat.com/docs/mdcluster). Depending on the provided values it
+  can deploy the following:
+  - One StatefulSet per entry in `workers`, each running the worker image with
+    that entry's key as its `WORKER_INSTANCE_TYPE` (by default: `ometascan`,
+    `api-gateway` and `callback-service`)
+  - A shared headless `worker` Service fronting every instance, plus an optional
+    dedicated Service for the `api-gateway` instance
+  - A per-instance pre-upgrade Job, when upgrades are opted into
+
+  ## Requirements
+  This chart is not standalone. It reads the `mdcluster-config` ConfigMap and
+  `mdcluster-secrets` Secret created by the `md-cluster-services` chart, which
+  must already be installed in the same namespace. Service names on both sides
+  come from the shared `mdcls.productName` helper, so the two charts always
+  agree.
+
+  ## Installation
+
+  ### From source
+  MetaDefender Cluster can be installed directly from the source code, here's an
+  example using generic values:
+  ```console
+  git clone https://github.com/OPSWAT/metadefender-k8s.git metadefender
+  cd metadefender/helm_charts
+  helm install md-cluster-services ./mdcluster/md-cluster-services
+  helm install md-cluster-instances ./mdcluster/md-cluster-instances
+  ```
+
+  ### From the GitHub helm repo
+  The installation can also be done using the helm repo which is updated on each release:
+  ```console
+  helm repo add mdk8s https://opswat.github.io/metadefender-k8s/
+  helm repo update mdk8s
+  helm install md-cluster-services mdk8s/md-cluster-services
+  helm install md-cluster-instances mdk8s/md-cluster-instances
+  ```
+
+  ## Operational Notes
+  The entire deployment can be customized by overwriting the chart's default
+  configuration values. Here are a few points to look out for when changing
+  these values:
+  - Instance types are defined entirely by the `workers` map. Adding a key
+    creates another StatefulSet; removing one deletes it. Each entry requires a
+    `listenPort`, and the ports must not collide
+  - Scaling is per instance via `workers.<name>.replicas`; there is no
+    autoscaling in this chart
+  - Pre-upgrade Jobs are opt-in and only run on `helm upgrade`. Enable them for
+    a single upgrade with `--set upgradeInstances=true`, or per instance with
+    `workers.<name>.upgradeInstances`
+  - Workers shut down gracefully over a long window
+    (`terminationGracePeriodSeconds`, default 1800) so in-flight scans can
+    finish. Lower it only if you accept losing those scans
+  - `env` here holds only the keys the worker template reads directly. Every
+    other setting comes from the `mdcluster-config` ConfigMap, so change it in
+    the `md-cluster-services` chart rather than duplicating it here
+
+type: application
+version: 0.1.0
+# Workers consume the mdcluster-config ConfigMap and mdcluster-secrets Secret
+# created by the md-cluster-services chart. Their names come from the shared
+# mdcls.productName helper, so the charts always agree. Install
+# md-cluster-services first.
+appVersion: "2.8.0"

@@ -1,0 +1,69 @@
+apiVersion: v2
+name: md-cluster-services
+description: MetaDefender Cluster core services (Control Center, File Storage, Identity Service) plus infrastructure (postgres/redis/rabbitmq) and shared config/secrets.
+
+long_description: |
+  This chart deploys the control plane half of MetaDefender Cluster
+  (https://www.opswat.com/docs/mdcluster). Depending on the provided values it
+  can deploy the following:
+  - Control Center (singleton Deployment, exposed through a NodePort Service)
+  - Identity Service (singleton Deployment, ClusterIP Service)
+  - File Storage (StatefulSet behind a headless Service, optionally persistent)
+  - A PostgreSQL instance pre-configured to be used by MetaDefender Cluster pods
+  - A Redis Cache instance pre-configured to be used by MetaDefender Cluster pods
+  - A RabbitMQ instance pre-configured to be used by MetaDefender Cluster pods
+
+  It also owns the `mdcluster-config` ConfigMap and `mdcluster-secrets` Secret
+  that the companion `md-cluster-instances` chart (the workers) consumes, so
+  this chart must be installed first, in the same namespace.
+
+  ## Installation
+
+  ### From source
+  MetaDefender Cluster can be installed directly from the source code, here's an
+  example using generic values:
+  ```console
+  git clone https://github.com/OPSWAT/metadefender-k8s.git metadefender
+  cd metadefender/helm_charts
+  helm install md-cluster-services ./mdcluster/md-cluster-services
+  helm install md-cluster-instances ./mdcluster/md-cluster-instances
+  ```
+
+  ### From the GitHub helm repo
+  The installation can also be done using the helm repo which is updated on each release:
+  ```console
+  helm repo add mdk8s https://opswat.github.io/metadefender-k8s/
+  helm repo update mdk8s
+  helm install md-cluster-services mdk8s/md-cluster-services
+  helm install md-cluster-instances mdk8s/md-cluster-instances
+  ```
+
+  ## Operational Notes
+  The entire deployment can be customized by overwriting the chart's default
+  configuration values. The defaults target dev/test parity with the
+  docker-compose stack, not production HA. Here are a few points to look out for
+  when changing these values:
+  - By default, PostgreSQL, Redis and RabbitMQ are deployed alongside the
+    MetaDefender Cluster deployment. In a production environment it's
+    recommended to use external services instead: set `postgres.enabled`,
+    `redis.enabled` and/or `rabbitmq.enabled` to false and point the matching
+    `env` entries (`CONTROL_CENTER_DB_HOST`, `IDENTITY_DB_HOST`,
+    `DATALAKE_SERVICES`, `WAREHOUSE_SERVICES`, `REDIS_SERVICES`,
+    `RABBITMQ_SERVICES`) at the external endpoints
+  - Persistence is disabled by default, so the database and scanned files live
+    in an emptyDir and are lost when the pod is replaced. Set
+    `postgres.persistence.enabled` and `file-storage.persistence.enabled` to
+    true for any deployment whose data matters
+  - Every credential under `secrets` ships with a development default. Override
+    all of them, and set `secrets.LICENSE_KEY`, before exposing the deployment
+  - Control Center is published through a NodePort Service by default; change
+    `control-center.service.type` (and optionally `nodePort`) to suit the cluster
+
+type: application
+version: 0.1.0
+# Mirrors the docker-compose stack; defaults target dev/test parity, not production HA.
+# Infrastructure (postgres/redis/rabbitmq) is deployed from the same official
+# images as docker-compose via in-chart templates -- no subchart dependencies.
+# Owns the mdcluster-config ConfigMap and mdcluster-secrets Secret that the
+# md-cluster-instances chart (workers) consumes.
+appVersion: "2.8.0"

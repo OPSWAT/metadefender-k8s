@@ -84,6 +84,13 @@ postgres_mdicapsrv:
   ports:
     rest: 5432
   service_type: ClusterIP
+  securityContext:
+    allowPrivilegeEscalation: false
+    runAsNonRoot: true
+    runAsUser: 999
+    runAsGroup: 999
+    seccompProfile:
+      type: RuntimeDefault
   # customPodDefinitions:
   #   nodeSelector:
   #     labelName: labelValue
@@ -153,6 +160,13 @@ icap_components:
         command: ['sh', '-c', 
           'until pg_isready -h $DB_HOST -p $DB_PORT; 
           do echo waiting for database; sleep 2; done;']
+        securityContext:
+          allowPrivilegeEscalation: false
+          runAsNonRoot: true
+          runAsUser: 999
+          runAsGroup: 999
+          seccompProfile:
+            type: RuntimeDefault
         resources:
           requests:
             memory: "128Mi"   # Minimum reserved memory
@@ -277,12 +291,13 @@ icap_components:
     service_type: ClusterIP          # Sets the service type for MD ICAP Server service (ClusterIP, NodePort, LoadBalancer)
     sessionAffinity: None
     service_annotations: null
-    securityContext: {}
-    # securityContext:
-    #   runAsUser: 1000
-    #   runAsGroup: 1000
-    #   runAsNonRoot: true
-    #   allowPrivilegeEscalation: false
+    securityContext:
+      allowPrivilegeEscalation: false
+      runAsNonRoot: true
+      runAsUser: 1000
+      runAsGroup: 1000
+      seccompProfile:
+        type: RuntimeDefault
 # If `aws-type` is set to `fargate`, the MD ICAP Server pod will be scheduled on an AWS Fargate virtual node (if a fargate profile is provisioned and configured)
     extra_labels:
       aws-type: fargate
@@ -332,7 +347,8 @@ icap_components:
     strategy:
       type: RollingUpdate
       rollingUpdate:
-        maxSurge: 0
+        maxSurge: 1        # Allow 1 extra pod to start before the old one is terminated
+        maxUnavailable: 0  # No pod may be unavailable during the rollout (zero-downtime)
 
   ## Autoscaling parameters
   ## @param autoscaling.enabled create an Horizontal Pod Autoscaler
@@ -376,3 +392,10 @@ autoscaling:
         value: 4
         periodSeconds: 15
       selectPolicy: Max
+# PodDisruptionBudget protects service availability during voluntary disruptions
+# (node drains, cluster upgrades, autoscaler scale-downs).
+# Effective only when replicas >= 2 (i.e. autoscaling is enabled or replicas is set manually).
+# minAvailable: minimum number of pods that must remain available during a disruption.
+podDisruptionBudget:
+  enabled: false
+  minAvailable: 1

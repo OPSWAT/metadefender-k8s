@@ -1,0 +1,163 @@
+{{- $root := . -}}
+{{- $svcName := .Values.env.WORKER_SERVICE_NAMESPACE | default "worker" -}}
+{{- $probeDefaults := dict
+    "startup"   (dict "periodSeconds" 5 "failureThreshold" 5)
+    "liveness"  (dict "periodSeconds" 5 "timeoutSeconds" 10 "failureThreshold" 12)
+    "readiness" (dict "periodSeconds" 5 "timeoutSeconds" 10 "failureThreshold" 1) -}}
+{{- if .Values.workers }}
+---
+# Shared headless Service fronting every worker instance.
+# Name is WORKER_SERVICE_NAMESPACE (the DNS name workers are addressed under).
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ $svcName | quote }}
+  labels:
+    app: worker
+    product: {{ include "mdcls.productName" . | quote }}
+spec:
+  clusterIP: None
+  publishNotReadyAddresses: true
+  selector:
+    component: worker
+  ports:
+    - name: worker-rest-port
+      port: {{ .Values.env.WORKER_LISTEN_PORT }}
+{{- end }}
+{{- range $wname, $w := .Values.workers }}
+{{- $w = $w | default dict -}}
+{{- $svc := $w.service | default dict -}}
+{{- $isolate := $w.isolate | default dict -}}
+{{- $isoEnabled := true -}}
+{{- if hasKey $isolate "enabled" }}{{- $isoEnabled = $isolate.enabled -}}{{- end -}}
+{{- $env := dict
+    "WORKER_INSTANCE_TYPE"            $wname
+    "WORKER_INSTANCE_PORT"            $w.listenPort
+    "WORKER_INSTANCE_LOG_LEVEL"       ($w.logLevel | default "info")
+    "WORKER_ISOLATE_INSTANCE"         $isoEnabled
+    "WORKER_ISOLATE_INSTANCE_TIMEOUT" ($isolate.timeout | default 1600) }}
+---
+# Worker instance "{{ $wname }}" (WORKER_INSTANCE_TYPE={{ $wname }}).
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ $wname | quote }}
+  labels:
+    app: {{ $wname | quote }}
+    product: {{ include "mdcls.productName" $ | quote }}
+spec:
+  {{- if not (kindIs "invalid" $w.replicas) }}
+  replicas: {{ $w.replicas }}
+  {{- end }}
+  serviceName: {{ $svcName | quote }}
+  selector:
+    matchLabels:
+      app: {{ $wname | quote }}
+      product: {{ include "mdcls.productName" $ | quote }}
+  podManagementPolicy: Parallel
+  template:
+    metadata:
+      labels:
+        product: {{ include "mdcls.productName" $ | quote }}
+        app: {{ $wname | quote }}
+        component: worker
+    spec:
+      terminationGracePeriodSeconds: {{ $w.terminationGracePeriodSeconds | default 1800 }}
+      {{- if or $w.nodeSelector $w.affinity $w.tolerations }}
+      {{- include "mdcls.scheduling" $w | nindent 6 }}
+      {{- end }}
+      containers:
+        - name: {{ $wname | quote }}
+          image: {{ include "mdcls.image" (dict "root" $root "name" "worker" "version" $w.version) | quote }}
+          imagePullPolicy: {{ $w.imagePullPolicy | default $.Values.imagePullPolicy | quote }}
+          {{- include "mdcls.probes" (dict "defaults" $probeDefaults "overrides" $w.probes) | nindent 10 }}
+          {{- if $w.resources }}
+          resources:
+            {{- toYaml $w.resources | nindent 12 }}
+          {{- end }}
+          envFrom:
+            - configMapRef:
+                name: {{ include "config-map-name" $root }}
+            - secretRef:
+                name: {{ include "secrets-map-name" $root }}
+          env:
+            {{- include "render.env" $env | nindent 12 }}
+      {{- if $.Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml $.Values.imagePullSecrets | nindent 8 }}
+      {{- end }}
+
+{{- if $w.service }}
+{{- if ne $wname "api-gateway" }}
+{{- fail (printf "workers.%s: a dedicated service is only supported for \"api-gateway\", not %q" $wname $wname) }}
+{{- end }}
+---
+# Dedicated Service targeting only the {{ $wname }} instance.
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ $wname | quote }}
+  labels:
+    app: {{ $wname | quote }}
+    product: {{ include "mdcls.productName" $ | quote }}
+spec:
+  {{- if $svc.type }}
+  type: {{ $svc.type }}
+  {{- end }}
+  {{- if $svc.clusterIP }}
+  clusterIP: {{ $svc.clusterIP }}
+  {{- end }}
+  selector:
+    app: {{ $wname | quote }}
+  ports:
+    - name: {{ $wname }}-rest-port
+      # port = external access port (default listenPort); targetPort is always
+      # the container's listenPort so routing stays correct if they differ.
+      port: {{ $svc.port | default $w.listenPort }}
+      targetPort: {{ $w.listenPort }}
+{{- end }}
+{{- /* Per-instance pre-upgrade Job. Per-worker upgradeInstances overrides the
+       global flag; runs the worker image with this instance's env as
+       `pre-upgrade` before a `helm upgrade`. */ -}}
+{{- $upgrade := $.Values.upgradeInstances -}}
+{{- if hasKey $w "upgradeInstances" }}{{- $upgrade = $w.upgradeInstances -}}{{- end -}}
+{{- if $upgrade }}
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ printf "%s-pre-upgrade" $wname | quote }}
+  labels:
+    app: {{ $wname | quote }}
+    product: {{ include "mdcls.productName" $ | quote }}
+  annotations:
+    "helm.sh/hook": pre-upgrade
+    "helm.sh/hook-weight": "0"
+    "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
+spec:
+  backoffLimit: 0
+  template:
+    metadata:
+      labels:
+        app: {{ $wname | quote }}
+        product: {{ include "mdcls.productName" $ | quote }}
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: pre-upgrade
+          image: {{ include "mdcls.image" (dict "root" $root "name" "worker" "version" $w.version) | quote }}
+          imagePullPolicy: {{ $w.imagePullPolicy | default $.Values.imagePullPolicy | quote }}
+          args: ["pre-upgrade"]
+          envFrom:
+            - configMapRef:
+                name: {{ include "config-map-name" $root }}
+            - secretRef:
+                name: {{ include "secrets-map-name" $root }}
+          env:
+            {{- include "render.env" $env | nindent 12 }}
+      {{- if $.Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml $.Values.imagePullSecrets | nindent 8 }}
+      {{- end }}
+{{- end }}
+{{- end }}

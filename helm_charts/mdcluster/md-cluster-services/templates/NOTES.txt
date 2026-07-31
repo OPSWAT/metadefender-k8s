@@ -1,0 +1,1 @@
+md-cluster {{ .Chart.AppVersion }} deployed as release "{{ .Release.Name }}" in namespace "{{ .Release.Namespace }}".

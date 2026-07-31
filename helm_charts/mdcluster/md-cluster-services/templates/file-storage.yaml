@@ -1,0 +1,108 @@
+{{- $root := . -}}
+{{- $name := "file-storage" -}}
+{{- $cfg := index .Values $name | default dict -}}
+{{- $svcName := .Values.env.FILE_STORAGE_SERVICE_NAMESPACE | default $name -}}
+{{- $persistence := $cfg.persistence | default dict -}}
+{{- $probeDefaults := dict
+    "startup"   (dict "periodSeconds" 5 "failureThreshold" 60)
+    "liveness"  (dict "periodSeconds" 5 "timeoutSeconds" 10 "failureThreshold" 5)
+    "readiness" (dict "periodSeconds" 5 "timeoutSeconds" 10 "failureThreshold" 5) -}}
+---
+# File Storage: StatefulSet + headless Service.
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ $name | quote }}
+  labels:
+    app: {{ $name | quote }}
+    product: {{ include "mdcls.productName" . | quote }}
+spec:
+  {{- if not (kindIs "invalid" $cfg.replicas) }}
+  replicas: {{ $cfg.replicas }}
+  {{- end }}
+  # Must match the headless Service name (FILE_STORAGE_SERVICE_NAMESPACE).
+  serviceName: {{ $svcName | quote }}
+  # Treat a pod as available only after it has been ready for 15s.
+  minReadySeconds: 15
+  selector:
+    matchLabels:
+      app: {{ $name | quote }}
+      product: {{ include "mdcls.productName" . | quote }}
+  podManagementPolicy: Parallel
+  template:
+    metadata:
+      labels:
+        product: {{ include "mdcls.productName" . | quote }}
+        app: {{ $name | quote }}
+    spec:
+      {{- if $cfg.terminationGracePeriodSeconds }}
+      terminationGracePeriodSeconds: {{ $cfg.terminationGracePeriodSeconds }}
+      {{- end }}
+      # Runs as UID/GID 1000; fsGroup makes the mounted volume group-writable.
+      securityContext:
+        fsGroup: 1000
+        fsGroupChangePolicy: OnRootMismatch
+      {{- if or $cfg.nodeSelector $cfg.affinity $cfg.tolerations }}
+      {{- include "mdcls.scheduling" $cfg | nindent 6 }}
+      {{- end }}
+      containers:
+        - name: {{ $name | quote }}
+          image: {{ include "mdcls.image" (dict "root" $root "name" $name "version" $cfg.version) | quote }}
+          imagePullPolicy: {{ $cfg.imagePullPolicy | default .Values.imagePullPolicy | quote }}
+          {{- include "mdcls.probes" (dict "defaults" $probeDefaults "overrides" $cfg.probes) | nindent 10 }}
+          volumeMounts:
+            - name: data
+              mountPath: /app/storage
+          {{- if $cfg.resources }}
+          resources:
+            {{- toYaml $cfg.resources | nindent 12 }}
+          {{- end }}
+          envFrom:
+            - configMapRef:
+                name: {{ include "config-map-name" $root }}
+            - secretRef:
+                name: {{ include "secrets-map-name" $root }}
+      {{- if .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml .Values.imagePullSecrets | nindent 8 }}
+      {{- end }}
+      {{- if not $persistence.enabled }}
+      # Ephemeral storage (compose-like) when persistence is disabled.
+      volumes:
+        - name: data
+          emptyDir: {}
+      {{- end }}
+  {{- if $persistence.enabled }}
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+        labels:
+          app: {{ $name | quote }}
+          product: {{ include "mdcls.productName" . | quote }}
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        {{- if $persistence.storageClassName }}
+        storageClassName: {{ $persistence.storageClassName | quote }}
+        {{- end }}
+        resources:
+          requests:
+            storage: {{ $persistence.size | default "100Gi" }}
+  {{- end }}
+---
+# Headless Service; name is FILE_STORAGE_SERVICE_NAMESPACE.
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ $svcName | quote }}
+  labels:
+    app: {{ $name | quote }}
+    product: {{ include "mdcls.productName" . | quote }}
+spec:
+  clusterIP: None
+  publishNotReadyAddresses: true
+  selector:
+    app: {{ $name | quote }}
+  ports:
+    - name: file-storage-rest-port
+      port: {{ .Values.env.FILE_STORAGE_LISTEN_PORT }}
+      targetPort: {{ .Values.env.FILE_STORAGE_LISTEN_PORT }}
