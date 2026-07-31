@@ -305,6 +305,21 @@ entries:
     version: 2.5.1
   metadefender_core:
   - apiVersion: v2
+    appVersion: 5.21.0
+    created: "2026-07-31T16:23:54.18582706Z"
+    description: 'This is a Helm chart for deploying MetaDefender Core (https://www.opswat.com/products/metadefender/core)
+      in a Kubernetes cluster.   Release Notes - Splunk log forwarding: SPLUNK_SERVER,
+      SPLUNK_LOG_LEVEL and SPLUNK_ALLOW_SELF_SIGNED_CERT to configure MD Core''s [splunk]
+      ignition section - In-cluster PostgreSQL bumped to postgres:18; the postgres-core
+      data volume is now mounted at /var/lib/postgresql (PG18 home dir) with PGDATA
+      left to default '
+    digest: 007718146823710cfe93c6a2fe1aebf11d5963ac706b647e5bc1d45a59fa2cce
+    name: metadefender_core
+    type: application
+    urls:
+    - https://github.com/OPSWAT/metadefender-k8s/releases/download/metadefender_core-5.21.0/metadefender_core-5.21.0.tgz
+    version: 5.21.0
+  - apiVersion: v2
     appVersion: 5.20.0
     created: "2026-07-02T11:18:04.913965755Z"
     description: 'This is a Helm chart for deploying MetaDefender Core (https://www.opswat.com/products/metadefender/core)
@@ -586,20 +601,20 @@ entries:
     - https://github.com/OPSWAT/metadefender-k8s/releases/download/metadefender_core-5.8.0/metadefender_core-5.8.0.tgz
     version: 5.8.0
   - apiVersion: v2
-    created: "2024-07-08T14:24:41.341759116Z"
+    created: "2024-07-22T16:47:35.294039413Z"
     description: This is a Helm chart for deploying MetaDefender Core (https://www.opswat.com/products/metadefender/core)
       in a Kubernetes cluster
-    digest: 1352980a41a94a0f74f41ca24eef9b756a7f579df971dcff0f5d94ca0b3274a7
+    digest: c2ac5383e59c29e677f6469dd77bd48d15dc1daba42f530778c369eaf0baa8b3
     name: metadefender_core
     type: application
     urls:
     - https://github.com/OPSWAT/metadefender-k8s/releases/download/metadefender_core-5.8.0-0/metadefender_core-5.8.0-0.tgz
     version: 5.8.0-0
   - apiVersion: v2
-    created: "2024-07-22T16:47:35.294039413Z"
+    created: "2024-07-08T14:24:41.341759116Z"
     description: This is a Helm chart for deploying MetaDefender Core (https://www.opswat.com/products/metadefender/core)
       in a Kubernetes cluster
-    digest: c2ac5383e59c29e677f6469dd77bd48d15dc1daba42f530778c369eaf0baa8b3
+    digest: 1352980a41a94a0f74f41ca24eef9b756a7f579df971dcff0f5d94ca0b3274a7
     name: metadefender_core
     type: application
     urls:
@@ -900,6 +915,18 @@ entries:
     version: 2.3.2
   metadefender_storage_security:
   - apiVersion: v2
+    appVersion: 4.5.1
+    created: "2026-07-31T16:23:54.396495431Z"
+    description: This is a Helm chart for deploying MetaDefender for Secure Storage
+      (https://www.opswat.com/products/metadefender/storage-security) in a Kubernetes
+      cluster
+    digest: db4be2bd85aaab3ea18f9d485592b0243183305e1d516bc6fb2af95f965603d0
+    name: metadefender_storage_security
+    type: application
+    urls:
+    - https://github.com/OPSWAT/metadefender-k8s/releases/download/metadefender_storage_security-4.5.1/metadefender_storage_security-4.5.1.tgz
+    version: 4.5.1
+  - apiVersion: v2
     appVersion: 4.5.0
     created: "2026-07-24T05:54:02.577411892Z"
     description: This is a Helm chart for deploying MetaDefender for Secure Storage
@@ -1186,4 +1213,4 @@ entries:
     urls:
     - https://github.com/OPSWAT/metadefender-k8s/releases/download/metadefender_storage_security-0.0.28/metadefender_storage_security-0.0.28.tgz
     version: 0.0.28
-generated: "2026-07-24T05:54:02.578088779Z"
+generated: "2026-07-31T16:23:54.396828818Z"
