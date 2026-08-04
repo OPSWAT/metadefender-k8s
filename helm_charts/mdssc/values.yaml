@@ -50,7 +50,8 @@ mdssc-common-environment:
 
   MDSSC_DETAILED_TRACE_LOGGING: "false"
 
-  DIRECT_FILE_UPLOAD_SIZE_MB: "128"
+  DIRECT_FILE_UPLOAD_SIZE_MB: "2048"
+  DIRECT_FILE_UPLOAD_COUNT_LIMIT: "10000"
   DIRECT_FILE_BUFFER_SIZE_KB: "128"
   # Number of seconds after an archive is placed in (/tmp) before it becomes eligible for deletion (ArchiveExtraction discovery)
   SCAN_TMP_ARCHIVE_RETENTION_SECONDS: "3600"
@@ -62,9 +63,16 @@ mdssc-common-environment:
   MDSSC_INCLUDE_DIRECT_SCANS_IN_VIEWS: "true"
   STORE_ARCHIVE_SCAN_RESULTS: "true"
 
+  # Container scans: guardrails on the per-layer staging temp folder so low disk can't deadlock discovery
+  MDSSC_CONTAINER_TMP_MIN_FREE_MB: "2048"
+  MDSSC_CONTAINER_TMP_WAIT_MAX_MINUTES: "1440"
+
+  # Multi-tenant mode (ABAC). Disabled by default.
+  MULTI_TENANT_ENABLED: "false"
+
   # Monitored files: artifact store root, recurring rescan cadence, and watch-folder polling
   MDSSC_MONITORED_FILES_ROOT: "/var/lib/mdssc/monitored"
-  MDSSC_MONITORED_FILES_RESCAN_INTERVAL_SECONDS: "120"
+  MDSSC_MONITORED_FILES_RESCAN_INTERVAL_SECONDS: "300"
   MDSSC_MONITORED_FILES_WATCH_ROOT: "/app/monitored-watch"
   MDSSC_MONITORED_FILES_WATCH_INTERVAL_SECONDS: "30"
 
@@ -97,14 +105,18 @@ mdssc-common-environment:
   SMBSERVICE_PORT: "5002"
   
   CODE_VERSION: "30a858390ca19fff81f2092f83a32f11c07d4fc8"
-  BUILD_VERSION: "4.0.0.0"
+  BUILD_VERSION: "4.0.1.0"
+
+  # OPSWAT OTLP telemetry target (matches the shipped release default). Blank both to disable export.
+  OPTEL_OPSWAT_COLLECTOR_ENDPOINT: "https://mdssc-telemetry.metadefender.com:4317"
+  OPTEL_OPSWAT_COLLECTOR_PROTOCOL: "grpc"
 
   # This can be modified in order to define how many messages can be sent to rabbitmq in parallel.
   RABBITMQ_SCANNING_PREFETCH_COUNT: "20"
 
   HTTPS_ACTIVE: "no"
   BRANCH: "platform-2.5.1"          # Set Platform version (image tag)
-  MDSSC_BRANCH: "4.0.0"          # Set MDSSC version (image tag)
+  MDSSC_BRANCH: "4.0.1"          # Set MDSSC version (image tag)
 
   # These variables can be changed to reveal debug information in the application
   LOG_LEVEL: "4"
