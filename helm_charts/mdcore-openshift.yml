@@ -1,5 +1,20 @@
+## Values file for deploying MD Core on a RedHat OpenShift cluster.
+##
+## This file is meant to be usable as-is on a default OpenShift cluster: the only
+## value you must supply is the license key. Everything here is compatible with the
+## `restricted-v2` SCC, which is what OpenShift applies to normal (non-privileged)
+## workloads. Under that SCC:
+##  - the pod runs as an arbitrary, per-namespace UID that has no entry in the
+##    container's user database, and it cannot write to the container's root directory
+##  - `hostPath` volumes are not allowed
+## Both of those are handled below.
+##
+## Example installation:
+##   helm install my_mdcore ./helm_charts/mdcore -f mdcore-openshift.yml \
+##     --set 'mdcore_license_key=<SET_LICENSE_KEY>'
 
-## Uncomment the following lines to set a fixed user and password for the MD Core web interface that will overwrite 
+
+## Uncomment the following lines to set a fixed user and password for the MD Core web interface that will overwrite
 ## any secret that already exists for these credentials (the secret will be kept when the chart is deleted)
 ## If left unset the following will apply:
 ## - if no "mdcore-cred" secret exists, it will be created with the user "admin" and a random password
@@ -9,17 +24,17 @@
 # mdcore_password: <SET_PASSWORD_HERE>
 
 
-## Uncomment the following lines to set a fixed user and password for the MD Core PostgreSQL database that will overwrite 
+## Uncomment the following lines to set a fixed user and password for the MD Core PostgreSQL database that will overwrite
 ## any secret that already exists for these credentials (the secret will be kept when the chart is deleted)
 ## If left unset the following will apply:
 ## - if no "mdcore-postgres-cred" secret exists, it will be created with the user "postgres" and a random password
 ## - if the "mdcore-postgres-cred" secret exists, the values from the secret are used as credentials
 
 db_user: postgres
-db_password: <SET_POSTGRES_PASSWORD>
+# db_password: <SET_POSTGRES_PASSWORD>       # if unset, a random password is generated
 
 
-## Uncomment the following line to set a fixed API key for MD Core that will overwrite 
+## Uncomment the following line to set a fixed API key for MD Core that will overwrite
 ## any secret that already exists for API key (the secret will be kept when the chart is deleted)
 ## If left unset the following will apply:
 ## - if no "mdcore-api-key" secret exists, it will be created with a random 36 character API key
@@ -28,8 +43,8 @@ db_password: <SET_POSTGRES_PASSWORD>
 # mdcore_api_key: <SET_36_CHARACTER_API_KEY>
 
 
-## Set your MD Core license key here and it will be stored in the "mdcore-license-key" secret that will be created 
-## if it does not exist. If left unset then a a secret is generated with and empty license key.
+## Set your MD Core license key here and it will be stored in the "mdcore-license-key" secret that will be created
+## if it does not exist. If left unset then a secret is generated with an empty license key.
 
 mdcore_license_key: <SET_LICENSE_KEY_HERE>
 
@@ -43,45 +58,191 @@ MDCORE_CERT_PATH: "/cert"
 
 deploy_with_core_db: true
 
-storage_provisioner: custom       # Type of storage to use in the pod definition
-storage_name: ocstorage           # Name of the PVC to use in the pod definition
+############# STORAGE CONFIGURATION ##################
+## `hostPath` is not permitted under restricted-v2, so this example does not use it.
+## As shipped, neither component declares a `persistentDir`, so the chart renders no
+## volumes for them and both run on ephemeral container storage.
+##
+## IMPORTANT: that means the in-cluster database does NOT survive a pod restart. This
+## default is intended for evaluating the deployment on any OpenShift cluster without
+## needing a StorageClass. For anything beyond evaluation, either:
+##   a) use an external managed PostgreSQL service - set `deploy_with_core_db: false`
+##      and point `MDCORE_DB_HOST` at it (recommended for production), or
+##   b) provision a PVC for the database by uncommenting the block below and setting
+##      a storage class available in your cluster (`oc get storageclass`).
 
-storage_configs:              # Example using a PVC with dynamic provisioning from an existing storage class
-  pvc-example:
-    apiVersion: v1
-    kind: PersistentVolumeClaim
-    metadata:
-      name: ocstorage
-    spec:
-      accessModes:
-        - ReadWriteOnce
-      resources:
-        requests:
-          storage: 1Gi
-      storageClassName: <SET_STORAGE_CLASS_NAME>
+pvc:
+  enabled: false
+# pvc:
+#   name: postgres-core
+#   enabled: true
+#   accessModes:
+#     - ReadWriteOnce
+#   resources:
+#     requests:
+#       storage: 100Gi
+#   storageClassName: <SET_STORAGE_CLASS_NAME>
+#   volumeMode: Filesystem
+# storage_provisioner: custom          # any value other than hostPath mounts the PVC
 
-env:
-  POSTGRESQL_ADMIN_PASSWORD: <SET_POSTGRES_ADMIN_PASSWORD>
-  # POSTGRESQL_USER: <DB_USER>
-  # POSTGRESQL_PASSWORD: <DB_PASSWORD>
+############# SECURITY CONTEXT #######################
+## Both components below declare the same security context. Everything in it is
+## what the `restricted-v2` SCC already requires, so nothing here loosens the
+## cluster's policy - the point is that the deployment states its security posture
+## explicitly instead of relying on the SCC to mutate the pod at admission time.
+## That makes the manifests reviewable and lets them be validated against a policy
+## engine or run unchanged on a plain Kubernetes cluster with Pod Security Admission
+## set to `restricted`.
+##
+##   runAsNonRoot: true                never run as UID 0
+##   allowPrivilegeEscalation: false   no setuid/setgid escalation
+##   capabilities.drop: [ALL]          drop every Linux capability
+##   seccompProfile: RuntimeDefault    use the runtime's default seccomp filter
+##
+## Deliberately NOT set: runAsUser, runAsGroup and fsGroup. OpenShift allocates a
+## UID and an SELinux context per namespace and injects them; hardcoding a UID would
+## be rejected by the SCC. MD Core and PostgreSQL both run correctly under whatever
+## arbitrary UID the namespace assigns.
+##
+## readOnlyRootFilesystem is not enabled: MD Core writes to several paths inside its
+## install directory at runtime, so a read-only root filesystem would require mounting
+## a writable volume over each of them and is out of scope for this reference.
 
 core_components:
+  postgres-core:
+    ## The upstream `postgres:18` image from the chart defaults runs correctly under
+    ## restricted-v2 as long as its data directory is not a mounted volume, so no
+    ## RedHat image and no registry.redhat.io pull secret are required here.
+    ## If you prefer a RedHat-supported image, override `image` and provide a pull
+    ## secret via `imagePullSecrets` - note those images expect POSTGRESQL_* env vars
+    ## instead of the POSTGRES_* ones the chart sets by default.
+    persistentDir: null                # ephemeral database, see the note above
+
+    securityContext:                   # container-level, see the block above
+      runAsNonRoot: true
+      allowPrivilegeEscalation: false
+      capabilities:
+        drop:
+          - ALL
+      seccompProfile:
+        type: RuntimeDefault
+    customPodDefinitions:              # pod-level
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+
   md-core:
     name: md-core
     replicas: 1
-    #persistentDir: /metadefendercore
-    #storage_name: md-core-storage
-    # service_type: LoadBalancer          # Set to LoadBalancer or NodePort to expose MD Core directly from the service
+
+    securityContext:                   # container-level, see the block above
+      runAsNonRoot: true
+      allowPrivilegeEscalation: false
+      capabilities:
+        drop:
+          - ALL
+      seccompProfile:
+        type: RuntimeDefault
+    customPodDefinitions:              # pod-level
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+
+    ## Required on OpenShift. The MD Core entrypoint creates STORAGE_PATH
+    ## (/metadefendercore) at the container's root directory, which the arbitrary UID
+    ## assigned by restricted-v2 cannot write - the container would otherwise exit with
+    ## "Cannot create '/metadefendercore' directory." and crash-loop. Mounting any
+    ## writable volume at that path resolves it. Replace this emptyDir with a PVC if
+    ## you need sanitized / DLP-processed / quarantined files to be retained.
+    extraVolumeMounts:
+      - name: mdcore-storage
+        mountPath: /metadefendercore
+    extraVolumes:
+      mdcore-storage:
+        name: mdcore-storage
+        emptyDir: {}
+
+    ## Required on OpenShift. This replaces the chart's default init container purely
+    ## to add `-U $DB_USER` to the pg_isready call, plus the DB_USER variable it needs
+    ## (DB_USER is not part of the mdcore-env ConfigMap, so it comes from the secret).
+    ## Without an explicit -U, libpq derives the default database user from the current
+    ## UID. Under restricted-v2 that UID has no entry in the container's user database,
+    ## the lookup fails, and pg_isready exits 3 ("no attempt") without ever connecting -
+    ## so this init container loops forever and MD Core never starts.
+    ## Keep the image tag here in sync with core_components.md-core.image.
+    initContainers:
+      - name: check-db-ready
+        image: opswat/metadefendercore-debian:5.21.0
+        imagePullPolicy: IfNotPresent
+        securityContext:               # same posture as the main containers
+          runAsNonRoot: true
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+              - ALL
+          seccompProfile:
+            type: RuntimeDefault
+        envFrom:
+          - configMapRef:
+              name: mdcore-env
+        env:
+          - name: DB_USER
+            valueFrom:
+              secretKeyRef:
+                name: mdcore-postgres-cred
+                key: user
+        command: ['sh', '-c',
+          'until pg_isready -h $DB_HOST -p $DB_PORT -U $DB_USER;
+          do echo waiting for database; sleep 2; done;']
+
+    ## On first boot MD Core downloads all engine definitions, which can take well
+    ## over the chart's default 90s. A low liveness delay kills the pod mid-download
+    ## and it never becomes ready.
+    livenessProbe:
+      httpGet:
+        path: /readyz
+        port: 8008
+      initialDelaySeconds: 600
+      periodSeconds: 30
+      timeoutSeconds: 10
+      failureThreshold: 10
+
+    # service_type: LoadBalancer        # Set to LoadBalancer or NodePort to expose MD Core directly from the service
     # resources:
     #   requests:
-    #     cpu: 2.0                        # Recommended minimum of 7 for production, can be lower for testing 
-  postgres-core:
-    image: registry.redhat.io/rhel8/postgresql-12
-    # persistentDir: null                 # Set to null to disable persistance of the database
+    #     cpu: 4.0                      # Recommended minimum of 7 for production, can be lower for testing
 
+############# SERVICE EXPOSURE #######################
+## On OpenShift a Route is the native way to expose a Service outside the cluster,
+## so this example uses one instead of an Ingress. The chart renders it from
+## templates/route-template.yml, which is inert unless core_route.enabled is true.
+##
+## `host` is left empty on purpose: OpenShift then generates a hostname from the
+## cluster's own ingress domain (<name>-<namespace>.apps.<cluster-domain>), which
+## makes this file portable across clusters. Set it if you need a fixed hostname,
+## and note that `<APP_NAMESPACE>` is replaced with the release namespace.
+##
+## TLS terminates at the router with edge termination, and plain HTTP is redirected
+## to HTTPS, so the MD Core REST API and web UI are not served unencrypted outside
+## the cluster. The router's default certificate is used; to serve your own, add
+## `certificate` and `key` under `tls`, or configure MD Core for end-to-end TLS
+## (core_components.md-core.tls) and switch termination to `reencrypt`.
+core_route:
+  enabled: true
+  name: core-route
+  service: md-core
+  port: 8008
+  host: ""                             # empty -> OpenShift generates the hostname
+  tls:
+    termination: edge
+    insecureEdgeTerminationPolicy: Redirect
+
+## Ingress is disabled: the Route above replaces it. Enable this instead only if
+## your cluster runs an ingress controller you specifically want to use.
 core_ingress:
-  host: <APP_NAMESPACE>-mdcore.k8s       # Hostname for the publicly accessible ingress, the `<APP_NAMESPACE>` string will be replaced with the namespace where the chart is deployed
-  enabled: true                         # Enable or disable the ingress creation
+  enabled: false
 
 # Docker repo to use, this should be changed when using private images (this string will be prepended to the image name)
 # If a component has "custom_repo: true" then the image name will be formated as "{docker_repo/}image_name{:BRANCH}" otherwise it will remain unaltered

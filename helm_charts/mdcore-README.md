@@ -34,34 +34,98 @@ helm install my_mdcore mdk8s/metadefender_core
 
 ### OpenShift deployment
 
+`mdcore-openshift.yml` is a **reference configuration** for deploying MD Core on Red Hat OpenShift under the platform's default security standards. It deploys MD Core and PostgreSQL as **non-root containers under the `restricted-v2` SCC**, declares their security context explicitly, and exposes MD Core through an OpenShift **Route** with TLS. The license key is the only value you have to supply.
+
+`restricted-v2` is the SCC OpenShift applies to authenticated users' workloads by default. It denies all host access, requires a UID and SELinux context allocated to the namespace, requires all Linux capabilities to be dropped, and disallows privilege escalation. Three consequences affect this chart:
+
+- The pod runs as an **arbitrary, per-namespace UID** which has **no entry in the container's user database** and **cannot write to the container's root directory**.
+- **`hostPath` volumes are not permitted**, so the chart's default `storage_provisioner: hostPath` cannot be used.
+- All **capabilities must be dropped** and privilege escalation disallowed.
+
+#### **Security context**
+
+The reference configuration declares the security posture on the pod, on both application containers, and on the init container, rather than letting the SCC mutate the pod silently at admission time. That makes the manifests reviewable, lets them be checked by a policy engine, and lets them run unchanged on a plain Kubernetes cluster whose namespaces use Pod Security Admission in `restricted` mode.
+
+| Setting | Value | Purpose |
+| ------- | ----- | ------- |
+| `runAsNonRoot` | `true` | never run as UID 0 |
+| `allowPrivilegeEscalation` | `false` | block setuid/setgid escalation |
+| `capabilities.drop` | `[ALL]` | drop every Linux capability |
+| `seccompProfile.type` | `RuntimeDefault` | apply the runtime's default seccomp filter |
+
+`runAsUser`, `runAsGroup` and `fsGroup` are deliberately **not** set. OpenShift allocates a UID range and an SELinux context per namespace and injects them; hardcoding a UID would be rejected by the SCC. MD Core and PostgreSQL both run correctly under whatever UID the namespace assigns.
+
+`readOnlyRootFilesystem` is **not** enabled: MD Core writes to several paths inside its install directory at runtime, so a read-only root filesystem would require mounting a writable volume over each of them.
+
+#### **ConfigMap and Secret configuration**
+
+The chart creates these itself; no manual step is required. Credentials are never placed in the pod spec — they are referenced from Secrets via `secretKeyRef`.
+
+| Object | Kind | Contents |
+| ------ | ---- | -------- |
+| `mdcore-env` | ConfigMap | database host/port/mode, REST port, `STORAGE_PATH`, activation server |
+| `<release>-config` | ConfigMap | the `env` values (health check, proxy, Splunk, licensing settings) |
+| `mdcore-cred` | Secret | MD Core web interface user and password |
+| `mdcore-postgres-cred` | Secret | PostgreSQL user and password |
+| `mdcore-api-key` | Secret | MD Core REST API key |
+| `mdcore-license-key` | Secret | MD Core license key |
+
+Any credential left unset is generated randomly on first install. Secrets are intentionally **retained when the chart is uninstalled** so a reinstall reuses the same credentials — delete them explicitly, or delete the namespace, if you want them gone.
+
 #### **Cluster requirements**
-1. A configured image pull secret for the current OpenShift user for the RedHat docker repo: `registry.redhat.io` . The helm values for OpenShift use the following image from RedHat: `registry.redhat.io/rhel8/postgresql-12` . This is only required if using the database deployment from the Helm chart, a managed external database service can be configured instead if available.
-The repo credentials can be configured with the following `oc` commands:
+No image pull secret and no StorageClass are required for a default deployment — `mdcore-openshift.yml` deploys the upstream `postgres:18` image with an ephemeral database, which works on any OpenShift cluster. You only need a valid MD Core license key.
+
+Optional, depending on how you deploy:
+- **Database persistence**: an existing StorageClass, if you uncomment the `pvc` block in `mdcore-openshift.yml`. Check what is available with `oc get storageclass`. For production, prefer an external managed PostgreSQL service (`deploy_with_core_db: false`) over an in-cluster database.
+- **A RedHat PostgreSQL image**: only if you specifically want RedHat-supported images instead of the upstream one. Those images live in `registry.redhat.io` and need a pull secret, and they expect `POSTGRESQL_*` environment variables rather than the `POSTGRES_*` ones the chart sets by default:
 ```
 oc create secret docker-registry imagepullsecret --docker-server=registry.redhat.io --docker-username=<REDHAT_USER> --docker-password=<REDHAT_PASSWORD> --docker-email=<REDHAT_EMAIL>
 
 oc secrets link <OPENSHIFT_USER> imagepullsecret --for=pull
 ```
-2. An existing persistent volume or storage class to be used for database persistency. The `mdcore-openshift.yml` values file is configured with an example persistent volume claim using a certain storage class.
 
 #### **Helm chart**
-To deploy the helm chart directly in a RedHat OpenShift cluster we have the `mdcore-openshift.yml` values file. This file can be used as an example of the changes required for OpenShift:
-- **PostgreSQL image**: the docker image has been changed to use the RedHat repo: `registry.redhat.io/rhel8/postgresql-12`
-- **Storage**: a persistent volume claim has been configured to use an existing storage class since `hostPath` is not supported on an unprivileged container
+To deploy the helm chart directly in a RedHat OpenShift cluster we have the `mdcore-openshift.yml` values file. It differs from the generic values in the following ways:
+- **Security context**: declared explicitly on the pod and on every container, as described above.
+- **Service exposure**: an OpenShift Route with edge TLS, instead of an Ingress. See the section below.
+- **Database readiness check**: the init container is overridden to call `pg_isready` with an explicit `-U $DB_USER`. Without it, libpq derives the default database user from the current UID; that lookup fails for the arbitrary UID, so `pg_isready` exits 3 (`no attempt`) without ever connecting and the pod stays in `Init:0/1` indefinitely. Keep the image tag in that override in sync with `core_components.md-core.image` when upgrading.
+- **Writable `STORAGE_PATH`**: an `emptyDir` is mounted at `/metadefendercore`. The MD Core entrypoint creates this directory at the container's root, which the arbitrary UID cannot write — without the mount the container exits with `Cannot create '/metadefendercore' directory.` and crash-loops. Replace the `emptyDir` with a PVC if sanitized / DLP-processed / quarantined files must be retained.
+- **Storage**: no `hostPath` and no PVC by default. Neither component declares a `persistentDir`, so both use ephemeral container storage. **The in-cluster database does not survive a pod restart** — see the notes in the values file for the persistent and external-database options.
+- **PostgreSQL image**: the chart default (`postgres:18`) is kept. It runs correctly under `restricted-v2` as long as its data directory is not a mounted volume.
+- **Liveness probe**: `initialDelaySeconds` is raised to 600. On first boot MD Core downloads all engine definitions, which can exceed the default 90s and cause the pod to be killed mid-download.
+- **Ingress**: disabled, since a Route is the usual way to expose a service on OpenShift (see below).
 
 Example installation when using local helm files and setting the custom values manually:
 ```
 helm install my_mdcore ./helm_charts/mdcore -f mdcore-openshift.yml \
- --set 'db_password=<SET_POSTGRES_PASSWORD>' \
- --set 'storage_configs.pvc-example.spec.storageClassName=<SET_STORAGE_CLASS_NAME>' \
  --set 'mdcore_license_key=<SET_LICENSE_KEY>'
 ```
 
 #### **Exposing MD Core**
-After installation MD Core can be exposed in OpenShift by creating a new route in the `Networking -> Routes` section with the following settings:
-- Path: `/`
-- Service: `md-core`
-- Target port: `8008 -> 8008`
+
+The chart can create the OpenShift Route for you, so no manual step in the console is needed. It is rendered from `templates/route-template.yml` and is only created when `core_route.enabled` is `true` — `core_route` is absent from the chart's default values, so the template is inert on non-OpenShift clusters and the Route API does not need to exist there. `mdcore-openshift.yml` enables it:
+
+```yaml
+core_route:
+  enabled: true
+  service: md-core
+  port: 8008
+  host: ""                             # empty -> OpenShift generates the hostname
+  tls:
+    termination: edge
+    insecureEdgeTerminationPolicy: Redirect
+```
+
+With `host` left empty, OpenShift generates `<route-name>-<namespace>.apps.<cluster-domain>`, which keeps this file portable across clusters. Set `host` for a fixed hostname; the `<APP_NAMESPACE>` placeholder is replaced with the release namespace.
+
+TLS terminates at the router (`edge`) and plain HTTP is redirected to HTTPS, so the REST API and web UI are not served unencrypted outside the cluster. The router's default certificate is used. To serve your own certificate, add `certificate` and `key` under `tls`. For encryption all the way to the pod, configure MD Core's own TLS (`core_components.md-core.tls`) and change `termination` to `reencrypt`.
+
+Check the assigned hostname after installation with:
+```
+oc get route core-route
+```
+
+To expose MD Core some other way instead, set `core_route.enabled` to `false` and use a `LoadBalancer`/`NodePort` service (`core_components.md-core.service_type`) or the chart's Ingress (`core_ingress`).
 
 Ingress creation is **disabled by default** (`core_ingress.enabled: false`). To expose MD Core via a Kubernetes Ingress, set `core_ingress.enabled` to `true` and configure `core_ingress.class` and `core_ingress.ingress_annotations` for your cluster's ingress controller (for example AWS ALB or GCE). Cloud-specific values files include ready-made examples.
 

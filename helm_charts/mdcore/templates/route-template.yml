@@ -1,0 +1,44 @@
+{{/*
+Optional OpenShift Route for MD Core.
+
+Routes are the native way to expose a Service outside an OpenShift cluster, so this
+is the counterpart to core_ingress for OpenShift deployments. It is rendered only
+when core_route.enabled is true, and `core_route` is not part of the chart's default
+values, so this template is inert on non-OpenShift clusters and the Route API does
+not need to exist. See helm_charts/mdcore-openshift.yml for a configured example.
+
+Leave core_route.host empty to let OpenShift generate a hostname from the cluster's
+ingress domain, which is the portable choice.
+*/}}
+{{- if and .Values.core_route .Values.core_route.enabled }}
+{{- $route := .Values.core_route }}
+---
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: {{ default "core-route" $route.name | quote }}
+  labels:
+    product: mdcore
+  {{- if $route.annotations }}
+  annotations:
+    {{- toYaml $route.annotations | nindent 4 }}
+  {{- end }}
+spec:
+  {{- if $route.host }}
+  host: {{ $route.host | replace "<APP_NAMESPACE>" .Release.Namespace | quote }}
+  {{- end }}
+  {{- if $route.path }}
+  path: {{ $route.path | quote }}
+  {{- end }}
+  to:
+    kind: Service
+    name: {{ default "md-core" $route.service | quote }}
+    weight: 100
+  port:
+    targetPort: {{ default 8008 $route.port }}
+  {{- if $route.tls }}
+  tls:
+    {{- toYaml $route.tls | nindent 4 }}
+  {{- end }}
+  wildcardPolicy: {{ default "None" $route.wildcardPolicy }}
+{{- end }}
