@@ -1,0 +1,263 @@
+DOCKER_REPO: 'opswat/metadefendercluster-debian'
+MDCLS_VERSION: 2.9.0
+imagePullPolicy: IfNotPresent
+# imagePullSecrets:
+#   - name: regcred
+
+# ---------------------------------------------------------------------------
+# Global security context — applied to EVERY MD Cluster workload
+# (control-center, identity-service, file-storage, and the workers) so it does
+# not have to be repeated per component. Defaults enforce the Kubernetes
+# "restricted" Pod Security Standard with a read-only root filesystem; the
+# images are built to run entirely under this (all runtime writes go to the
+# writable volumes the templates mount at /app/system, /app/data and, for
+# file-storage, /app/storage).
+#
+# Most fields are overridable: edit the values here to change them for all
+# workloads, or set `<component>.podSecurityContext` / `<component>.securityContext`
+# to override for a single component. To relax read-only for a component:
+# `<component>.securityContext.readOnlyRootFilesystem: false`.
+#
+# Exception — runAsUser / runAsGroup are pinned to 1000: the images bake user
+# 1000 with owner-only (0700) files, so a non-1000 UID/GID cannot even read the
+# binaries/entrypoint. Overriding either (globally or per-component) fails
+# template rendering on purpose; to run as a different UID, rebuild the images
+# with build args RUN_UID / RUN_GID and then override here.
+
+# Pod-level (applies to all containers in the pod; owns volume permissions).
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 1000
+  runAsGroup: 1000
+  # fsGroup makes the mounted writable volumes group-owned + group-writable so
+  # the (non-root) process can write to them.
+  fsGroup: 1000
+  fsGroupChangePolicy: OnRootMismatch
+  seccompProfile:
+    type: RuntimeDefault
+
+# Container-level.
+securityContext:
+  readOnlyRootFilesystem: true
+  allowPrivilegeEscalation: false
+  runAsNonRoot: true
+  runAsUser: 1000
+  runAsGroup: 1000
+  capabilities:
+    drop:
+      - ALL
+  seccompProfile:
+    type: RuntimeDefault
+
+# ---------------------------------------------------------------------------
+# MD Cluster core services.
+#
+# Each component below is an intent-level description: replicas, resources,
+# scheduling, persistence and a few probe knobs. The structural details of how
+# a component is deployed (Deployment vs StatefulSet, rollout strategy, pod
+# security context, headless service topology) are fixed in the corresponding
+# template under templates/ and are intentionally not exposed here.
+#
+# Per-component knobs (all optional):
+#   version           image tag override, i.e. <name>-<version> (default MDCLS_VERSION)
+#   replicas          desired pod count
+#   imagePullPolicy   overrides the top-level imagePullPolicy
+#   resources         standard k8s resources block (requests/limits)
+#   nodeSelector      \
+#   affinity           }  standard pod scheduling knobs
+#   tolerations       /
+#   probes            override timeoutSeconds/failureThreshold per phase
+#                     (startup/liveness/readiness); the exec command is fixed
+#   terminationGracePeriodSeconds  graceful shutdown window (k8s default if unset)
+#   podSecurityContext \ per-component override, deep-merged over the global
+#   securityContext    / podSecurityContext/securityContext defaults above
+# ---------------------------------------------------------------------------
+
+# Control Center -> Deployment + NodePort Service
+# Singleton: replicas is fixed at 1 by the template.
+control-center:
+  # version: 2.7.0   # image tag override; defaults to MDCLS_VERSION
+  service:
+    type: NodePort
+    # nodePort: 30001
+  # HTTPS (opt-in; off by default). secretName is an existing Secret of type
+  # kubernetes.io/tls (data keys tls.crt/tls.key) that you create yourself
+  # (the chart never generates or stores cert material) — e.g.
+  # `kubectl create secret tls <name> --cert=control-center.crt --key=control-center.key`.
+  # There is no self-signed fallback: secretName is required when enabled=true,
+  # or the chart render fails.
+  tls:
+    enabled: false
+    secretName: ''
+
+# Identity Service -> Deployment + ClusterIP Service
+# Singleton: replicas is fixed at 1 by the template.
+identity-service:
+  # version: 2.7.0   # image tag override; defaults to MDCLS_VERSION
+
+# File Storage -> StatefulSet + headless Service
+file-storage:
+  # version: 2.7.0   # image tag override; defaults to MDCLS_VERSION
+  replicas: 1
+  # Persist scanned files + sqlite metadata (mounted at /app/storage).
+  # enabled false -> emptyDir (ephemeral, like compose).
+  persistence:
+    enabled: false
+    size: 100Gi
+    # storageClassName: ""
+
+# Workers -> one StatefulSet per entry (instance name -> config), all fronted
+# by the shared headless "worker" Service. The map key is the
+# WORKER_INSTANCE_TYPE and selects the image (worker-<type>), which bakes in
+# that type's installer plus WORKER_INSTANCE_TYPE / WORKER_INSTANCE_VERSION at
+# build time. Per-worker knobs:
+#   listenPort        WORKER_INSTANCE_LISTEN_PORT (required)
+#   version           image tag override, i.e. worker-<type>-<version>
+#                     (default MDCLS_VERSION)
+#   replicas          desired pod count
+#   imagePullPolicy   overrides the top-level imagePullPolicy
+#   resources         standard k8s resources block (requests/limits)
+#   nodeSelector/affinity/tolerations   standard pod scheduling knobs
+#   probes            override timeoutSeconds/failureThreshold per phase
+#   terminationGracePeriodSeconds        graceful shutdown window (default 1800)
+#   logLevel          WORKER_INSTANCE_LOG_LEVEL (default: info)
+#   isolate.enabled   WORKER_ISOLATE_INSTANCE (default: true)
+#   isolate.timeout   WORKER_ISOLATE_INSTANCE_TIMEOUT (default: 1600)
+#   service           optional dedicated Service {type, clusterIP, port};
+#                     port is the external access port (default listenPort),
+#                     targetPort is always listenPort. Only supported for
+#                     the "api-gateway" instance.
+#   tls               optional HTTPS {enabled, secretName} — same shape as
+#                     control-center.tls above. Only supported for the
+#                     "api-gateway" instance.
+workers:
+  ometascan:
+    listenPort: 8008
+    probes:
+      liveness:
+        failureThreshold: 90
+  api-gateway:
+    listenPort: 8899
+    service:
+      type: ClusterIP
+    tls:
+      enabled: false
+      secretName: ''
+  callback-service:
+    listenPort: 8894
+
+postgres:
+  enabled: true
+  image: postgres:16
+  pullPolicy: IfNotPresent
+  port: 5432
+  maxConnections: 200
+  # POSTGRES_DB created on first start.
+  database: postgres
+  # Persist data across restarts. false -> emptyDir (ephemeral, like compose).
+  persistence:
+    enabled: false
+    size: 8Gi
+    storageClassName: ""
+  resources: {}
+
+redis:
+  enabled: true
+  image: redis:8
+  pullPolicy: IfNotPresent
+  port: 6379
+  resources: {}
+
+rabbitmq:
+  enabled: true
+  image: rabbitmq:4.2.5-management
+  pullPolicy: IfNotPresent
+  amqpPort: 5672
+  managementPort: 15672
+  resources: {}
+
+
+# ---------------------------------------------------------------------------
+# Credentials -> the mdcluster-secrets Secret that BOTH charts' pods consume.
+#
+# The five keys marked "auto-generated" below are generated by the chart when
+# left empty, and preserved across `helm upgrade` by reading the live Secret
+# (see templates/secret.yaml). Set them explicitly to take control; retrieve a
+# generated one with:
+#   kubectl -n <namespace> get secret mdcluster-secrets \
+#     -o jsonpath='{.data.ADMIN_APIKEY}' | base64 -d
+#
+# Everything else keeps a dev default and should be overridden before exposing
+# the deployment.
+# ---------------------------------------------------------------------------
+secrets:
+  CONTROL_CENTER_DB_USER: postgres
+  CONTROL_CENTER_DB_PASSWORD: postgres
+
+  IDENTITY_DB_USER: postgres
+  IDENTITY_DB_PASSWORD: postgres
+
+  DATALAKE_USER: postgres
+  DATALAKE_PASSWORD: postgres
+
+  WAREHOUSE_USER: postgres
+  WAREHOUSE_PASSWORD: postgres
+
+  # REDIS_USER: admin # Optional
+  # REDIS_PASSWORD: admin # Optional
+
+  RABBITMQ_USER: admin
+  RABBITMQ_PASSWORD: admin
+
+  # Auto-generated when empty (32 alphanumeric chars). Sharing one value across
+  # all three is fine; each side reads it from the same Secret either way.
+  IDENTITY_CONNECTION_KEY: ''
+  FILE_STORAGE_CONNECTION_KEY: ''
+  WORKER_CONNECTION_KEY: ''
+
+  # Auto-generated when empty. Must be EXACTLY 32 characters.
+  CONTROL_CENTER_ENCRYPTION_KEY: ''
+
+  ADMIN_USER: admin
+  ADMIN_PASSWORD: admin
+  ADMIN_EMAIL: admin@admin
+  # Auto-generated when empty (36 hex chars, alternating digit/letter).
+  ADMIN_APIKEY: ''
+
+  LICENSE_KEY: ''
+
+# Populates the mdcluster-config ConfigMap that every pod in this chart
+# consumes (core services and workers alike).
+env:
+  CONTROL_CENTER_PORT: 8892
+  CONTROL_CENTER_HOST: control-center
+  CONTROL_CENTER_LISTEN_PORT: 8892
+  # CONTROL_CENTER_LISTEN_HOST: '*' # Not supported yet
+  CONTROL_CENTER_DB_HOST: postgres
+  CONTROL_CENTER_DB_PORT: 5432
+
+  DATALAKE_SERVICES: postgres:5432
+  WAREHOUSE_SERVICES: postgres:5432
+  REDIS_SERVICES: redis:6379
+  RABBITMQ_SERVICES: rabbitmq:5672
+
+  IDENTITY_DB_HOST: postgres
+  IDENTITY_DB_PORT: 5432
+
+  IDENTITY_LISTEN_PORT: 8891
+  IDENTITY_LISTEN_HOST: '*'
+  IDENTITY_HOST: identity-service
+  IDENTITY_PORT: 8891
+
+  FILE_STORAGE_LISTEN_HOST: '*'
+  FILE_STORAGE_LISTEN_PORT: 8890
+  FILE_STORAGE_SERVICE_NAMESPACE: file-storage
+  # min/max file-storage replica setting applied to Control Center after startup.
+  # Each falls back to the legacy FILE_STORAGE_REPLICA_COUNT (default 1) when unset.
+  FILE_STORAGE_MIN_REPLICA: 1
+  FILE_STORAGE_MAX_REPLICA: 1
+
+  WORKER_LISTEN_PORT: 8893
+  WORKER_SERVICE_NAMESPACE: worker
+
+  GLOBAL_WAIT_TIMEOUT: 150 # seconds

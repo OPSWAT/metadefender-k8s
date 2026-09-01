@@ -1,6 +1,9 @@
 {{- $root := . -}}
 {{- $name := "file-storage" -}}
 {{- $cfg := index .Values $name | default dict -}}
+{{- $podSecurityContext := mergeOverwrite (deepCopy ($root.Values.podSecurityContext | default dict)) ($cfg.podSecurityContext | default dict) -}}
+{{- $securityContext := mergeOverwrite (deepCopy ($root.Values.securityContext | default dict)) ($cfg.securityContext | default dict) -}}
+{{- $readOnlyRootFs := $securityContext.readOnlyRootFilesystem -}}
 {{- $svcName := .Values.env.FILE_STORAGE_SERVICE_NAMESPACE | default $name -}}
 {{- $persistence := $cfg.persistence | default dict -}}
 {{- $probeDefaults := dict
@@ -35,13 +38,12 @@ spec:
         product: {{ include "mdcls.productName" . | quote }}
         app: {{ $name | quote }}
     spec:
+      # Pod securityContext (incl. fsGroup, which makes the mounted volumes
+      # group-writable for the non-root process).
+      {{- include "mdcls.securityContext" $podSecurityContext | nindent 6 }}
       {{- if $cfg.terminationGracePeriodSeconds }}
       terminationGracePeriodSeconds: {{ $cfg.terminationGracePeriodSeconds }}
       {{- end }}
-      # Runs as UID/GID 1000; fsGroup makes the mounted volume group-writable.
-      securityContext:
-        fsGroup: 1000
-        fsGroupChangePolicy: OnRootMismatch
       {{- if or $cfg.nodeSelector $cfg.affinity $cfg.tolerations }}
       {{- include "mdcls.scheduling" $cfg | nindent 6 }}
       {{- end }}
@@ -49,10 +51,17 @@ spec:
         - name: {{ $name | quote }}
           image: {{ include "mdcls.image" (dict "root" $root "name" $name "version" $cfg.version) | quote }}
           imagePullPolicy: {{ $cfg.imagePullPolicy | default .Values.imagePullPolicy | quote }}
+          {{- include "mdcls.securityContext" $securityContext | nindent 10 }}
           {{- include "mdcls.probes" (dict "defaults" $probeDefaults "overrides" $cfg.probes) | nindent 10 }}
+          # data -> /app/storage: file blobs + sqlite metadata (persistent).
+          # system -> /app/system: ephemeral writes, only for a read-only root fs.
           volumeMounts:
             - name: data
               mountPath: /app/storage
+            {{- if $readOnlyRootFs }}
+            - name: system
+              mountPath: /app/system
+            {{- end }}
           {{- if $cfg.resources }}
           resources:
             {{- toYaml $cfg.resources | nindent 12 }}
@@ -66,11 +75,18 @@ spec:
       imagePullSecrets:
         {{- toYaml .Values.imagePullSecrets | nindent 8 }}
       {{- end }}
-      {{- if not $persistence.enabled }}
-      # Ephemeral storage (compose-like) when persistence is disabled.
+      {{- if or (not $persistence.enabled) $readOnlyRootFs }}
       volumes:
+        {{- if not $persistence.enabled }}
+        # Ephemeral blob storage (compose-like) when persistence is disabled.
         - name: data
           emptyDir: {}
+        {{- end }}
+        {{- if $readOnlyRootFs }}
+        # Ephemeral writes for a read-only root filesystem.
+        - name: system
+          emptyDir: {}
+        {{- end }}
       {{- end }}
   {{- if $persistence.enabled }}
   volumeClaimTemplates:

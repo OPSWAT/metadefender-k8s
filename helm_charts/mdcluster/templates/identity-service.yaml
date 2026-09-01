@@ -1,6 +1,9 @@
 {{- $root := . -}}
 {{- $name := "identity-service" -}}
 {{- $cfg := index .Values $name | default dict -}}
+{{- $podSecurityContext := mergeOverwrite (deepCopy ($root.Values.podSecurityContext | default dict)) ($cfg.podSecurityContext | default dict) -}}
+{{- $securityContext := mergeOverwrite (deepCopy ($root.Values.securityContext | default dict)) ($cfg.securityContext | default dict) -}}
+{{- $readOnlyRootFs := $securityContext.readOnlyRootFilesystem -}}
 {{- $svc := $cfg.service | default dict -}}
 {{- $svcName := .Values.env.IDENTITY_HOST | default $name -}}
 {{- $probeDefaults := dict
@@ -29,6 +32,7 @@ spec:
         product: {{ include "mdcls.productName" . | quote }}
         app: {{ $name | quote }}
     spec:
+      {{- include "mdcls.securityContext" $podSecurityContext | nindent 6 }}
       {{- if $cfg.terminationGracePeriodSeconds }}
       terminationGracePeriodSeconds: {{ $cfg.terminationGracePeriodSeconds }}
       {{- end }}
@@ -39,16 +43,28 @@ spec:
         - name: {{ $name | quote }}
           image: {{ include "mdcls.image" (dict "root" $root "name" $name "version" $cfg.version) | quote }}
           imagePullPolicy: {{ $cfg.imagePullPolicy | default .Values.imagePullPolicy | quote }}
+          {{- include "mdcls.securityContext" $securityContext | nindent 10 }}
           {{- include "mdcls.probes" (dict "defaults" $probeDefaults "overrides" $cfg.probes) | nindent 10 }}
           {{- if $cfg.resources }}
           resources:
             {{- toYaml $cfg.resources | nindent 12 }}
+          {{- end }}
+          {{- if $readOnlyRootFs }}
+          # Writable mount for a read-only root filesystem (see SYSTEM_DIR).
+          volumeMounts:
+            - name: system
+              mountPath: /app/system
           {{- end }}
           envFrom:
             - configMapRef:
                 name: {{ include "config-map-name" $root }}
             - secretRef:
                 name: {{ include "secrets-map-name" $root }}
+      {{- if $readOnlyRootFs }}
+      volumes:
+        - name: system
+          emptyDir: {}
+      {{- end }}
       {{- if .Values.imagePullSecrets }}
       imagePullSecrets:
         {{- toYaml .Values.imagePullSecrets | nindent 8 }}

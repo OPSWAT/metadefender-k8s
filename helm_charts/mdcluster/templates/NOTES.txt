@@ -1,0 +1,25 @@
+md-cluster {{ .Chart.AppVersion }} deployed as release "{{ .Release.Name }}" in namespace "{{ .Release.Namespace }}".
+
+Credentials live in the {{ include "secrets-map-name" $ }} Secret. Read one back with:
+
+  kubectl -n {{ .Release.Namespace }} get secret {{ include "secrets-map-name" $ }} \
+    -o jsonpath='{.data.ADMIN_APIKEY}' | base64 -d
+{{- $blank := list }}
+{{- range $k := (list "IDENTITY_CONNECTION_KEY" "FILE_STORAGE_CONNECTION_KEY" "WORKER_CONNECTION_KEY" "CONTROL_CENTER_ENCRYPTION_KEY" "ADMIN_APIKEY") }}
+{{- if empty (index ($.Values.secrets | default dict) $k) }}{{ $blank = append $blank $k }}{{ end }}
+{{- end }}
+{{- if $blank }}
+
+Generated (or carried over from a previous release) for this install:
+{{- range $k := $blank }}
+  - {{ $k }}
+{{- end }}
+
+The Secret carries "helm.sh/resource-policy: keep" so these survive
+`helm uninstall` -- reinstalling into this namespace reuses them.
+{{- end }}
+{{- if empty .Values.secrets.LICENSE_KEY }}
+
+WARNING: secrets.LICENSE_KEY is empty. Deployed MD Core instances will not be
+activated until it is set.
+{{- end }}

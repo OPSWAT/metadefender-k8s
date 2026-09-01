@@ -43,7 +43,7 @@ mdssc-common-environment:
   EULA_ACCEPTED_AFTER_UPGRADE: "yes"
 
   ENABLED_MODULES: ""
-  AVAILABLE_MODULES: "github,dockerhub,bitbucket,svn,amazonecr,quay,jfrogcontainer,jfrogbinary,azureacr,gitlabsource,azuredevopssource,directfile,nexusbinary,gitea,harbor"
+  AVAILABLE_MODULES: "github,dockerhub,bitbucket,svn,amazonecr,quay,jfrogcontainer,jfrogbinary,azureacr,gitlabsource,azuredevopssource,directfile,nexusbinary,gitea,harbor,nexuscontainer"
 
   # This variable is used to define the context URL for SPDX v3 json documents
   SPDX_V3_CONTEXT_URL: "https://spdx.github.io/spdx-spec/v3.0.1/rdf/spdx-context.jsonld"
@@ -105,7 +105,7 @@ mdssc-common-environment:
   SMBSERVICE_PORT: "5002"
   
   CODE_VERSION: "30a858390ca19fff81f2092f83a32f11c07d4fc8"
-  BUILD_VERSION: "4.0.1.0"
+  BUILD_VERSION: "4.0.4.0"
 
   # OPSWAT OTLP telemetry target (matches the shipped release default). Blank both to disable export.
   OPTEL_OPSWAT_COLLECTOR_ENDPOINT: "https://mdssc-telemetry.metadefender.com:4317"
@@ -115,8 +115,8 @@ mdssc-common-environment:
   RABBITMQ_SCANNING_PREFETCH_COUNT: "20"
 
   HTTPS_ACTIVE: "no"
-  BRANCH: "platform-2.5.1"          # Set Platform version (image tag)
-  MDSSC_BRANCH: "4.0.1"          # Set MDSSC version (image tag)
+  BRANCH: "platform-2.5.2"          # Set Platform version (image tag)
+  MDSSC_BRANCH: "4.0.4"          # Set MDSSC version (image tag)
 
   # These variables can be changed to reveal debug information in the application
   LOG_LEVEL: "4"
