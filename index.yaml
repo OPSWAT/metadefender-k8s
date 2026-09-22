@@ -25,6 +25,39 @@ entries:
     version: 0.0.28
   MetaDefender_ICAP_Server:
   - apiVersion: v2
+    appVersion: 5.15.0
+    created: "2026-09-22T17:37:53.065066922Z"
+    description: 'This is a Helm chart for deploying MetaDefender ICAP Server (https://www.opswat.com/products/metadefender/icap)
+      in a Kubernetes cluster.  Release Notes - Non-root security context applied
+      by default to MD ICAP Server, the PostgreSQL container and the database wait
+      init container (runAsNonRoot, no privilege escalation, RuntimeDefault seccomp
+      profile) - Zero-downtime rolling updates for MD ICAP Server: maxSurge 1 / maxUnavailable
+      0 - Optional PodDisruptionBudget for MD ICAP Server via `podDisruptionBudget.enabled`
+      and `podDisruptionBudget.minAvailable` (disabled by default, effective with
+      2 or more replicas) - The in-cluster PostgreSQL service is no longer created
+      when `postgres_mdicapsrv.enabled` is false or when the database is not the in-cluster
+      PostgreSQL (`database.db_mode` other than "4") - OpenShift support: run under
+      the namespace-assigned arbitrary UID with the `mdicapsrv-openshift.yml` overlay
+      - Pod-level settings (`securityContext`/`fsGroup`, `nodeSelector`, `tolerations`,
+      `affinity`) are set through `customPodDefinitions`, consistent with the MD Core
+      and MDSS charts; `fsGroup` is set by default so a freshly provisioned PVC is
+      writable by the non-root user - PostgreSQL `PGDATA` can be pointed at a subdirectory
+      of the mount (shipped commented out in `values.yaml`), which `initdb` requires
+      under the arbitrary UID assigned on OpenShift; only enable it on a fresh volume,
+      as it changes the on-disk layout - The worker Role now grants access only to
+      the specific secrets the chart uses, instead of every secret in the namespace '
+    digest: 52e7e9e1826bc73cdd0d03a11a75828bd1b871bc716c4a92088ce83eb6261416
+    home: https://docs.opswat.com/mdicap/installation
+    keywords:
+    - mdicapsrv
+    - icap
+    - MetaDefender ICAP Server
+    name: MetaDefender_ICAP_Server
+    type: application
+    urls:
+    - https://github.com/OPSWAT/metadefender-k8s/releases/download/MetaDefender_ICAP_Server-5.15.0/MetaDefender_ICAP_Server-5.15.0.tgz
+    version: 5.15.0
+  - apiVersion: v2
     appVersion: 5.14.1
     created: "2026-07-02T11:18:04.7324226Z"
     description: This is a Helm chart for deploying MetaDefender ICAP Server (https://www.opswat.com/products/metadefender/icap)
@@ -282,6 +315,18 @@ entries:
     version: 0.0.29
   mdcluster:
   - apiVersion: v2
+    appVersion: 2.9.1
+    created: "2026-09-22T17:37:53.281165284Z"
+    description: MetaDefender Cluster — core services (Control Center, File Storage,
+      Identity Service), worker instances (ometascan, api-gateway, callback-service)
+      and infrastructure (postgres/redis/rabbitmq).
+    digest: 1a08a70f9b378ae280f74bf12b594022327f76e2544ea90a6ca750a394f938a5
+    name: mdcluster
+    type: application
+    urls:
+    - https://github.com/OPSWAT/metadefender-k8s/releases/download/mdcluster-2.9.1/mdcluster-2.9.1.tgz
+    version: 2.9.1
+  - apiVersion: v2
     appVersion: 2.9.0
     created: "2026-09-01T20:29:38.702074555Z"
     description: MetaDefender Cluster — core services (Control Center, File Storage,
@@ -317,6 +362,23 @@ entries:
     - https://github.com/OPSWAT/metadefender-k8s/releases/download/metadefender_cluster-2.5.1/metadefender_cluster-2.5.1.tgz
     version: 2.5.1
   metadefender_core:
+  - apiVersion: v2
+    appVersion: 5.22.0
+    created: "2026-09-22T17:37:53.465423248Z"
+    description: 'This is a Helm chart for deploying MetaDefender Core (https://www.opswat.com/products/metadefender/core)
+      in a Kubernetes cluster.   Release Notes - Default MD Core image bumped to 5.22.0
+      - OpenShift reference configuration: mdcore-openshift.yml installs as-is under
+      the restricted-v2 SCC (arbitrary per-namespace UID, no hostPath volumes, explicit
+      non-root security context); the license key is the only value you must supply
+      - Optional OpenShift Route through core_route (templates/route-template.yml),
+      the OpenShift counterpart to core_ingress; core_route is not part of the chart
+      defaults, so the template stays inert on non-OpenShift clusters '
+    digest: 62e3231a5f280f38a677a5208f1d240f1da4840f98cd48e70b4de81afa3bc0d5
+    name: metadefender_core
+    type: application
+    urls:
+    - https://github.com/OPSWAT/metadefender-k8s/releases/download/metadefender_core-5.22.0/metadefender_core-5.22.0.tgz
+    version: 5.22.0
   - apiVersion: v2
     appVersion: 5.21.0
     created: "2026-07-31T16:23:54.18582706Z"
@@ -614,20 +676,20 @@ entries:
     - https://github.com/OPSWAT/metadefender-k8s/releases/download/metadefender_core-5.8.0/metadefender_core-5.8.0.tgz
     version: 5.8.0
   - apiVersion: v2
-    created: "2024-07-22T16:47:35.294039413Z"
+    created: "2024-07-08T14:24:41.341759116Z"
     description: This is a Helm chart for deploying MetaDefender Core (https://www.opswat.com/products/metadefender/core)
       in a Kubernetes cluster
-    digest: c2ac5383e59c29e677f6469dd77bd48d15dc1daba42f530778c369eaf0baa8b3
+    digest: 1352980a41a94a0f74f41ca24eef9b756a7f579df971dcff0f5d94ca0b3274a7
     name: metadefender_core
     type: application
     urls:
     - https://github.com/OPSWAT/metadefender-k8s/releases/download/metadefender_core-5.8.0-0/metadefender_core-5.8.0-0.tgz
     version: 5.8.0-0
   - apiVersion: v2
-    created: "2024-07-08T14:24:41.341759116Z"
+    created: "2024-07-22T16:47:35.294039413Z"
     description: This is a Helm chart for deploying MetaDefender Core (https://www.opswat.com/products/metadefender/core)
       in a Kubernetes cluster
-    digest: 1352980a41a94a0f74f41ca24eef9b756a7f579df971dcff0f5d94ca0b3274a7
+    digest: c2ac5383e59c29e677f6469dd77bd48d15dc1daba42f530778c369eaf0baa8b3
     name: metadefender_core
     type: application
     urls:
@@ -1262,4 +1324,4 @@ entries:
     urls:
     - https://github.com/OPSWAT/metadefender-k8s/releases/download/metadefender_storage_security-0.0.28/metadefender_storage_security-0.0.28.tgz
     version: 0.0.28
-generated: "2026-09-01T20:29:38.921205345Z"
+generated: "2026-09-22T17:37:53.465783336Z"
