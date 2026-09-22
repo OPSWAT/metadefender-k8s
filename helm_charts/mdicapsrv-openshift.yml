@@ -1,0 +1,87 @@
+# OpenShift overlay for the MetaDefender ICAP Server chart.
+#
+# This file is an OVERLAY, not a standalone values file. Everything it does not
+# mention is inherited from icap/values.yaml:
+#
+#   helm install mdicapsrv ./icap -f mdicapsrv-openshift.yml \
+#     --set ACCEPT_EULA=true --set mdicapsrv_license_key=<KEY>
+#
+# Deployment-specific settings (license key, repo, storage class, ingress host)
+# still belong on the command line or in a site-specific values file layered
+# after this one.
+#
+# Why these overrides exist:
+# OpenShift ignores the image's USER directive and assigns a UID from the
+# namespace's openshift.io/sa.scc.uid-range annotation, keeping GID 0 as the
+# primary group. The UIDs values.yaml pins (999 for postgres and the init
+# container, 1000 for md-icapsrv) fall outside that range, so the restricted-v2
+# SCC rejects the pod outright. Setting them to null deletes the keys from the
+# merged values; runAsNonRoot still forbids root, and dropping ALL capabilities
+# keeps the containers admissible under restricted-v2 without depending on a UID
+# the platform will not grant.
+#
+# Requires MD ICAP Server 5.14.1 or later.
+
+postgres_mdicapsrv:
+  # The restricted-v2 SCC's fsGroup strategy is MustRunAs over the range in the
+  # namespace's openshift.io/sa.scc.supplemental-groups annotation, and it supplies a
+  # value automatically when the pod omits one. values.yaml pins 999 for vanilla
+  # clusters; that is outside the namespace range here and would be rejected at
+  # admission, so null it out and let the SCC decide. null deletes the key entirely,
+  # so the template renders no pod-level securityContext at all.
+  customPodDefinitions:
+    securityContext: null
+  securityContext:
+    # Let the SCC inject the namespace UID instead of pinning 999.
+    runAsUser: null
+    runAsGroup: null
+    capabilities:
+      drop:
+        - ALL
+
+  # NOTE: the PGDATA env var from values.yaml is inherited as-is and is REQUIRED here.
+  # Without it postgres uses the mount root, which it does not own under an arbitrary
+  # UID, and initdb fails with "could not change permissions of directory".
+
+icap_components:
+  md_icapsrv:
+    # Same reasoning as postgres_mdicapsrv above -- the SCC supplies the fsGroup for
+    # any PVC mounted when icap_container_persistent is true.
+    customPodDefinitions:
+      securityContext: null
+    securityContext:
+      # Let the SCC inject the namespace UID instead of pinning 1000.
+      runAsUser: null
+      runAsGroup: null
+      capabilities:
+        drop:
+          - ALL
+
+    # initContainers is a LIST, and Helm replaces lists wholesale rather than
+    # merging them — so the whole entry has to be restated here even though only
+    # its securityContext differs from values.yaml. Keep this in sync with
+    # values.yaml when that init container changes.
+    initContainers:
+      - name: check-db-ready
+        image: postgres:16.6
+        envFrom:
+          - configMapRef:
+              name: mdicapsrv-env
+        command: ['sh', '-c',
+          'until pg_isready -h $DB_HOST -p $DB_PORT;
+          do echo waiting for database; sleep 2; done;']
+        securityContext:
+          allowPrivilegeEscalation: false
+          runAsNonRoot: true
+          capabilities:
+            drop:
+              - ALL
+          seccompProfile:
+            type: RuntimeDefault
+        resources:
+          requests:
+            memory: "128Mi"   # Minimum reserved memory
+            cpu: "100m"       # Minimum reserved cpu
+          limits:
+            memory: "128Mi"   # Maximum memory limit
+            cpu: "100m"       # Maximum cpu limit

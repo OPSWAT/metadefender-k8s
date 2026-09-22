@@ -116,6 +116,7 @@ resource "google_sql_database_instance" "metadefender-db" {
 
 # Create the database inside the Cloud SQL instance for MDSS that needs to exist
 resource "google_sql_database" "mdss_db" {
+  count    = var.deploy_cloud_sql ? 1 : 0
   name     = "MDSS"
   instance = google_sql_database_instance.metadefender-db[0].name
 }

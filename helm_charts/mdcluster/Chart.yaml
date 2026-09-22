@@ -75,8 +75,8 @@ long_description: |
     finish. Lower it only if you accept losing those scans
 
 type: application
-version: 2.9.0
+version: 2.9.1
 # Mirrors the docker-compose stack; defaults target dev/test parity, not production HA.
 # Infrastructure (postgres/redis/rabbitmq) is deployed from the same official
 # images as docker-compose via in-chart templates -- no subchart dependencies.
-appVersion: "2.9.0"
+appVersion: "2.9.1"

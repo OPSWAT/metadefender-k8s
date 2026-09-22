@@ -1,8 +1,8 @@
 apiVersion: v2
 name: MetaDefender_ICAP_Server
 type: application
-version: 5.14.1
-appVersion: 5.14.1
+version: 5.15.0
+appVersion: 5.15.0
 home: https://docs.opswat.com/mdicap/installation
 keywords:
   - mdicapsrv
@@ -15,7 +15,11 @@ description: |
   - Non-root security context applied by default to MD ICAP Server, the PostgreSQL container and the database wait init container (runAsNonRoot, no privilege escalation, RuntimeDefault seccomp profile)
   - Zero-downtime rolling updates for MD ICAP Server: maxSurge 1 / maxUnavailable 0
   - Optional PodDisruptionBudget for MD ICAP Server via `podDisruptionBudget.enabled` and `podDisruptionBudget.minAvailable` (disabled by default, effective with 2 or more replicas)
-  - The in-cluster PostgreSQL service is no longer created when `postgres_mdicapsrv.enabled` is false
+  - The in-cluster PostgreSQL service is no longer created when `postgres_mdicapsrv.enabled` is false or when the database is not the in-cluster PostgreSQL (`database.db_mode` other than "4")
+  - OpenShift support: run under the namespace-assigned arbitrary UID with the `mdicapsrv-openshift.yml` overlay
+  - Pod-level settings (`securityContext`/`fsGroup`, `nodeSelector`, `tolerations`, `affinity`) are set through `customPodDefinitions`, consistent with the MD Core and MDSS charts; `fsGroup` is set by default so a freshly provisioned PVC is writable by the non-root user
+  - PostgreSQL `PGDATA` can be pointed at a subdirectory of the mount (shipped commented out in `values.yaml`), which `initdb` requires under the arbitrary UID assigned on OpenShift; only enable it on a fresh volume, as it changes the on-disk layout
+  - The worker Role now grants access only to the specific secrets the chart uses, instead of every secret in the namespace
 long_description: |
   This chart can deploy the following depending on the provided values:
   - One or more MD ICAP Server instances 

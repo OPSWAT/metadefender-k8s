@@ -17,7 +17,7 @@ There is no Ingress or HorizontalPodAutoscaler template — exposure and scaling
 
 - A Kubernetes cluster and `kubectl`/`helm` (Helm 3) configured against it
 - A MetaDefender Cluster license key (`secrets.LICENSE_KEY`) — contact sales-inquiry@opswat.com if you don't have one
-- Access to the container images referenced by `DOCKER_REPO`/`MDCLS_VERSION` (default `opswat/metadefendercluster-debian:<component>-2.9.0`); set `imagePullSecrets` if the registry is private
+- Access to the container images referenced by `DOCKER_REPO`/`MDCLS_VERSION` (default `opswat/metadefendercluster-debian:<component>-2.9.1`); set `imagePullSecrets` if the registry is private
 - If you disable the bundled PostgreSQL/Redis/RabbitMQ (recommended for production, see below), reachable endpoints for your own instances
 
 ## Installation
@@ -100,7 +100,7 @@ For anything beyond a smoke test, put it behind your own Ingress/LoadBalancer �
 | Key | Default | Notes |
 |---|---|---|
 | `DOCKER_REPO` | `opswat/metadefendercluster-debian` | Image repo prefix; images are tagged `<repo>:<component>-<version>` |
-| `MDCLS_VERSION` | `2.9.0` | Default image tag for every component |
+| `MDCLS_VERSION` | `2.9.1` | Default image tag for every component |
 | `imagePullPolicy` | `IfNotPresent` | Overridable per component |
 | `imagePullSecrets` | *(commented out)* | Set for private registries |
 

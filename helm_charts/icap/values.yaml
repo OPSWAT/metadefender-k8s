@@ -29,7 +29,7 @@ db_user: postgres                      # PostgreSQL database username
 db_password: postgres                  # PostgreSQL database password, if not set it will be randomly generated
 # Support customize the database name. Default is `metadefender_icapsrv`
 db_name: metadefender_icapsrv
-# Support customize privavte user, if not set it will be randomly generated as prefix usr_***
+# Support customize private user, if not set it will be randomly generated as prefix usr_***
 # mdicapsrv_private_user: postgres
 # mdicapsrv_private_password: postgres
 ## Integration OLMS
@@ -81,9 +81,38 @@ postgres_mdicapsrv:
         secretKeyRef:
           name: mdicapsrv-postgres-cred
           key: user
+    # PGDATA points at a subdirectory of the volume instead of the mount root,
+    # which is what keeps Postgres from failing to initialise with
+    # "initdb: error: could not change permissions of directory". fsGroup leaves
+    # the volume root owned by root:999 (mode 2775) -- writable, but not owned by
+    # the postgres user -- so the entrypoint's `chmod 00700 $PGDATA` and initdb's
+    # own chmod both fail with EPERM. With a subdirectory the entrypoint mkdirs it
+    # as UID 999, so it owns the dir and the chmod succeeds.
+    # NOTE: the on-disk layout depends on this. Commenting it out on a volume that
+    # was initialised with it set hides the existing cluster under pgdata/ and
+    # initdb runs again against the mount root, so only change it on a fresh volume.
+    - name: PGDATA
+      value: /var/lib/postgresql/data/pgdata
   ports:
     rest: 5432
   service_type: ClusterIP
+  # Pod-level definitions for the PostgreSQL pod: securityContext, nodeSelector,
+  # tolerations, affinity, ... Anything valid under a PodSpec can go here and is
+  # rendered as-is. The chart already sets restartPolicy and imagePullSecrets
+  # on the pod, so do not repeat those keys here.
+  customPodDefinitions:
+    # fsGroup is a POD-level field -- it belongs here, not in the container-level
+    # securityContext below. It makes the PVC mounted at /var/lib/postgresql/data
+    # group-writable by the postgres user (UID/GID 999); without it initdb fails on
+    # a freshly provisioned volume.
+    securityContext:
+      fsGroup: 999
+    # nodeSelector:
+    #   labelName: labelValue
+    # tolerations:
+    #   - key: "example-key"
+    #     operator: "Exists"
+    #     effect: "NoSchedule"
   securityContext:
     allowPrivilegeEscalation: false
     runAsNonRoot: true
@@ -91,13 +120,6 @@ postgres_mdicapsrv:
     runAsGroup: 999
     seccompProfile:
       type: RuntimeDefault
-  # customPodDefinitions:
-  #   nodeSelector:
-  #     labelName: labelValue
-  #   tolerations:
-  #     - key: "example-key"
-  #       operator: "Exists"
-  #       effect: "NoSchedule"
 # Docker repo to use, this should be changed when using private images (this string will be prepended to the image name)
 # If a component has "custom_repo: true" then the image name will be formated as "{docker_repo/}image_name{:BRANCH}" otherwise it will remain unaltered
 icap_docker_repo: opswat
@@ -157,8 +179,8 @@ icap_components:
         envFrom:
           - configMapRef:
               name: mdicapsrv-env
-        command: ['sh', '-c', 
-          'until pg_isready -h $DB_HOST -p $DB_PORT; 
+        command: ['sh', '-c',
+          'until pg_isready -h $DB_HOST -p $DB_PORT;
           do echo waiting for database; sleep 2; done;']
         securityContext:
           allowPrivilegeEscalation: false
@@ -171,13 +193,13 @@ icap_components:
           requests:
             memory: "128Mi"   # Minimum reserved memory
             cpu: "100m"       # Minimum reserved cpu
-          limits:              
+          limits:
             memory: "128Mi"   # Maximum memory limit
             cpu: "100m"       # Maximum cpu limit
     name: md-icapsrv
     custom_repo: true
     # Overrides the default docker image for the MD ICAP Server service, this value can be changed if you want to set a different version of MD ICAP Server
-    image: metadefendericapsrv-debian:5.14.1
+    image: metadefendericapsrv-debian:5.15.0
     # Warning: When to use this feature!
     # Sets the number of replicas if you want to have multiple MD ICAP Server instances
     replicas: 1
@@ -301,23 +323,32 @@ icap_components:
 # If `aws-type` is set to `fargate`, the MD ICAP Server pod will be scheduled on an AWS Fargate virtual node (if a fargate profile is provisioned and configured)
     extra_labels:
       aws-type: fargate
-# Custom pod definitions for the MD ICAP Server pod
-    # customPodDefinitions:
-    #   nodeSelector:
-    #     kubernetes.io/os: linux       # example: pin to Linux nodes
-    #     # agentpool: icappool         # example: pin to a specific node pool
-    #   tolerations:
-    #     - key: "dedicated"
-    #       operator: "Equal"
-    #       value: "icap"
-    #       effect: "NoSchedule"
-    #   affinity:                     # optional, for advanced scheduling
-    #     podAntiAffinity:
-    #       requiredDuringSchedulingIgnoredDuringExecution:
-    #         - labelSelector:
-    #             matchLabels:
-    #               app: md-icapsrv
-    #           topologyKey: kubernetes.io/hostname
+# Pod-level definitions for the MD ICAP Server pod: securityContext, nodeSelector,
+# tolerations, affinity, ... Anything valid under a PodSpec can go here and is
+# rendered as-is. The chart already sets serviceAccountName, restartPolicy and
+# imagePullSecrets on the pod, so do not repeat those keys here.
+    customPodDefinitions:
+      # fsGroup is a POD-level field -- it belongs here, not in the container-level
+      # securityContext above. It is required when icap_container_persistent is
+      # true, so the PVC mounted at /opt/mdicapsrv/icap_data/var/lib/mdicapsrv is
+      # writable by the MD ICAP Server user (UID/GID 1000).
+      securityContext:
+        fsGroup: 1000
+      # nodeSelector:
+      #   kubernetes.io/os: linux       # example: pin to Linux nodes
+      #   # agentpool: icappool         # example: pin to a specific node pool
+      # tolerations:
+      #   - key: "dedicated"
+      #     operator: "Equal"
+      #     value: "icap"
+      #     effect: "NoSchedule"
+      # affinity:                       # optional, for advanced scheduling
+      #   podAntiAffinity:
+      #     requiredDuringSchedulingIgnoredDuringExecution:
+      #       - labelSelector:
+      #           matchLabels:
+      #             app: md-icapsrv
+      #         topologyKey: kubernetes.io/hostname
     extraVolumeMounts:
     #  - mountPath: <path_to_mount> # for icap migration from sqlite to postgresql needed to mount -> "/opt/mdicapsrv/icap_data/var/lib/mdicapsrv". From version 5.2.0
     #    subPath: md_icapsrv        # subpath with the mounted point

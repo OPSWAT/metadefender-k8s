@@ -174,7 +174,7 @@ core_components:
     ## Keep the image tag here in sync with core_components.md-core.image.
     initContainers:
       - name: check-db-ready
-        image: opswat/metadefendercore-debian:5.21.0
+        image: opswat/metadefendercore-debian:5.22.0
         imagePullPolicy: IfNotPresent
         securityContext:               # same posture as the main containers
           runAsNonRoot: true

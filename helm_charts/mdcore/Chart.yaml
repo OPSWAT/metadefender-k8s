@@ -4,8 +4,9 @@ description: |
   This is a Helm chart for deploying MetaDefender Core (https://www.opswat.com/products/metadefender/core) in a Kubernetes cluster. 
 
   Release Notes
-  - Splunk log forwarding: SPLUNK_SERVER, SPLUNK_LOG_LEVEL and SPLUNK_ALLOW_SELF_SIGNED_CERT to configure MD Core's [splunk] ignition section
-  - In-cluster PostgreSQL bumped to postgres:18; the postgres-core data volume is now mounted at /var/lib/postgresql (PG18 home dir) with PGDATA left to default
+  - Default MD Core image bumped to 5.22.0
+  - OpenShift reference configuration: mdcore-openshift.yml installs as-is under the restricted-v2 SCC (arbitrary per-namespace UID, no hostPath volumes, explicit non-root security context); the license key is the only value you must supply
+  - Optional OpenShift Route through core_route (templates/route-template.yml), the OpenShift counterpart to core_ingress; core_route is not part of the chart defaults, so the template stays inert on non-OpenShift clusters
 
 
 long_description: |
@@ -48,5 +49,5 @@ long_description: |
   
 type: application
 
-version: 5.21.0
-appVersion: 5.21.0
+version: 5.22.0
+appVersion: 5.22.0
