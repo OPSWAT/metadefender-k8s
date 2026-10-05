@@ -30,12 +30,8 @@ variable "resource_group_name_prefix" {
 }
 
 variable "resource_group_location" {
-  default       = "centralus"
-  description   = "Location of the resource group."
-}
-
-variable "failover_location" {
-  default = "eastus"
+  default       = "eastus"
+  description   = "Location of the resource group. Was centralus; moved to eastus after repeated AKSCapacityHeavyUsage errors there — override via -var if you need a different region."
 }
 
 variable "agent_count" {
@@ -54,17 +50,13 @@ variable cluster_name {
     default = "k8md"
 }
 
-variable location {
-    default = "Central US"
-}
-
 variable log_analytics_workspace_name {
     default = "testLogAnalyticsWorkspaceName"
 }
 
 # refer https://azure.microsoft.com/global-infrastructure/services/?products=monitor for log analytics available regions
 variable log_analytics_workspace_location {
-    default = "centralus"
+    default = "eastus"
 }
 
 # refer https://azure.microsoft.com/pricing/details/monitor/ for log analytics pricing 
