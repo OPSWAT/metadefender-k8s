@@ -7,7 +7,7 @@ This is a single Helm chart, `mdcluster`, for deploying [MetaDefender Cluster](h
 | Part | Deploys |
 |---|---|
 | Control plane | Control Center, Identity Service, File Storage, plus the `mdcluster-config` ConfigMap / `mdcluster-secrets` Secret, and (by default) an in-cluster PostgreSQL, Redis and RabbitMQ |
-| Worker fleet | One StatefulSet per entry under `workers` (`ometascan`, `api-gateway`, `callback-service` by default) |
+| Worker fleet | One StatefulSet per entry under `workers` (`ometascan`, `api-gateway`, `callback-service`, `download-service` by default) |
 
 Everything installs as one release, so there is no ordering to get right: the workers read the same `mdcluster-config` ConfigMap and `mdcluster-secrets` Secret the chart creates for the control plane.
 
@@ -17,7 +17,7 @@ There is no Ingress or HorizontalPodAutoscaler template — exposure and scaling
 
 - A Kubernetes cluster and `kubectl`/`helm` (Helm 3) configured against it
 - A MetaDefender Cluster license key (`secrets.LICENSE_KEY`) — contact sales-inquiry@opswat.com if you don't have one
-- Access to the container images referenced by `DOCKER_REPO`/`MDCLS_VERSION` (default `opswat/metadefendercluster-debian:<component>-2.9.1`); set `imagePullSecrets` if the registry is private
+- Access to the container images referenced by `DOCKER_REPO`/`MDCLS_VERSION` (default `opswat/metadefendercluster-debian:<component>-2.10.0`); set `imagePullSecrets` if the registry is private
 - If you disable the bundled PostgreSQL/Redis/RabbitMQ (recommended for production, see below), reachable endpoints for your own instances
 
 ## Installation
@@ -83,7 +83,7 @@ helm install mdcluster ./mdcluster \
 ```console
 kubectl -n mdcluster get all
 ```
-You should see `control-center`, `identity-service`, `file-storage-0` (StatefulSet), the infra pods you left enabled, and one pod per worker (`ometascan-0`, `api-gateway-0`, `callback-service-0` by default). Allow a couple of minutes after `--wait` returns for the workers to finish registering with Control Center over RabbitMQ before scanning traffic.
+You should see `control-center`, `identity-service`, `file-storage-0` (StatefulSet), the infra pods you left enabled, and one pod per worker (`ometascan-0`, `api-gateway-0`, `callback-service-0`, `download-service-0` by default). Allow a couple of minutes after `--wait` returns for the workers to finish registering with Control Center over RabbitMQ before scanning traffic.
 
 ### Accessing Control Center
 
@@ -100,7 +100,7 @@ For anything beyond a smoke test, put it behind your own Ingress/LoadBalancer �
 | Key | Default | Notes |
 |---|---|---|
 | `DOCKER_REPO` | `opswat/metadefendercluster-debian` | Image repo prefix; images are tagged `<repo>:<component>-<version>` |
-| `MDCLS_VERSION` | `2.9.1` | Default image tag for every component |
+| `MDCLS_VERSION` | `2.10.0` | Default image tag for every component |
 | `imagePullPolicy` | `IfNotPresent` | Overridable per component |
 | `imagePullSecrets` | *(commented out)* | Set for private registries |
 
@@ -145,7 +145,7 @@ Rows marked *generated* are filled in by the chart when left empty (see [Generat
 | `ADMIN_USER` / `ADMIN_EMAIL` | `admin` / `admin@admin` | Bootstrap admin account identity |
 | `ADMIN_PASSWORD` | `admin` | Bootstrap admin account password |
 | `ADMIN_APIKEY` | `''` → *generated* | Identity Service bootstraps the admin account with it, and Control Center, File Storage and the workers all authenticate their registration calls with the same value. Must be 36 hex chars, ≥10 digits, ≥10 letters, no run of 4+ of either class — the generated one satisfies all four |
-| `LICENSE_KEY` | `''` | Required for a usable deployment |
+| `LICENSE_KEY` | *not set* → *live Secret value, else empty* | Required for a usable deployment, and the **source of truth** for licensing — Control Center reconciles its license list to exactly the resolved value on every start. Deliberately has no default and no generated fallback: not specifying it keeps whatever the Secret already holds, while setting it to `''` means *remove all licenses*. See [Changing the license key](#changing-the-license-key) |
 
 ### `env` (renders the shared `mdcluster-config` ConfigMap)
 
@@ -162,7 +162,7 @@ To point at external infrastructure, disable the corresponding component (`postg
 
 | Key | Default | Notes |
 |---|---|---|
-| `workers` | `ometascan` (port `8008`), `api-gateway` (port `8899`), `callback-service` (port `8894`) | Map of instance type → config. The key selects the image (`worker-<key>`), so it must be one of `ometascan` / `api-gateway` / `callback-service` |
+| `workers` | `ometascan` (port `8008`), `api-gateway` (port `8899`), `callback-service` (port `8894`), `download-service` (port `8895`) | Map of instance type → config. The key selects the image (`worker-<key>`), so it must be one of `ometascan` / `api-gateway` / `callback-service` / `download-service` |
 | `workers.<name>.listenPort` | *(required per entry)* | Must not collide across workers |
 | `workers.<name>.replicas` | *(k8s default)* | Per-instance scaling; there is **no autoscaling** in this chart |
 | `workers.<name>.service` | *(unset)* | Dedicated Service for this worker — **only supported for `api-gateway`**; any other name fails the render |
@@ -173,6 +173,8 @@ To point at external infrastructure, disable the corresponding component (`postg
 | `workers.<name>.version` | *(falls back to `MDCLS_VERSION`)* | Image tag override, i.e. `worker-<type>-<version>` |
 
 Each worker also accepts `imagePullPolicy`, `resources`, `nodeSelector`/`affinity`/`tolerations`, and `probes` overrides, same as the other components. Adding a key to `workers` creates another StatefulSet on `helm upgrade`; removing one deletes it.
+
+The `download-service` entry serves the API Gateway's `downloadfrom` header (scan by URL). It is deployed by default, but the feature itself stays off until Control Center's `/admin/config/downloadfrom` is enabled (`PUT` with `{"enable": true, ...}`). The instance fetches the submitted links itself, so the cluster must allow egress from it to those hosts.
 
 Each worker image bakes in the installer for its instance type, together with `WORKER_INSTANCE_TYPE` and `WORKER_INSTANCE_VERSION` as build-time environment variables. On startup a worker uploads that installer to Control Center, triggers an upgrade of its type to that version, and deploys it — so **rolling out new worker image tags is what upgrades the deployed instances**. Neither variable is set from the chart; overriding them would desync an image from its own installer.
 
@@ -207,7 +209,7 @@ workers:
 
 ## Production configuration
 
-- **License key** — `secrets.LICENSE_KEY` is empty by default; the deployment isn't usable without it.
+- **License key** — `secrets.LICENSE_KEY` is empty by default; the deployment isn't usable without it. It is also the single source of truth: Control Center reconciles its license list to it on every start, so a license added by hand in the Control Center UI is removed the next time Control Center restarts. Manage licenses through this value, not through the UI. If `mdcluster-secrets` is populated by an external controller instead of by chart values, read the limitation in [Changing the license key](#changing-the-license-key) before your first upgrade — a client-side render with no key in values resolves to an empty key, which removes every license.
 - **Rotate every dev-default credential** — see the `secrets` table above. The five keys marked *generated* need no action (the chart creates strong values and preserves them across upgrades); the DB, RabbitMQ and admin-account credentials are the ones still carrying well-known defaults.
 - **All four DB passwords must match** — `CONTROL_CENTER_DB_PASSWORD`, `IDENTITY_DB_PASSWORD`, `DATALAKE_PASSWORD`, `WAREHOUSE_PASSWORD` are the same underlying Postgres superuser when using the in-chart database.
 - **Use external PostgreSQL/Redis/RabbitMQ in production** — the bundled ones (`postgres.enabled`, `redis.enabled`, `rabbitmq.enabled`, all `true` by default) target dev/test parity with the docker-compose stack, not HA. Disable them and point the matching `env` hosts/services at managed instances.
@@ -228,6 +230,63 @@ helm upgrade mdcluster ./mdcluster --namespace mdcluster --reuse-values
 
 Bumping `MDCLS_VERSION` (or an individual `workers.<name>.version`) rolls the worker StatefulSets, and each new worker pod uploads its baked-in installer and triggers the upgrade of its instance type to that version. There is no separate upgrade hook or Job to opt into.
 
+### Changing the license key
+
+`secrets.LICENSE_KEY` is the source of truth for the cluster's licensing. Change it and upgrade as usual:
+
+```console
+helm upgrade mdcluster ./mdcluster --namespace mdcluster --reuse-values \
+  --set secrets.LICENSE_KEY='<new-key>'
+```
+
+**Giving `secrets.LICENSE_KEY` a value is an instruction, so there are three distinct states — and "not specified" is not the same as `''`:**
+
+| `secrets.LICENSE_KEY` | Resolves to | Effect |
+|---|---|---|
+| not specified, or `null` | the `LICENSE_KEY` already in the live `mdcluster-secrets` Secret (empty if there is none) | Leaves licensing as it is. This is the default, and it is what lets an external controller own the key — see [If an external controller owns the Secret](#if-an-external-controller-owns-the-secret) |
+| `''` | empty | **Removes all licensing.** Every license is deactivated and deleted |
+| `'<key>'` | that key | That key is applied and becomes the only license |
+
+The chart therefore ships **no** `LICENSE_KEY` default in `values.yaml`: a default would make the key permanently "specified", which would remove every license on a stock install and disable the external-controller fallback outright.
+
+The Control Center pod template carries a `checksum/license-key` annotation derived from the key (a SHA-256 of it — never the key itself, since pod annotations are readable with pod read access), so changing the key rolls the Control Center pod. Its entrypoint then reconciles:
+
+1. Adds the new key. Control Center validates it against the OPSWAT Activation Server at this point, so an invalid key, one not entitled for cluster use, or an unreachable Activation Server is rejected here — **before** anything else is touched. The reconcile then stops, an error is logged, and the existing licensing is left exactly as it is.
+2. Lists the licenses, and logs how many there are and how many workers are activated.
+3. Deactivates every license that has activated workers on a different key, which frees their slots on the Activation Server.
+4. Activates the new license, which Control Center pushes live to each running MD Core instance over the worker connection. A key yields one license record per platform, and the one activated is the record matching the platform your `ometascan` workers actually run — read from the workers themselves, not assumed.
+5. Deletes every license carrying a *different* key. Every record of the configured key is kept, whatever its platform. Control Center decides whether each delete is allowed — it refuses while a license still has activated workers — and a refusal is logged with the reason it gave.
+
+Things worth knowing:
+
+- **The workers do not restart.** Only the Control Center pod rolls. Activation is pushed to the running MD Core instances live, so there is no scan outage and no redeploy.
+- **An unchanged key is a no-op.** Re-running the upgrade with the same key changes nothing — no deactivate/reactivate churn.
+- **Setting it to `''` removes all licensing.** Every license is deactivated and deleted; scans stop working until a key is set again. Leaving the key out entirely (or `null`) is the *opposite* instruction — it keeps whatever the Secret already holds.
+- **Licenses added in the Control Center UI are deleted.** The chart wins. Add licenses through `secrets.LICENSE_KEY`.
+- **The license key never appears in a log line, an annotation, or a rendered manifest.** Logs identify a license by its license id, never by the key or anything derived from it.
+- **A key that cannot be added stops the reconcile.** Nothing is deactivated, activated or deleted, and the licensing already in the cluster keeps running untouched — a rejected key or a momentarily unreachable Activation Server cannot cost you your licences. It is logged as an error in the Control Center log, which is the only signal, so check there after changing the key.
+- **Nothing here fails the container start.** Every licensing failure is logged and Control Center comes up regardless.
+
+#### If an external controller owns the Secret
+
+`mdcluster-secrets` may be populated by External Secrets Operator, Sealed Secrets, Vault Agent, or a plain `kubectl create secret` rather than by chart values. The chart resolves the key like this:
+
+1. if `secrets.LICENSE_KEY` was given a value (including `''`), that value wins;
+2. otherwise the value already present in the live `mdcluster-secrets` Secret;
+3. otherwise empty.
+
+**Leave `secrets.LICENSE_KEY` out of your values entirely** (or set it to `null`) so step 2 applies. That is what keeps an externally injected key alive: `helm upgrade` reads the Secret that is already in the cluster and writes that value back, instead of overwriting it with `""`. The Control Center annotation hashes the same resolved value, so if the external controller changes the key, the next `helm upgrade` rolls Control Center and the new key is applied.
+
+Setting it to `''` in this setup is not "leave it alone" — it is an explicit instruction to remove every license, and it overrides the Secret.
+
+> **Limitation — client-side rendering cannot see the live Secret.**
+> Step 2 uses Helm's `lookup`, which returns nothing during `helm template`, client-side `--dry-run`, and any pipeline that renders manifests without cluster access. **Argo CD renders this way by default.** In that mode a chart with no key in values resolves to an empty `LICENSE_KEY` — and an empty key means *deactivate and remove every license*. If you render client-side, do one of these:
+> - set `secrets.LICENSE_KEY` explicitly in values (via your own secret-management path, e.g. an Argo CD plugin or a values file sourced from your secret store); **or**
+> - do not let an external controller own the `LICENSE_KEY` entry of `mdcluster-secrets`; **or**
+> - enable server-side rendering for the release (`helm upgrade` against the cluster, or Argo CD's server-side apply / `--dry-run=server` equivalent) so `lookup` can see the live Secret.
+>
+> Control Center does **not** watch the Secret for changes at runtime. A key rotated by an external controller is picked up on the next `helm upgrade` that rolls the Control Center pod, not before.
+
 ### Database upgrades
 
 Not applicable when using an external, managed database. For the in-chart PostgreSQL, `postgres.image` pins the version (default `postgres:16`) — check release notes before bumping it across a major version.
@@ -245,7 +304,7 @@ Persistent volumes (if persistence was enabled) are kept (`helm.sh/resource-poli
 ## Troubleshooting
 
 - **Workers crash-loop right after install** — confirm `kubectl -n mdcluster get configmap mdcluster-config` and `kubectl -n mdcluster get secret mdcluster-secrets` both exist, and check the worker logs for how far registration with Control Center got.
-- **`Error: execution error ... unknown instance type`** — a `workers` key must be one of `ometascan` / `api-gateway` / `callback-service`, since the key selects the image.
+- **`Error: execution error ... unknown instance type`** — a `workers` key must be one of `ometascan` / `api-gateway` / `callback-service` / `download-service`, since the key selects the image.
 - **`Error: execution error ... a dedicated service is only supported for "api-gateway"`** — remove `workers.<name>.service` for any worker other than `api-gateway`.
 - **`Error: execution error ... tls is only supported for "api-gateway"`** — remove `workers.<name>.tls` for any worker other than `api-gateway`.
 - **`Error: execution error ... secretName is required when tls.enabled is true (no self-signed fallback)`** — set `secretName` on `control-center.tls` (or `workers.api-gateway.tls`) to an existing `kubernetes.io/tls` Secret; there is no auto-generated fallback for these two components.

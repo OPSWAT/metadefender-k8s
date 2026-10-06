@@ -15,11 +15,18 @@ mdcore_password: null                   # Initial admin password for the MD Core
 ## - if no "mdcore-postgres-cred" secret exists, it will be created with the user "postgres" and a random password
 ## - if the "mdcore-postgres-cred" secret exists, the values from the secret are used as credentials
 
-db_user: postgres                  # PostgreSQL database username 
+db_user: postgres                  # PostgreSQL database username
 db_password: null                  # PostgreSQL database password, if not set it will be randomly generated
 
 
-## Uncomment the following line to set a fixed API key for MD Core that will overwrite 
+## MD Core private database role, stored in the "mdcore-db-private-cred" secret (kept when the chart is deleted).
+## Required when MD_INSTANCE_SLOTS is set. See the README for details.
+
+mdcore_db_private_user: mdcore_private_user   # MD Core private database role
+mdcore_db_private_password: null              # Password for that role, if not set it will be randomly generated
+
+
+## Uncomment the following line to set a fixed API key for MD Core that will overwrite
 ## any secret that already exists for API key (the secret will be kept when the chart is deleted)
 ## If left unset the following will apply:
 ## - if no "mdcore-api-key" secret exists, it will be created with a random 36 character API key
@@ -42,6 +49,16 @@ MDCORE_DB_TYPE: remote              # Database type
 MDCORE_DB_HOST: postgres-core       # Hostname / entrypoint of the database, this value should be changed any if using an external database service
 MDCORE_DB_PORT: "5432"              # Port for the PostgreSQL Database
 MDCORE_CERT_PATH: "/cert"
+
+# Stable instance names for shared-database mode (MDCORE_DB_MODE "4"); see the README for details.
+MD_INSTANCE_SLOTS: null                  # Slot pool size, at least the max replica count; null keeps pod names as instance names
+MD_INSTANCE_SLOT_PREFIX: md-core         # Slot names are "<prefix>-0", "<prefix>-1", ...
+MD_INSTANCE_SLOT_DB: postgres            # Database the slot lock session connects to
+MD_INSTANCE_SLOT_WAIT_SECONDS: "120"     # Total budget for claiming a slot; "0" means a single attempt
+MD_INSTANCE_SLOT_KEEPALIVE_SECONDS: "20" # TCP keepalive on the lock session
+MD_INSTANCE_SLOT_WATCHDOG_SECONDS: "30"  # Lock session re-check interval; "0" disables the watchdog
+MD_INSTANCE_SLOT_LOST_ACTION: restart    # When another container takes the slot: restart | warn
+MD_INSTANCE_SLOT_MAP_ALIAS: "true"       # Set the instance alias to the holding pod's name
 
 # Path inside the MD Core container for sanitized, DLP-processed, and quarantined files.
 # Must match core_components.md-core.persistentDir when file storage persistence is enabled.
@@ -170,7 +187,7 @@ env:                                                            # Set additional
   PROXY_EXCLUSION: ""       # Not use the proxy server for the addresses starting with the following entries
   # Licensing CleanUp
   LICENSING_CLEANUP: "false"
-  # Upgrade Database Flags
+  # Upgrade Database Flags. With MDCORE_DB_MODE=4, UPGRADE_DB=true runs the upgrade in an initContainer (see README)
   MDCORE_UPGRADE_FROM_DB_NAME: "metadefender_core"
   UPGRADE_DB: "false"
   MIGRATE_HISTORY: "false"  # Only from version 5.10.1 See Pre-steps in docs.opswat.com 
@@ -249,7 +266,7 @@ core_components:
     is_db: true
     # Postgres 18 moved the volume mount to the home dir (/var/lib/postgresql) and
     # PGDATA to a version-scoped subdir (/var/lib/postgresql/18/docker). Mount at
-    # the home dir and let PGDATA default. See LMS-50532 / docker-library/postgres#1259.
+    # the home dir and let PGDATA default. docker-library/postgres#1259.
     persistentDir: /var/lib/postgresql
     storage_name: postgres-core
     tls:
@@ -257,7 +274,7 @@ core_components:
 
   md-core:
     name: md-core
-    image: opswat/metadefendercore-debian:5.22.1        # Overrides the default docker image for the MD Core service, this value can be changed if you want to set a different version of MD Core
+    image: opswat/metadefendercore-debian:5.23.0        # Overrides the default docker image for the MD Core service, this value can be changed if you want to set a different version of MD Core
     replicas: 1                                         # Sets the number of replicas if you want to have multiple MD Core instances
     env:
       - name: MD_USER
@@ -301,6 +318,17 @@ core_components:
         valueFrom:
           secretKeyRef:
             name: mdcore-postgres-cred
+            key: password
+      # Predefined private database role, required when MD_INSTANCE_SLOTS is set
+      - name: MDCORE_DB_PRIVATE_USERNAME
+        valueFrom:
+          secretKeyRef:
+            name: mdcore-db-private-cred
+            key: user
+      - name: MDCORE_DB_PRIVATE_PASSWORD
+        valueFrom:
+          secretKeyRef:
+            name: mdcore-db-private-cred
             key: password
     #persistentDir: /metadefendercore
     #storage_name: md-core-storage
@@ -346,7 +374,7 @@ core_components:
         maxSurge: 0
     initContainers:
       - name: check-db-ready
-        image: opswat/metadefendercore-debian:5.22.1
+        image: opswat/metadefendercore-debian:5.23.0
         imagePullPolicy: IfNotPresent
         envFrom:
           - configMapRef:

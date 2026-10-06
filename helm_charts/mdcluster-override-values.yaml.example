@@ -6,7 +6,7 @@
 
 # --- Images -----------------------------------------------------------------
 DOCKER_REPO: 'opswat/metadefendercluster-debian'  # <DOCKER_REPO>:<service>-<MDCLS_VERSION>
-MDCLS_VERSION: '2.9.1'
+MDCLS_VERSION: '2.10.0'
 imagePullPolicy: IfNotPresent
 # imagePullSecrets:
 #   - name: regcred
@@ -18,6 +18,8 @@ workers:
   api-gateway:
     replicas: 1
   callback-service:
+    replicas: 1
+  download-service:
     replicas: 1
 
 secrets:
@@ -39,8 +41,39 @@ secrets:
   ADMIN_PASSWORD: '<admin-password>'
   ADMIN_EMAIL: '<admin-email>'
 
-  # --- Optional ---
-  LICENSE_KEY: ''   # when set, deployed MD Core instances are activated automatically
+  # --- License ---
+  # The source of truth for the cluster's licensing. Control Center reconciles
+  # its license list to exactly the resolved value every time it starts, so
+  # GIVING THIS KEY A VALUE IS AN INSTRUCTION -- and leaving it out is not the
+  # same as setting it to '':
+  #
+  #   not specified / null  -> keep whatever LICENSE_KEY is already in the live
+  #                            mdcluster-secrets Secret. This is the safe
+  #                            default, and it is what lets a key injected by
+  #                            External Secrets Operator / Sealed Secrets /
+  #                            Vault Agent / `kubectl create secret` survive an
+  #                            upgrade.
+  #   ''                    -> REMOVE ALL LICENSING. Every license is
+  #                            deactivated and deleted, and scans stop working.
+  #   '<license-key>'       -> that key is applied and becomes the only license.
+  #                            Deployed MD Core instances are activated with it
+  #                            automatically; changing it later makes `helm
+  #                            upgrade` roll the Control Center pod and migrate
+  #                            the fleet (the workers do NOT restart). An
+  #                            invalid or unreachable key is only a warning and
+  #                            leaves the previous license running.
+  #
+  # A license added by hand in the Control Center UI is deleted on the next
+  # Control Center restart. Manage licenses here, not in the UI.
+  #
+  # The "keep what is in the Secret" fallback needs cluster access at render
+  # time: if you render client-side (`helm template`, `--dry-run`, Argo CD's
+  # default) it resolves to empty -- which REMOVES ALL LICENSES. See "Changing
+  # the license key" in README.md.
+  #
+  # Left commented out on purpose: uncomment it only when you actually want to
+  # set or clear the cluster's license.
+  # LICENSE_KEY: '<license-key>'
 
 # --- Persistence (recommended: see "Production configuration" in README.md) ---
 postgres:

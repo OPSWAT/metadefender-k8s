@@ -15,6 +15,16 @@ data:
   {{- if .Values.STORAGE_PATH }}
   STORAGE_PATH: {{ .Values.STORAGE_PATH | quote }}
   {{- end }}
+  {{- if .Values.MD_INSTANCE_SLOTS }}
+  MD_INSTANCE_SLOTS: {{ .Values.MD_INSTANCE_SLOTS | quote }}
+  MD_INSTANCE_SLOT_PREFIX: {{ .Values.MD_INSTANCE_SLOT_PREFIX | quote }}
+  MD_INSTANCE_SLOT_DB: {{ .Values.MD_INSTANCE_SLOT_DB | quote }}
+  MD_INSTANCE_SLOT_WAIT_SECONDS: {{ .Values.MD_INSTANCE_SLOT_WAIT_SECONDS | quote }}
+  MD_INSTANCE_SLOT_KEEPALIVE_SECONDS: {{ .Values.MD_INSTANCE_SLOT_KEEPALIVE_SECONDS | quote }}
+  MD_INSTANCE_SLOT_WATCHDOG_SECONDS: {{ .Values.MD_INSTANCE_SLOT_WATCHDOG_SECONDS | quote }}
+  MD_INSTANCE_SLOT_LOST_ACTION: {{ .Values.MD_INSTANCE_SLOT_LOST_ACTION | quote }}
+  MD_INSTANCE_SLOT_MAP_ALIAS: {{ .Values.MD_INSTANCE_SLOT_MAP_ALIAS | quote }}
+  {{- end }}
 ---
 # add config-map for mdcore-import-zip-config
 {{- if and ($.Values.CONFIG_IMPORT_FILE) ($.Values.CONFIG_IMPORT_PASSWORD) }}

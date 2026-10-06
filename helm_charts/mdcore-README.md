@@ -153,6 +153,33 @@ The entire deployment can be customized by overwriting the chart's default confi
 
 See [MD Core Docker environment variables](https://www.opswat.com/docs/mdcore/container-deployment/docker-image-published-on-opswat-docker-hub) for `STORAGE_PATH` semantics.
 
+### Database upgrade in an initContainer (LMS-29194)
+
+For **remote/shared PostgreSQL** (`MDCORE_DB_MODE=4`), set `env.UPGRADE_DB` to `"true"` when upgrading the Core image against an existing database. The chart then:
+
+1. Keeps the existing `check-db-ready` initContainer.
+2. Adds an `upgrade-db` initContainer with `MDCORE_RUN_MODE=upgrade-only` that runs the DB upgrade and exits.
+3. Sets `UPGRADE_DB_SKIP=true` on the main `md-core` container so startup skips in-process upgrade and uses standard liveness/readiness probe timings.
+
+Both initContainer and main container mount the same `STORAGE_PATH` volume so Postgres credential files can be exchanged via `STORAGE_PATH/sharedb`. If `md-core` has no storage configured, the chart auto-provisions an `emptyDir` at `STORAGE_PATH`.
+
+**Requirements:**
+
+- Core image **5.23.0+** with LMS-29194 support (`MDCORE_RUN_MODE`, `UPGRADE_DB_SKIP`).
+- Remote DB mode only — the initContainer path is not enabled for other `MDCORE_DB_MODE` values.
+- Set `env.MDCORE_UPGRADE_FROM_DB_NAME` to the source database name before upgrade.
+
+Example:
+
+```console
+helm upgrade --install my_mdcore ./helm_charts/mdcore \
+  --set env.UPGRADE_DB=true \
+  --set env.MDCORE_UPGRADE_FROM_DB_NAME=metadefender_core \
+  --set core_components.md-core.image=opswat/metadefendercore-debian:5.23.0
+```
+
+When `env.UPGRADE_DB` is `false` (default), behaviour is unchanged — DB upgrade runs inside the main container on first start.
+
 ## KEDA Autoscaling
 
 The chart can deploy a KEDA `ScaledObject` for the `md-core` Deployment. KEDA autoscaling is **disabled by default**; enable it by setting `keda.enabled` to `true`.
@@ -218,6 +245,8 @@ The following table lists the configurable parameters of the Metadefender core c
 | `mdcore_password` | Initial admin password for the MD Core web interface, if not set it will be randomly generated | `null` |
 | `core_db_user` | PostgreSQL database username | `"postgres"` |
 | `core_db_password` | PostgreSQL database password, if not set it will be randomly generated | `null` |
+| `mdcore_db_private_user` | MD Core private database role. Without a predefined role MD Core creates one `usr_<sha1(instance name)>` role per instance name and drops it on shutdown, so a pod taking over an instance name loses its privileges and exits — a predefined shared role is required whenever `MD_INSTANCE_SLOTS` is set | `"mdcore_private_user"` |
+| `mdcore_db_private_password` | Password for that role, if not set it will be randomly generated the same way as `core_db_password` and kept in the `mdcore-db-private-cred` secret across upgrades | `null` |
 | `mdcore_api_key` | 36 character API key used for the MD Core REST API, if not set it will be randomly generated | `null` |
 | `mdcore_license_key` | A valid license key, **this value is mandatory** | `"<SET_LICENSE_KEY_HERE>"` |
 | `activation_server` | URL to the OPSWAT activation server, this value should not be changed | `"activation.dl.opswat.com"` |
@@ -227,6 +256,14 @@ The following table lists the configurable parameters of the Metadefender core c
 | `MDCORE_DB_HOST` | Hostname / entrypoint of the database, this value should be changed any if using an external database service | `"postgres-core"` |
 | `MDCORE_DB_PORT` | Port for the PostgreSQL Database | `"5432"` |
 | `STORAGE_PATH` | Container path for sanitized, DLP, and quarantined files; must match `core_components.md-core.persistentDir` when persistence is enabled | `"/metadefendercore"` |
+| `MD_INSTANCE_SLOTS` | Size of the stable instance-name pool for shared-database mode. When set, each pod claims a name from `<MD_INSTANCE_SLOT_PREFIX>-0`..`-(N-1)` instead of using its pod name, so a restarted pod keeps its `instance_id` and its per-instance settings. Size it at or above the maximum replica count plus the rolling-update surge — `keda.maxReplicas` when autoscaling is enabled. A slot is a PostgreSQL session-level advisory lock, so it needs no schema and works from the very first pod, and the server frees it the moment the holding session ends. `null` keeps the pod-name behaviour and writes none of these keys | `null` |
+| `MD_INSTANCE_SLOT_PREFIX` | Prefix for slot names. Give each deployment sharing one database its own prefix | `"md-core"` |
+| `MD_INSTANCE_SLOT_DB` | Database the lock session connects to. Advisory locks are scoped to one database, so every pod of a deployment must use the same one; it only needs `CONNECT` and nothing is written to it | `"postgres"` |
+| `MD_INSTANCE_SLOT_WAIT_SECONDS` | Total budget for claiming a slot, retried within it | `"120"` |
+| `MD_INSTANCE_SLOT_KEEPALIVE_SECONDS` | TCP keepalive on the lock session. A pod that vanishes without closing its socket is reaped, and its slot freed, in roughly this plus 30s | `"20"` |
+| `MD_INSTANCE_SLOT_WATCHDOG_SECONDS` | How often to re-check that the lock session still exists and take the slot back if it does not. The check is itself query activity, so it also holds off a server-side `idle_session_timeout`. `"0"` disables the watchdog | `"30"` |
+| `MD_INSTANCE_SLOT_LOST_ACTION` | What to do when the slot is gone and another container now holds it: `restart` shuts the pod down so its replacement claims a slot it owns, `warn` keeps serving under the name. Either way `.instance_slot_lost` is written for a probe to test | `"restart"` |
+| `MD_INSTANCE_SLOT_MAP_ALIAS` | Record the holding pod's name as the instance alias, so a slot seen in the MD Core UI can be traced back to its pod. Never overwrites an alias a user typed. Defaulted on by this chart; the container's own default is `"false"` | `"true"` |
 | `deploy_with_core_db` | Enable or disable the local in-cluster PostgreSQL database | `true` |
 | `persistance_enabled` |  | `true` |
 | `storage_provisioner` |  | `"hostPath"` |

@@ -60,3 +60,43 @@ Create the name of the service account to use
 {{- default "default" .Values.serviceAccount.name }}
 {{- end }}
 {{- end }}
+
+{{/*
+True when the md-core pod should run DB upgrade in an initContainer.
+Requires UPGRADE_DB=true and remote/shared DB mode (MDCORE_DB_MODE=4).
+*/}}
+{{- define "mdss.upgradeDbInitContainerEnabled" -}}
+{{- $root := .root -}}
+{{- $component := .component -}}
+{{- and (eq $component.name "md-core") (eq ($root.Values.env.UPGRADE_DB | default "false" | toString) "true") (eq ($root.Values.MDCORE_DB_MODE | toString) "4") -}}
+{{- end -}}
+
+{{/*
+Resolve the Kubernetes volume used for STORAGE_PATH credential handoff between
+the upgrade initContainer and the md-core main container.
+Returns a dict: name, mountPath, auto (chart renders emptyDir when true), subPath (optional).
+*/}}
+{{- define "mdss.mdCoreStoragePathVolume" -}}
+{{- $root := .root -}}
+{{- $component := .component -}}
+{{- $storagePath := $root.Values.STORAGE_PATH | default "/metadefendercore" -}}
+{{- if $component.persistentDir -}}
+{{- $subPath := "" -}}
+{{- if not (eq $root.Values.storage_provisioner "hostPath") -}}
+{{- $subPath = $component.name -}}
+{{- end -}}
+{{- dict "name" $component.name "mountPath" $component.persistentDir "auto" false "subPath" $subPath | toYaml -}}
+{{- else -}}
+{{- $volName := "" -}}
+{{- range $component.extraVolumeMounts | default list -}}
+{{- if eq .mountPath $storagePath -}}
+{{- $volName = .name -}}
+{{- end -}}
+{{- end -}}
+{{- if $volName -}}
+{{- dict "name" $volName "mountPath" $storagePath "auto" false "subPath" "" | toYaml -}}
+{{- else -}}
+{{- dict "name" "md-core-shared-storage" "mountPath" $storagePath "auto" true "subPath" "" | toYaml -}}
+{{- end -}}
+{{- end -}}
+{{- end -}}

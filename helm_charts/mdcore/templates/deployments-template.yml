@@ -27,6 +27,12 @@ spec:
           {{- toYaml $component.extra_labels | nindent 8 }}
         {{- end }}
     spec:
+      {{- $upgradeDbInit := include "mdss.upgradeDbInitContainerEnabled" (dict "root" $ "component" $component) | trim }}
+      {{- $storageVol := dict }}
+      {{- if eq $upgradeDbInit "true" }}
+      {{- $storageVol = include "mdss.mdCoreStoragePathVolume" (dict "root" $ "component" $component) | fromYaml }}
+      {{- end }}
+      {{- $autoStorageVolume := and (eq $upgradeDbInit "true") $storageVol.auto }}
       containers:
         - envFrom:
             - configMapRef:
@@ -42,7 +48,7 @@ spec:
           {{- end }}
           imagePullPolicy: {{ $.Values.imagePullPolicy }}
           {{- $injectIgnitionJSON := and $.Values.IGNITION_JSON (eq $component.name "md-core") }}
-          {{- if or $component.env $injectIgnitionJSON }}
+          {{- if or $component.env $injectIgnitionJSON (eq $upgradeDbInit "true") }}
           env:
             {{- if $component.env }}
             {{- toYaml $component.env | nindent 12 }}
@@ -53,6 +59,10 @@ spec:
                 secretKeyRef:
                   name: mdcore-stack-configs
                   key: IGNITION_JSON
+            {{- end }}
+            {{- if eq $upgradeDbInit "true" }}
+            - name: UPGRADE_DB_SKIP
+              value: "true"
             {{- end }}
           {{- end }}
           name: {{ $component.name | quote }}
@@ -87,7 +97,7 @@ spec:
             {{- toYaml $component.securityContext | nindent 12 }}
           {{- end }}
           {{- $tls := default dict $component.tls }}
-          {{- if (or $component.mountConfig $tls.enabled $component.persistentDir $component.extraVolumeMounts)}}
+          {{- if (or $component.mountConfig $tls.enabled $component.persistentDir $component.extraVolumeMounts $autoStorageVolume)}}
           volumeMounts:
             {{- if $component.mountConfig }}
             - name: {{ $component.mountConfig.configName }}
@@ -109,6 +119,10 @@ spec:
               subPath: {{ $component.name }}
               {{- end }}
             {{ end }}
+            {{- if $autoStorageVolume }}
+            - name: {{ $storageVol.name }}
+              mountPath: {{ $storageVol.mountPath }}
+            {{- end }}
             {{- if $component.extraVolumeMounts }}
               {{- toYaml $component.extraVolumeMounts | nindent 12 }}
             {{- end }}
@@ -120,9 +134,55 @@ spec:
           {{- if $component.sidecars }}
             {{- toYaml $component.sidecars | nindent 8 }}
           {{- end }}
-      {{- if $component.initContainers }}
+      {{- if or $component.initContainers (eq $upgradeDbInit "true") }}
       initContainers:
+        {{- if $component.initContainers }}
         {{- toYaml $component.initContainers | nindent 8 }}
+        {{- end }}
+        {{- if eq $upgradeDbInit "true" }}
+        - name: upgrade-db
+          {{ if $component.custom_repo -}}
+          image: {{ printf "%s/%s:%s" $.Values.core_docker_repo $component.image $.Values.BRANCH | quote }}
+          {{- else -}}
+          image: {{ $component.image | quote }}
+          {{- end }}
+          imagePullPolicy: {{ $.Values.imagePullPolicy }}
+          envFrom:
+            - configMapRef:
+                name: mdcore-env
+            {{- if $.Values.env }}
+            - configMapRef:
+                name: {{ printf "%s-config" $.Release.Name }}
+            {{- end }}
+          env:
+            - name: MDCORE_RUN_MODE
+              value: "upgrade-only"
+            - name: DB_USER
+              valueFrom:
+                secretKeyRef:
+                  name: mdcore-postgres-cred
+                  key: user
+            - name: DB_PWD
+              valueFrom:
+                secretKeyRef:
+                  name: mdcore-postgres-cred
+                  key: password
+            - name: APIKEY
+              valueFrom:
+                secretKeyRef:
+                  name: mdcore-api-key
+                  key: value
+          {{- if $component.securityContext }}
+          securityContext:
+            {{- toYaml $component.securityContext | nindent 12 }}
+          {{- end }}
+          volumeMounts:
+            - name: {{ $storageVol.name }}
+              mountPath: {{ $storageVol.mountPath }}
+              {{- if $storageVol.subPath }}
+              subPath: {{ $storageVol.subPath }}
+              {{- end }}
+        {{- end }}
       {{- end }}
       restartPolicy: Always
       {{- if $.Values.imagePullSecrets }}
@@ -132,7 +192,7 @@ spec:
       {{- if $component.customPodDefinitions }}
         {{- toYaml $component.customPodDefinitions | nindent 6 }}
       {{- end }}
-      {{- if (or $component.mountConfig $tls.enabled $component.persistentDir $component.extraVolumes )}}
+      {{- if (or $component.mountConfig $tls.enabled $component.persistentDir $component.extraVolumes $autoStorageVolume )}}
       volumes:
         {{- if $component.mountConfig }}
         - name: {{ $component.mountConfig.configName }}
@@ -165,6 +225,10 @@ spec:
             {{ end }}
         {{ end }}
         {{ end }}
+        {{- if $autoStorageVolume }}
+        - name: {{ $storageVol.name }}
+          emptyDir: {}
+        {{- end }}
         {{- if $component.extraVolumes -}}
           {{- range $volumeLabel, $volume := $component.extraVolumes }}
         -
