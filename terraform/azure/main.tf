@@ -96,7 +96,7 @@ resource "azurerm_kubernetes_cluster" "k8s" {
   default_node_pool {
     name       = "agentpool"
     node_count = var.agent_count
-    vm_size    = "Standard_F8s_v2"
+    vm_size    = var.vm_size
     vnet_subnet_id = "${azurerm_subnet.subnet.id}"
     upgrade_settings {
       drain_timeout_in_minutes      = 0

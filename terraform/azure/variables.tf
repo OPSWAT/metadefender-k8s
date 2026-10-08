@@ -38,6 +38,11 @@ variable "agent_count" {
     default = 3
 }
 
+variable "vm_size" {
+  default     = "Standard_F8s_v2"
+  description = "AKS node pool VM size. Compute-optimized F-series SKUs like this one tend to run into AKSCapacityHeavyUsage more often than general-purpose D-series — override via -var if the default is capacity-constrained in the target region."
+}
+
 variable "ssh_public_key" {
     default = "~/.ssh/id_rsa.pub"
 }
