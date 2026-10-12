@@ -20,8 +20,9 @@
 # Third-party services (postgres-mdss, rabbitmq, redis):
 # - These upstream images require root to start and are NOT compatible with
 #   non-root / ROFS security contexts in their current form.
-# - securityContext is set to null for these components to opt them out of the
-#   global security context.
+# - securityContext is set to {} for these components to opt them out of the
+#   global security context. It must be {} and not null: Helm deletes a key that is
+#   set to null, so the component would silently inherit the global context again.
 # - For a fully hardened deployment, replace these images with Bitnami variants
 #   (bitnami/postgresql, bitnami/rabbitmq, bitnami/redis) which are built to
 #   run as non-root out of the box.
@@ -44,14 +45,16 @@ securityContext:
 mdss_components:
   # Upstream postgres image requires root; replace with bitnami/postgresql for non-root support
   postgres-mdss:
-    securityContext: null
+    securityContext: {}
   # Upstream rabbitmq image requires root; replace with bitnami/rabbitmq for non-root support
   rabbitmq:
-    securityContext: null
+    securityContext: {}
   # Upstream redis image requires root; replace with bitnami/redis for non-root support
   redis:
-    securityContext: null
-  # nginx requires writable /var/cache/nginx and /var/run at runtime; mount as emptyDir
+    securityContext: {}
+  # nginx requires writable /var/cache/nginx and /var/run at runtime; mount as emptyDir.
+  # The 4.6.0 image copies the web client into /usr/share/nginx/html at start, so the
+  # document root needs a writable mount as well.
   webclient:
     resources: null
     extraVolumes:
@@ -61,8 +64,23 @@ mdss_components:
       nginx-run:
         name: nginx-run
         emptyDir: {}
+      webclient-html:
+        name: webclient-html
+        emptyDir: {}
     extraVolumeMounts:
       - name: nginx-cache
         mountPath: /var/cache/nginx
       - name: nginx-run
         mountPath: /var/run
+      - name: webclient-html
+        mountPath: /usr/share/nginx/html
+  smbservice:
+    image: mdintegrations_smbservice
+    securityContext: null
+    extraVolumes:
+      smb-logs:
+        name: smb-logs
+        emptyDir: {}
+    extraVolumeMounts:
+      - name: smb-logs
+        mountPath: /app/logs
