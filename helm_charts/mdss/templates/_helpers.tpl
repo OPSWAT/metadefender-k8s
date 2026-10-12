@@ -60,3 +60,19 @@ Create the name of the service account to use
 {{- default "default" .Values.serviceAccount.name }}
 {{- end }}
 {{- end }}
+
+{{/*
+Autoscaling mode of a component: "keda", "hpa" or "" (fixed size).
+Call with (dict "component" $component "Values" $.Values).
+merge treats false as unset, so a component's own hpa.enabled: false is resolved explicitly.
+*/}}
+{{- define "mdss.autoscaling" -}}
+{{- $c := .component -}}
+{{- $own := $c.hpa | default dict -}}
+{{- $hpaEnabled := ternary $own.enabled .Values.hpa.enabled (hasKey $own "enabled") -}}
+{{- if and .Values.keda.enabled (dig "keda" "queues" list $c) -}}
+keda
+{{- else if $hpaEnabled -}}
+hpa
+{{- end -}}
+{{- end }}

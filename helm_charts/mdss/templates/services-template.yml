@@ -1,6 +1,17 @@
 {{ range $component_name, $component := .Values.mdss_components }}
 {{ if and (not (eq $component.enabled false)) $component.ports ( or (not $component.module_name) (contains (print $component.module_name) (index $.Values "mdss-common-environment").ENABLED_MODULES)) }}
 
+{{- /* apigateway publishes the ports declared in mdss-common-environment
+     (APIGATEWAY_PORT / APIGATEWAY_PORT_SSL) so the Service, the containerPort
+     and the env the app reads cannot disagree. Keyed on the map key, not
+     $component.name, so renaming the component does not bypass it.
+     SSL first preserves the original ordering, so the auto-injected
+     APIGATEWAY_SERVICE_PORT stays 443. */ -}}
+{{- $ports := $component.ports -}}
+{{- if eq $component_name "apigateway" -}}
+{{-   $env := index $.Values "mdss-common-environment" -}}
+{{-   $ports = list (dict "port" (int $env.APIGATEWAY_PORT_SSL)) (dict "port" (int $env.APIGATEWAY_PORT)) -}}
+{{- end -}}
 {{ if and (not $.Values.deploy_with_mdss_db) $component.is_db }}
 {{ else }}
 ---
@@ -32,7 +43,7 @@ spec:
       targetPort: {{ $port }}
     {{- end }}
   {{- else }}
-    {{- range $component.ports }}
+    {{- range $ports }}
     - name: {{ .port | quote }}
       port: {{ .port }}
       targetPort: {{ .port }}

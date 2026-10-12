@@ -1,6 +1,17 @@
 
 # Create a deployment for each component in MDSS
 {{ range $component_name, $component := .Values.mdss_components }}
+{{- /* apigateway publishes the ports declared in mdss-common-environment
+     (APIGATEWAY_PORT / APIGATEWAY_PORT_SSL) so the Service, the containerPort
+     and the env the app reads cannot disagree. Keyed on the map key, not
+     $component.name, so renaming the component does not bypass it.
+     SSL first preserves the original ordering, so the auto-injected
+     APIGATEWAY_SERVICE_PORT stays 443. */ -}}
+{{- $ports := $component.ports -}}
+{{- if eq $component_name "apigateway" -}}
+{{-   $env := index $.Values "mdss-common-environment" -}}
+{{-   $ports = list (dict "port" (int $env.APIGATEWAY_PORT_SSL)) (dict "port" (int $env.APIGATEWAY_PORT)) -}}
+{{- end -}}
 
 {{ if and (not (eq $component.enabled false)) (or $.Values.deploy_with_mdss_db (not $component.is_db)) ( or (not $component.module_name) (contains (print $component.module_name) (index $.Values "mdss-common-environment").ENABLED_MODULES))  }}
 ---
@@ -11,13 +22,27 @@ metadata:
   labels:
     product: mdss
 spec:
+  {{- /* Left out when an HPA or KEDA owns the replica count: with server-side apply a
+         rendered replicas field (even an empty one) conflicts with the autoscaler on
+         every helm upgrade after it has scaled the Deployment. */}}
+  {{- if and $component.replicas (not (include "mdss.autoscaling" (dict "component" $component "Values" $.Values))) }}
   replicas: {{ $component.replicas }}
+  {{- end }}
   selector:
     matchLabels:
       app: {{ $component.name | quote }}
-  {{- if $component.strategy}}
+  {{- $strategy := $component.strategy | default $.Values.deploymentStrategy }}
+  {{- if $strategy }}
   strategy:
-    {{- toYaml $component.strategy | nindent 4 }}
+    {{- if eq (toString $strategy.type) "Recreate" }}
+    {{- /* The API rejects rollingUpdate parameters on a Recreate strategy. The explicit null
+           makes helm upgrade delete the defaults the API server filled into a Deployment
+           that was created with RollingUpdate; merely omitting the field keeps them. */}}
+    type: Recreate
+    rollingUpdate: null
+    {{- else }}
+    {{- toYaml $strategy | nindent 4 }}
+    {{- end }}
   {{- end }}
   template:
     metadata:
@@ -42,14 +67,33 @@ spec:
           image: {{ $component.image | quote }}
           {{- end }}
           imagePullPolicy: {{ $.Values.imagePullPolicy }}
-          {{- if $component.env }}
+          {{- $nodeId := $component.custom_repo }}
+          {{- range $component.env }}
+            {{- if eq .name "MDSS_NODE_ID" }}{{ $nodeId = false }}{{ end }}
+          {{- end }}
+          {{- if or $component.env $nodeId }}
           env:
-            {{- toYaml $component.env | nindent 12 }}
+            {{- if $nodeId }}
+            - name: MDSS_NODE_ID
+              valueFrom:
+                fieldRef:
+                  fieldPath: spec.nodeName
+            {{- end }}
+            {{- with $component.env }}
+            {{- /* Rendered through tpl so a value can derive from another
+                   value -- apigateway's ASPNETCORE_URLS is built from
+                   mdss-common-environment.APIGATEWAY_PORT. Kubernetes' own
+                   $(VAR) interpolation cannot do this: it only expands names
+                   declared earlier in the same env list, never ones arriving
+                   through envFrom, which is how the common environment is
+                   mounted. Same mechanism as $component.tag above. */ -}}
+                        {{- tpl (toYaml .) $ | nindent 12 }}
+            {{- end }}
           {{- end }}
           name: {{ $component.name | quote }}
-          {{- if $component.ports }}
+          {{- if $ports }}
           ports:
-          {{- range $component.ports }}
+          {{- range $ports }}
             - containerPort: {{ .port }}
           {{- end }}
           {{- end }}
@@ -90,7 +134,7 @@ spec:
               mountPath: {{ $component.mountConfig.mountPath }}
               subPath: {{ $component.mountConfig.subPath }}
             {{ end }}
-            {{- if $component.persistentDir }}
+            {{- if (and $component.persistentDir $.Values.persistance_enabled) }}
             - name: {{ $component.name }}
               mountPath: {{ $component.persistentDir }}
               {{- if not (eq $.Values.storage_provisioner "hostPath") }}

@@ -1,13 +1,11 @@
-# OpenShift values for the MDSS chart (4.5.2), which deploys one workload per storage
-# integration (amazonsdk-services, azureblob-services, ...).
-#
 # Run these commands in the current project before deploying the chart for priviledged access
 # oc create sa mdss
 # oc adm policy add-scc-to-user privileged -z mdss -n mdss
 #
 # Components without an explicit securityContext below run under the default restricted SCC,
-# i.e. as an arbitrary non-root UID that belongs to the root group. The components that need a
-# specific user are pinned to it and use the mdss service account.
+# i.e. as an arbitrary non-root UID that belongs to the root group. The images support this
+# once the two root-only startup steps are switched off (see mdss-common-environment).
+# The components that still need root are pinned to UID 0 and use the mdss service account.
 
 persistance_enabled: false
 
@@ -19,13 +17,15 @@ mdss-common-environment:
   # writable by an arbitrary UID (OpenShift collects container stdout)
   ROTATELOGS_ENABLED: "false"
 
+# OpenShift names its cluster DNS Service dns-default in the openshift-dns namespace
+webclient_nginx:
+  resolver: dns-default.openshift-dns.svc.cluster.local
+
 mdss_components:
-  # This chart version mounts persistentDir even when persistance_enabled is false, so it is
-  # cleared here. initdb must own its data directory, which the upstream image creates for
-  # the postgres user (UID 999). For production use an external database
+  # initdb must own its data directory, which the upstream image creates for the postgres
+  # user (UID 999); an arbitrary UID cannot chmod it. For production use an external database
   # (deploy_with_mdss_db: false) or an OpenShift-ready image such as bitnami/postgresql.
   postgres-mdss:
-    persistentDir: null
     securityContext:
       runAsUser: 999
     customPodDefinitions:
@@ -52,87 +52,49 @@ mdss_components:
       runAsUser: 0
     customPodDefinitions:
       serviceAccountName: mdss
+  smbservice:
+    image: mdintegrations_smbservice
+    securityContext: null
+    extraVolumes:
+      smb-logs:
+        name: smb-logs
+        emptyDir: {}
+    extraVolumeMounts:
+      - name: smb-logs
+        mountPath: /app/logs
 
-  # MongoDB migration module (only deployed when "mongomigrations" is in ENABLED_MODULES)
-  mongodb:
-    persistentDir: null
-    securityContext:
-      runAsUser: 0
-    customPodDefinitions:
-      serviceAccountName: mdss
-  mongomigrations:
-    securityContext:
-      runAsUser: 0
-    customPodDefinitions:
-      serviceAccountName: mdss
+# On OpenShift a Route is the native way to expose a Service outside the cluster, so this
+# example uses one instead of an Ingress. The chart renders it from
+# templates/route-template.yml, which is inert unless mdss_route.enabled is true.
+#
+# The Route points at webclient, which serves the web UI and forwards /api to apigateway.
+# `host` is left empty on purpose: OpenShift then generates a hostname from the cluster's
+# own ingress domain (<name>-<namespace>.apps.<cluster-domain>), which keeps this file
+# portable across clusters. `<APP_NAMESPACE>` in a fixed host is replaced with the release
+# namespace.
+#
+# TLS terminates at the router with edge termination, and plain HTTP is redirected to
+# HTTPS. The router's default certificate is used; to serve your own, add `certificate`
+# and `key` under `tls`.
+#
+# The router closes requests after 30 s by default; webclient's nginx allows 60 s (its
+# default proxy_read_timeout), so the Route matches that.
+#
+# The ONTAP Connector cannot use this Route: its config.ini takes an IPv4 address only,
+# and the router picks the backend by hostname. Give it a LoadBalancer or NodePort
+# Service in front of webclient instead (MetalLB provides LoadBalancer IPs on-premises).
+mdss_route:
+  enabled: true
+  name: mdss-route
+  service: webclient
+  port: 80
+  host: ""                             # empty -> OpenShift generates the hostname
+  annotations:
+    haproxy.router.openshift.io/timeout: 60s
+  tls:
+    termination: edge
+    insecureEdgeTerminationPolicy: Redirect
 
-  # Integration workloads (each only deployed when its module is in ENABLED_MODULES).
-  # Their supervisord programs always pipe through rotatelogs into /var/log/mdss/services
-  # (ROTATELOGS_ENABLED is fixed when the image is built), and that directory belongs to the
-  # images' own mdss user, UID 1000, so they run as that user.
-  amazonsdk-services:
-    securityContext:
-      runAsUser: 1000
-    customPodDefinitions:
-      serviceAccountName: mdss
-  azureblob-services:
-    securityContext:
-      runAsUser: 1000
-    customPodDefinitions:
-      serviceAccountName: mdss
-  alibabacloud-services:
-    securityContext:
-      runAsUser: 1000
-    customPodDefinitions:
-      serviceAccountName: mdss
-  googlecloud-services:
-    securityContext:
-      runAsUser: 1000
-    customPodDefinitions:
-      serviceAccountName: mdss
-  box-services:
-    securityContext:
-      runAsUser: 1000
-    customPodDefinitions:
-      serviceAccountName: mdss
-  azurefiles-services:
-    securityContext:
-      runAsUser: 1000
-    customPodDefinitions:
-      serviceAccountName: mdss
-  smb-services:
-    securityContext:
-      runAsUser: 1000
-    customPodDefinitions:
-      serviceAccountName: mdss
-  graph-services:
-    securityContext:
-      runAsUser: 1000
-    customPodDefinitions:
-      serviceAccountName: mdss
-  ftp-services:
-    securityContext:
-      runAsUser: 1000
-    customPodDefinitions:
-      serviceAccountName: mdss
-  # The sftp image is built as root: its /var/log/mdss/services belongs to root
-  sftp-services:
-    securityContext:
-      runAsUser: 0
-    customPodDefinitions:
-      serviceAccountName: mdss
-  nfs-services:
-    securityContext:
-      runAsUser: 1000
-    customPodDefinitions:
-      serviceAccountName: mdss
-  mft-services:
-    securityContext:
-      runAsUser: 1000
-    customPodDefinitions:
-      serviceAccountName: mdss
-  oraclesdk-services:
-    securityContext:
-      runAsUser: 1000
-    customPodDefinitions:
-      serviceAccountName: mdss
+# Ingress is disabled: the Route above replaces it.
+mdss_ingress:
+  enabled: false

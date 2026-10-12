@@ -1,3 +1,26 @@
+{{- /*
+  Single source of truth for the API gateway hostname.
+
+  mdss_components.apigateway.name already names the Service, the Deployment and
+  the selector that binds them. APIGATEWAY_HOST below and the nginx upstream in
+  the webclient config are both derived from it, so the env var, the Service and
+  the proxy target cannot drift apart.
+
+  MDSS_RESOLVER is deliberately NOT emitted. The webclient image resolves the
+  nginx resolver itself, reading /etc/resolv.conf when the variable is unset
+  (detect_resolver in mdss-entrypoint.sh) -- which in a pod is the cluster DNS,
+  the same address the resolver directive below is rendered with. Setting it
+  would restate a value the container already knows.
+
+  Do NOT add APIGATEWAY_HOST to mdss-common-environment in values.yaml: it is
+  emitted here, and a second copy would render a duplicate ConfigMap key.
+
+*/ -}}
+{{- $apigwName := "apigateway" -}}
+{{- if hasKey .Values.mdss_components "apigateway" -}}
+{{-   $apigwName = (index .Values.mdss_components "apigateway").name -}}
+{{- end -}}
+{{- $apigwHost := printf "%s.%s.svc.%s" $apigwName .Release.Namespace (.Values.webclient_nginx.cluster_domain | default "cluster.local") -}}
 ---
 kind: ConfigMap
 apiVersion: v1
@@ -5,6 +28,7 @@ metadata:
   name: {{ .Values.mdss_config_map_env_name }}
 data:
   {{- toYaml (index .Values "mdss-common-environment") | nindent 2 }}
+  APIGATEWAY_HOST: {{ $apigwHost | quote }}
 
 ---
 apiVersion: v1
@@ -13,6 +37,26 @@ metadata:
   name: webclient-nginx-config
 data:
   default.conf: |
+    # MDSS web client nginx config (Kubernetes deployment).
+    #
+    # Mounted at /etc/nginx/conf.d/default.conf in the webclient pod. Serves the SPA
+    # and reverse-proxies the MDSS API gateway. Kept in sync with the docker-compose
+    # copy in md-storage-security (Utils/default.conf) -- fix both together.
+    #
+    # Caching. index.html and env-config.js are not content-hashed, so they are
+    # served with "expires -1" (Cache-Control: no-cache) and revalidated on every
+    # load, while the content-hashed files Vite writes under /assets get a one-year
+    # expiry. Before that, no Cache-Control was emitted at all: browsers applied
+    # heuristic freshness to index.html and kept serving a pre-upgrade page, which
+    # is why customers were told to clear the browser cache after every MDSS
+    # upgrade. Never put a long expiry on index.html -- it is the document that
+    # points the browser at the new asset hashes.
+    #
+    # Load balancer and ingress health checks must target /api/health, not "/".
+    # nginx serves "/" from disk and answers 200 even when the API gateway is
+    # unreachable, so a probe on "/" reported a healthy target for seven days
+    # through a total API outage. /api/health goes through to the gateway.
+
     limit_req_zone $binary_remote_addr zone=api_limit:10m rate=200r/s;
     limit_req_zone $binary_remote_addr zone=api_limit_realtime:10m rate=10000r/s;
     server {
@@ -20,41 +64,75 @@ data:
       server_name _;
       server_tokens off;
 
+      # Upstream resolution. nginx resolves a literal hostname in proxy_pass ONCE
+      # at configuration load and caches the address for the worker's lifetime, and
+      # refuses to start at all when the name does not resolve yet -- so a webclient
+      # pod that comes up before the apigateway Service crashloops, and a Service
+      # recreated with a new ClusterIP keeps answering 502 until the webclient pod
+      # is restarted. Naming the upstream through a variable defers resolution to
+      # request time, so the gateway is followed automatically.
+      #
+      # Every proxy_pass forwards $request_uri explicitly. With a variable upstream
+      # nginx no longer derives the URI itself, and a literal path there would be
+      # passed "as is" -- silently dropping the query string and any path suffix
+      # (the OIDC /callback carries ?code=...&state=...).
+      resolver {{ .Values.webclient_nginx.resolver }} valid={{ .Values.webclient_nginx.resolver_valid }} ipv6=off;
+      resolver_timeout 5s;
+      set $mdss_apigw {{ $apigwHost }};
+
       add_header Referrer-Policy "no-referrer" always;
       add_header X-Content-Type-Options "nosniff" always;
-      add_header Content-Security-Policy "default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'; img-src 'self' data:;" always;
+      add_header Content-Security-Policy "default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self'; img-src 'self' data:; font-src 'self' data:; frame-ancestors 'none';" always;
+      add_header X-Frame-Options "DENY" always;
       add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
       #return 301 https://$host$request_uri;
 
-      location ~ ^/([^/]+)/login {
+      # The tenant slug is written into Set-Cookie, so it must not carry ';', ',' or a line break
+      location ~ ^/([^/\x3B,\r\n]+)/login/?$ {
         add_header Set-Cookie "tenant_slug=$1; Path=/; SameSite=Strict; Max-Age=2592000" always;
         # A location-level add_header cancels inheritance of all server-level
         # add_header directives, so the security headers must be repeated here.
         add_header Referrer-Policy "no-referrer" always;
         add_header X-Content-Type-Options "nosniff" always;
-        add_header Content-Security-Policy "default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'; img-src 'self' data:;" always;
+        add_header Content-Security-Policy "default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self'; img-src 'self' data:; font-src 'self' data:; frame-ancestors 'none';" always;
+        add_header X-Frame-Options "DENY" always;
         add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
-        try_files $uri $uri/ /index.html;
+        try_files /index.html =404;
+        # Not content-hashed -- revalidate on every load (see "Caching" up top).
+        expires -1;
         root   /usr/share/nginx/html;
-        index  index.html index.htm;
         limit_except GET POST PUT DELETE PATCH OPTIONS { deny  all; }
       }
       location / {
         try_files $uri $uri/ /index.html;
+        # Not content-hashed -- revalidate on every load (see "Caching" up top).
+        expires -1;
         root   /usr/share/nginx/html;
         index  index.html index.htm;
         limit_except GET POST PUT DELETE PATCH OPTIONS { deny  all; }
       }
 
+      # Vite writes content-hashed asset names (name-<hash>.ext) under /assets, so
+      # those URLs never change meaning and are safe to cache for a year. Unhashed
+      # files that also live there (auth-light.webp, auth-dark.webp) deliberately
+      # fall through to "location /" above and stay revalidated. Only "expires" is
+      # used here: a location-level add_header would cancel inheritance of the
+      # server-level security headers.
+      location ~ "^/assets/.+-[A-Za-z0-9_-]{8,}\.[A-Za-z0-9]+$" {
+        root   /usr/share/nginx/html;
+        expires 1y;
+        limit_except GET POST PUT DELETE PATCH OPTIONS { deny  all; }
+      }
+
       location /api/webhook/realtime {
         limit_req zone=api_limit_realtime burst=10000 nodelay;
-        proxy_pass http://apigateway/api/webhook/realtime;
+        proxy_pass http://$mdss_apigw$request_uri;
         proxy_set_header Host $host;
         limit_except GET POST PUT DELETE PATCH OPTIONS { deny all; }
       }
       location /api {
         limit_req zone=api_limit burst=100 nodelay;
-        proxy_pass http://apigateway;
+        proxy_pass http://$mdss_apigw$request_uri;
 
         # Set Content-Length to 0 if not provided (for POST with no body)
         set $fixed_content_length $content_length;
@@ -68,7 +146,8 @@ data:
         limit_except GET POST PUT DELETE PATCH OPTIONS { deny  all; }
         add_header Referrer-Policy "no-referrer" always;
         add_header X-Content-Type-Options "nosniff" always;
-        add_header Content-Security-Policy "default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'; img-src 'self' data:;" always;
+        add_header Content-Security-Policy "default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self'; img-src 'self' data:; font-src 'self' data:; frame-ancestors 'none';" always;
+        add_header X-Frame-Options "DENY" always;
         add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
 
         # Ensure backend error responses pass through to client
@@ -76,11 +155,11 @@ data:
       }
 
       location /callback {
-        proxy_pass http://apigateway/callback;
+        proxy_pass http://$mdss_apigw$request_uri;
         limit_except GET POST PUT DELETE PATCH OPTIONS { deny  all; }
       }
       location /hubs { 
-        proxy_pass http://apigateway;
+        proxy_pass http://$mdss_apigw$request_uri;
         limit_except GET POST PUT DELETE PATCH OPTIONS { deny  all; }
         proxy_set_header Upgrade $http_upgrade;
         proxy_set_header Connection "upgrade";
@@ -96,39 +175,58 @@ data:
       #ssl_prefer_server_ciphers on;
       server_tokens off;
 
+      # See the notes on the HTTP server block above -- this block must stay in sync.
+      resolver {{ .Values.webclient_nginx.resolver }} valid={{ .Values.webclient_nginx.resolver_valid }} ipv6=off;
+      resolver_timeout 5s;
+      set $mdss_apigw {{ $apigwHost }};
+
       add_header X-Content-Type-Options "nosniff" always;
       add_header Referrer-Policy "no-referrer" always;
-      add_header Content-Security-Policy "default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'; img-src 'self' data:;" always;
+      add_header Content-Security-Policy "default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self'; img-src 'self' data:; font-src 'self' data:; frame-ancestors 'none';" always;
+      add_header X-Frame-Options "DENY" always;
       add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
 
-      location ~ ^/([^/]+)/login {
+      # The tenant slug is written into Set-Cookie, so it must not carry ';', ',' or a line break
+      location ~ ^/([^/\x3B,\r\n]+)/login/?$ {
         add_header Set-Cookie "tenant_slug=$1; Path=/; SameSite=Strict; Max-Age=2592000" always;
         # A location-level add_header cancels inheritance of all server-level
         # add_header directives, so the security headers must be repeated here.
         add_header Referrer-Policy "no-referrer" always;
         add_header X-Content-Type-Options "nosniff" always;
-        add_header Content-Security-Policy "default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'; img-src 'self' data:;" always;
+        add_header Content-Security-Policy "default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self'; img-src 'self' data:; font-src 'self' data:; frame-ancestors 'none';" always;
+        add_header X-Frame-Options "DENY" always;
         add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
-        try_files $uri $uri/ /index.html;
+        try_files /index.html =404;
+        # Not content-hashed -- revalidate on every load (see "Caching" up top).
+        expires -1;
         root   /usr/share/nginx/html;
-        index  index.html index.htm;
         limit_except GET POST PUT DELETE PATCH OPTIONS { deny  all; }
       }
       location / {
         try_files $uri $uri/ /index.html;
+        # Not content-hashed -- revalidate on every load (see "Caching" up top).
+        expires -1;
         root   /usr/share/nginx/html;
         index  index.html index.htm;
         limit_except GET POST PUT DELETE PATCH OPTIONS { deny  all; }
       }
+
+      # Content-hashed assets only (see the note on the HTTP server block above).
+      location ~ "^/assets/.+-[A-Za-z0-9_-]{8,}\.[A-Za-z0-9]+$" {
+        root   /usr/share/nginx/html;
+        expires 1y;
+        limit_except GET POST PUT DELETE PATCH OPTIONS { deny  all; }
+      }
+
       location /api/webhook/realtime {
         limit_req zone=api_limit_realtime burst=10000 nodelay;
-        proxy_pass http://apigateway/api/webhook/realtime;
+        proxy_pass http://$mdss_apigw$request_uri;
         proxy_set_header Host $host;
         limit_except GET POST PUT DELETE PATCH OPTIONS { deny all; }
       }
       location /api {
         limit_req zone=api_limit burst=100 nodelay;
-        proxy_pass http://apigateway;
+        proxy_pass http://$mdss_apigw$request_uri;
         proxy_set_header Host            $host; 
 
         # Set Content-Length to 0 if not provided (for POST with no body)
@@ -142,19 +240,20 @@ data:
         limit_except GET POST PUT DELETE PATCH OPTIONS { deny  all; }
         add_header Referrer-Policy "no-referrer" always;
         add_header X-Content-Type-Options "nosniff" always;
-        add_header Content-Security-Policy "default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'; img-src 'self' data:;" always;
+        add_header Content-Security-Policy "default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self'; img-src 'self' data:; font-src 'self' data:; frame-ancestors 'none';" always;
+        add_header X-Frame-Options "DENY" always;
         add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
 
         # Ensure backend error responses pass through to client
         proxy_intercept_errors off;
       }
       location /callback {
-        proxy_pass http://apigateway/callback;
+        proxy_pass http://$mdss_apigw$request_uri;
         limit_except GET POST PUT DELETE PATCH OPTIONS { deny  all; }
       }
 
       location /hubs { 
-        proxy_pass http://apigateway;
+        proxy_pass http://$mdss_apigw$request_uri;
         limit_except GET POST PUT DELETE PATCH OPTIONS { deny  all; }
         proxy_set_header Upgrade $http_upgrade;
         proxy_set_header Connection "upgrade";
