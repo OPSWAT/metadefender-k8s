@@ -67,8 +67,20 @@ mdssc-common-environment:
   MDSSC_CONTAINER_TMP_MIN_FREE_MB: "2048"
   MDSSC_CONTAINER_TMP_WAIT_MAX_MINUTES: "1440"
 
+  # Repository archive limits. Sizes accept a KB/MB/GB/TB suffix (base 2); a bare number is bytes.
+  MDSSC_ARCHIVE_MAX_DOWNLOAD_SIZE: "5GB"
+  MDSSC_ARCHIVE_MAX_EXTRACTED_SIZE: "10GB"
+  MDSSC_ARCHIVE_MAX_ENTRY_COUNT: "100000"
+  MDSSC_ARCHIVE_MAX_EXPANSION_FACTOR: "1000"
+
   # Multi-tenant mode (ABAC). Disabled by default.
   MULTI_TENANT_ENABLED: "false"
+
+  # Extra browser origins allowed for HTTP CORS and the SignalR hub, comma separated
+  ALLOWED_ORIGINS: ""
+  # Proxy hops in front of the API whose X-Forwarded-For entry is trusted.
+  # 1 = the MDSSC web client only. Set 2 when an ingress or load balancer sits in front of the frontend.
+  TRUSTED_PROXY_HOPS: "2"
 
   # Monitored files: artifact store root, recurring rescan cadence, and watch-folder polling
   MDSSC_MONITORED_FILES_ROOT: "/var/lib/mdssc/monitored"
@@ -105,7 +117,7 @@ mdssc-common-environment:
   SMBSERVICE_PORT: "5002"
   
   CODE_VERSION: "30a858390ca19fff81f2092f83a32f11c07d4fc8"
-  BUILD_VERSION: "4.0.4.0"
+  BUILD_VERSION: "4.1.0.0"
 
   # OPSWAT OTLP telemetry target (matches the shipped release default). Blank both to disable export.
   OPTEL_OPSWAT_COLLECTOR_ENDPOINT: "https://mdssc-telemetry.metadefender.com:4317"
@@ -116,7 +128,7 @@ mdssc-common-environment:
 
   HTTPS_ACTIVE: "no"
   BRANCH: "platform-2.5.2"          # Set Platform version (image tag)
-  MDSSC_BRANCH: "4.0.4"          # Set MDSSC version (image tag)
+  MDSSC_BRANCH: "4.1.0"          # Set MDSSC version (image tag)
 
   # These variables can be changed to reveal debug information in the application
   LOG_LEVEL: "4"
@@ -450,6 +462,17 @@ mdssc_components:
       is_mdssc: true
       custom_repo: true
       image: "mdssc_notifications"
+      extra_labels:
+        aws-type: fargate
+      resources:
+        requests:
+          memory: "0.125Gi"
+          cpu: "0.010"
+  processing:
+      name: processing
+      is_mdssc: true
+      custom_repo: true
+      image: "mdssc_processing"
       extra_labels:
         aws-type: fargate
       resources:

@@ -1,5 +1,5 @@
 DOCKER_REPO: 'opswat/metadefendercluster-debian'
-MDCLS_VERSION: 2.9.1
+MDCLS_VERSION: 2.10.0
 imagePullPolicy: IfNotPresent
 # imagePullSecrets:
 #   - name: regcred
@@ -145,6 +145,8 @@ workers:
       secretName: ''
   callback-service:
     listenPort: 8894
+  download-service:
+    listenPort: 8895
 
 postgres:
   enabled: true
@@ -224,7 +226,16 @@ secrets:
   # Auto-generated when empty (36 hex chars, alternating digit/letter).
   ADMIN_APIKEY: ''
 
-  LICENSE_KEY: ''
+  # LICENSE_KEY is deliberately NOT given a default here. Giving it a value is
+  # an instruction, so a default would permanently override whatever is in the
+  # mdcluster-secrets Secret:
+  #   omitted / null -> keep the key already in the Secret. This is the default,
+  #                     and what lets External Secrets Operator, Sealed Secrets,
+  #                     Vault Agent or `kubectl create secret` own the key.
+  #   ''             -> REMOVE every license from the cluster
+  #   '<key>'        -> apply that key, and make it the only license
+  # See "Changing the license key" in helm/README.md.
+  # LICENSE_KEY: '<license-key>'
 
 # Populates the mdcluster-config ConfigMap that every pod in this chart
 # consumes (core services and workers alike).

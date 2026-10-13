@@ -1,0 +1,76 @@
+# Queue based autoscaling with KEDA: one ScaledObject per component that lists keda.queues.
+# Requires KEDA (keda.sh/v1alpha1 CRDs) to be installed in the cluster.
+{{- if .Values.keda.enabled }}
+{{- $env := index .Values "mdss-common-environment" }}
+{{- $secretName := .Values.keda.existingSecret | default .Values.keda.secretName }}
+{{- /* The KEDA operator runs in its own namespace, so a short in-cluster Service name
+       (the default "rabbitmq") is qualified with the release namespace. A host that
+       already contains a dot (FQDN or external broker) is used as-is. */ -}}
+{{- $rabbitHost := toString $env.RABBITMQ_HOST }}
+{{- if not (contains "." $rabbitHost) }}
+{{- $rabbitHost = printf "%s.%s.svc" $rabbitHost .Release.Namespace }}
+{{- end }}
+{{- if not .Values.keda.existingSecret }}
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: {{ $secretName | quote }}
+  labels:
+    product: mdss
+type: Opaque
+stringData:
+  host: {{ printf "amqp://%s:%s@%s:%s/" (urlquery $env.RABBITMQ_DEFAULT_USER) (urlquery $env.RABBITMQ_DEFAULT_PASS) $rabbitHost (toString $env.RABBITMQ_PORT) | quote }}
+{{- end }}
+---
+apiVersion: keda.sh/v1alpha1
+kind: TriggerAuthentication
+metadata:
+  name: mdss-rabbitmq
+  labels:
+    product: mdss
+spec:
+  secretTargetRef:
+    - parameter: host
+      name: {{ $secretName | quote }}
+      key: host
+
+{{- range $component_name, $component := .Values.mdss_components }}
+{{- $queues := dig "keda" "queues" list $component }}
+{{- if and $queues (not (eq $component.enabled false)) ( or (not $component.module_name) (contains (print $component.module_name) (index $.Values "mdss-common-environment").ENABLED_MODULES)) }}
+{{- $keda := merge (deepCopy $component.keda) (deepCopy $.Values.keda) }}
+---
+apiVersion: keda.sh/v1alpha1
+kind: ScaledObject
+metadata:
+  name: {{ $component.name | quote }}
+  labels:
+    product: mdss
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: {{ $component.name | quote }}
+  minReplicaCount: {{ $keda.minReplicaCount }}
+  maxReplicaCount: {{ $keda.maxReplicaCount }}
+  cooldownPeriod: {{ $keda.cooldownPeriod }}
+  {{- if $keda.behavior }}
+  advanced:
+    horizontalPodAutoscalerConfig:
+      behavior:
+        {{- toYaml $keda.behavior | nindent 8 }}
+  {{- end }}
+  triggers:
+    {{- range $queues }}
+    - type: rabbitmq
+      authenticationRef:
+        name: mdss-rabbitmq
+      metadata:
+        protocol: amqp
+        queueName: {{ . | quote }}
+        mode: QueueLength
+        value: {{ $keda.queueLength | quote }}
+    {{- end }}
+{{- end }}
+{{- end }}
+{{- end }}

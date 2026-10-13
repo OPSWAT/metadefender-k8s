@@ -18,8 +18,9 @@ Generated (or carried over from a previous release) for this install:
 The Secret carries "helm.sh/resource-policy: keep" so these survive
 `helm uninstall` -- reinstalling into this namespace reuses them.
 {{- end }}
-{{- if empty .Values.secrets.LICENSE_KEY }}
+{{- if empty (include "mdcls.licenseKey" $) }}
 
-WARNING: secrets.LICENSE_KEY is empty. Deployed MD Core instances will not be
-activated until it is set.
+WARNING: no license key is set -- neither in secrets.LICENSE_KEY nor in the
+Secret already in this namespace. Deployed MD Core instances will not be
+activated until one is set.
 {{- end }}

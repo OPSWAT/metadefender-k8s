@@ -1,6 +1,6 @@
 apiVersion: v2
 name: mdcluster
-description: MetaDefender Cluster — core services (Control Center, File Storage, Identity Service), worker instances (ometascan, api-gateway, callback-service) and infrastructure (postgres/redis/rabbitmq).
+description: MetaDefender Cluster — core services (Control Center, File Storage, Identity Service), worker instances (ometascan, api-gateway, callback-service, download-service) and infrastructure (postgres/redis/rabbitmq).
 
 long_description: |
   This chart deploys MetaDefender Cluster
@@ -10,9 +10,10 @@ long_description: |
   - Identity Service (singleton Deployment, ClusterIP Service)
   - File Storage (StatefulSet behind a headless Service, optionally persistent)
   - One StatefulSet per entry in `workers`, each running the `worker-<type>`
-    image matching that entry's key (by default: `ometascan`, `api-gateway`
-    and `callback-service`), fronted by a shared headless `worker` Service plus
-    an optional dedicated Service for the `api-gateway` instance
+    image matching that entry's key (by default: `ometascan`, `api-gateway`,
+    `callback-service` and `download-service`), fronted by a shared headless
+    `worker` Service plus an optional dedicated Service for the `api-gateway`
+    instance
   - A PostgreSQL instance pre-configured to be used by MetaDefender Cluster pods
   - A Redis Cache instance pre-configured to be used by MetaDefender Cluster pods
   - A RabbitMQ instance pre-configured to be used by MetaDefender Cluster pods
@@ -63,8 +64,9 @@ long_description: |
   - Instance types are defined entirely by the `workers` map. Adding a key
     creates another StatefulSet; removing one deletes it. Each entry requires a
     `listenPort`, and the ports must not collide. The key must be one of
-    `ometascan` / `api-gateway` / `callback-service`, since it also selects the
-    image (`worker-<key>`) that ships that type's installer
+    `ometascan` / `api-gateway` / `callback-service` / `download-service`, since
+    it also selects the image (`worker-<key>`) that ships that type's
+    installer
   - Scaling is per instance via `workers.<name>.replicas`; there is no
     autoscaling in this chart
   - Upgrades are driven by the images themselves: each worker uploads its
@@ -75,8 +77,8 @@ long_description: |
     finish. Lower it only if you accept losing those scans
 
 type: application
-version: 2.9.1
+version: 2.10.0
 # Mirrors the docker-compose stack; defaults target dev/test parity, not production HA.
 # Infrastructure (postgres/redis/rabbitmq) is deployed from the same official
 # images as docker-compose via in-chart templates -- no subchart dependencies.
-appVersion: "2.9.1"
+appVersion: "2.10.0"

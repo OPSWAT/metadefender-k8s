@@ -1,22 +1,45 @@
-# Create an hpa for each component in MDSS
+# Create a CPU/memory based hpa for each component in MDSS
+# Components opt out with hpa.enabled: false in their own values (databases, RabbitMQ, Redis,
+# migrations), and components scaled by KEDA are skipped: KEDA creates its own HPA for them.
 {{ range $component_name, $component := .Values.mdss_components }}
 
-{{ if and (or $.Values.deploy_with_mdss_db (not $component.is_db)) ( or (not $component.module_name) (contains (print $component.module_name) (index $.Values "mdss-common-environment").ENABLED_MODULES))  }}
+{{ if and (not (eq $component.enabled false)) (or $.Values.deploy_with_mdss_db (not $component.is_db)) ( or (not $component.module_name) (contains (print $component.module_name) (index $.Values "mdss-common-environment").ENABLED_MODULES))  }}
 
-{{- if $.Values.hpa.enabled -}}
+{{- if eq (include "mdss.autoscaling" (dict "component" $component "Values" $.Values)) "hpa" }}
+{{- $hpa := merge (deepCopy ($component.hpa | default dict)) (deepCopy $.Values.hpa) }}
 ---
-apiVersion: autoscaling/v1
+apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
 metadata:
   name: {{ $component.name | quote }}
+  labels:
+    product: mdss
 spec:
-  minReplicas: {{ $.Values.hpa.minReplicas }}
-  maxReplicas: {{ $.Values.hpa.maxReplicas }}
-  targetCPUUtilizationPercentage: {{ $.Values.hpa.cpuTargetUtilization }}
+  minReplicas: {{ $hpa.minReplicas }}
+  maxReplicas: {{ $hpa.maxReplicas }}
   scaleTargetRef:
     apiVersion: apps/v1
     kind: Deployment
     name: {{ $component.name | quote }}
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: {{ $hpa.cpuTargetUtilization }}
+    {{- if $hpa.memoryTargetUtilization }}
+    - type: Resource
+      resource:
+        name: memory
+        target:
+          type: Utilization
+          averageUtilization: {{ $hpa.memoryTargetUtilization }}
+    {{- end }}
+  {{- if $hpa.behavior }}
+  behavior:
+    {{- toYaml $hpa.behavior | nindent 4 }}
+  {{- end }}
 {{ end }}
 {{ end }}
 {{ end }}

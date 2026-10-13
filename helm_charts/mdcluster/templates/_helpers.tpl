@@ -159,3 +159,58 @@ Usage: {{ include "mdcls.tlsVolumes" $tls | nindent 8 }}
   secret:
     secretName: {{ .secretName | quote }}
 {{- end -}}
+
+{{/*
+Resolve LICENSE_KEY the same way for every template that needs it, so the value
+in the Secret and the checksum annotation that rolls Control Center can never
+disagree.
+
+Unlike the five keys in secret.yaml's $generated dict, LICENSE_KEY has NO
+generated fallback: an empty key is not a missing default, it is the meaningful
+instruction "deactivate and remove every license".
+
+That is why the branch is on whether the user GAVE the key a value at all, not
+on whether that value is non-empty. Three states, all deliberate:
+
+  no value (the key is absent, or explicitly null)
+      -> whatever is already in the live mdcluster-secrets Secret, so a key
+         injected by an external controller (External Secrets Operator, Sealed
+         Secrets, Vault Agent, `kubectl create secret`) survives `helm upgrade`
+         instead of being overwritten with ""
+  set to empty ('')
+      -> empty, on purpose. This is how an operator clears the cluster's
+         licensing from values: the resolved value changes, so the checksum
+         annotation changes, so Control Center rolls and removes every license.
+         It must NOT fall through to the lookup, or clearing the key would
+         silently resolve back to the previous one and do nothing.
+  set to a value
+      -> that value.
+
+Both halves of the test are needed. `hasKey` alone is not enough: Helm only
+drops a null-valued key while merging it over a chart default, and this chart
+deliberately ships no default (see below), so a user writing `LICENSE_KEY: null`
+would otherwise land in the "clear everything" branch. Treating null as "no
+value" keeps it a synonym for leaving the key out, which is what an operator
+means by it.
+
+This is also why values.yaml ships NO LICENSE_KEY entry: a default would make
+the key permanently "mentioned", which would fire the remove-everything path on
+every stock install and disable the external-controller fallback outright.
+
+`lookup` returns nothing during `helm template` and client-side `--dry-run`, so
+those renders resolve to the mentioned value or to empty.
+
+Usage: {{ include "mdcls.licenseKey" $ }}
+*/}}
+{{- define "mdcls.licenseKey" -}}
+{{- $secrets := .Values.secrets | default dict -}}
+{{- if and (hasKey $secrets "LICENSE_KEY") (not (kindIs "invalid" $secrets.LICENSE_KEY)) -}}
+{{- $secrets.LICENSE_KEY | toString -}}
+{{- else -}}
+{{- with (lookup "v1" "Secret" .Release.Namespace (include "secrets-map-name" .)) -}}
+{{- with (index (.data | default dict) "LICENSE_KEY") -}}
+{{- b64dec . -}}
+{{- end -}}
+{{- end -}}
+{{- end -}}
+{{- end -}}

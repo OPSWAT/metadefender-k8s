@@ -51,6 +51,26 @@ spec:
       maxSurge: 0
   template:
     metadata:
+      annotations:
+        # Roll the Control Center pod when the license key changes, so its
+        # entrypoint re-runs the license reconcile. Values delivered through
+        # `envFrom: secretRef` do not update inside a running container, so
+        # without this a `helm upgrade` that changes the key would never reach
+        # Control Center at all.
+        #
+        # mdcls.licenseKey, not .Values.secrets.LICENSE_KEY: this must hash the
+        # value that actually lands in the Secret, including one injected there
+        # by an external controller. Hashing the values entry would be a
+        # constant -- and therefore inert -- for every externally managed key.
+        #
+        # A SHA-256 of the key, never the key itself: pod annotations are
+        # readable by anyone with pod read access.
+        #
+        # The worker StatefulSets are deliberately NOT annotated. Control Center
+        # pushes the new license file to each running MD Core instance live over
+        # the worker connection, so rolling the workers would buy nothing and
+        # cost a scan outage.
+        checksum/license-key: {{ include "mdcls.licenseKey" $root | sha256sum | quote }}
       labels:
         product: {{ include "mdcls.productName" . | quote }}
         app: {{ $name | quote }}
