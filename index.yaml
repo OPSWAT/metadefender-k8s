@@ -315,6 +315,18 @@ entries:
     version: 0.0.29
   mdcluster:
   - apiVersion: v2
+    appVersion: 2.10.0
+    created: "2026-10-13T11:16:46.704076371Z"
+    description: MetaDefender Cluster — core services (Control Center, File Storage,
+      Identity Service), worker instances (ometascan, api-gateway, callback-service,
+      download-service) and infrastructure (postgres/redis/rabbitmq).
+    digest: df8d0893303afceefa43eb8c15af7e5e063252d3edfee87404d9bb4bc99fc4ba
+    name: mdcluster
+    type: application
+    urls:
+    - https://github.com/OPSWAT/metadefender-k8s/releases/download/mdcluster-2.10.0/mdcluster-2.10.0.tgz
+    version: 2.10.0
+  - apiVersion: v2
     appVersion: 2.9.1
     created: "2026-09-22T17:37:53.281165284Z"
     description: MetaDefender Cluster — core services (Control Center, File Storage,
@@ -881,6 +893,18 @@ entries:
     version: 3.3.0-0
   metadefender_software_supply_chain:
   - apiVersion: v2
+    appVersion: 4.1.0
+    created: "2026-10-13T11:16:46.841304917Z"
+    description: This is a Helm chart for deploying MetaDefender Software Supply Chain
+      (https://www.opswat.com/products/metadefender/software-supply-chain) in a Kubernetes
+      cluster
+    digest: 2eb832edd1cce24e605c566053d50bfee0843738aa60548093fa192f0cc00b3e
+    name: metadefender_software_supply_chain
+    type: application
+    urls:
+    - https://github.com/OPSWAT/metadefender-k8s/releases/download/metadefender_software_supply_chain-4.1.0/metadefender_software_supply_chain-4.1.0.tgz
+    version: 4.1.0
+  - apiVersion: v2
     appVersion: 4.0.4
     created: "2026-09-01T20:29:38.920860039Z"
     description: This is a Helm chart for deploying MetaDefender Software Supply Chain
@@ -1049,6 +1073,18 @@ entries:
     - https://github.com/OPSWAT/metadefender-k8s/releases/download/metadefender_software_supply_chain-2.3.2/metadefender_software_supply_chain-2.3.2.tgz
     version: 2.3.2
   metadefender_storage_security:
+  - apiVersion: v2
+    appVersion: 4.6.0
+    created: "2026-10-13T11:16:47.005015333Z"
+    description: This is a Helm chart for deploying MetaDefender for Secure Storage
+      (https://www.opswat.com/products/metadefender/storage-security) in a Kubernetes
+      cluster
+    digest: badb3d7ebf19329723defc12f109017aa6b548e8783e34a8a2bd58a4c39a6481
+    name: metadefender_storage_security
+    type: application
+    urls:
+    - https://github.com/OPSWAT/metadefender-k8s/releases/download/metadefender_storage_security-4.6.0/metadefender_storage_security-4.6.0.tgz
+    version: 4.6.0
   - apiVersion: v2
     appVersion: 4.5.2
     created: "2026-08-19T14:48:14.619555634Z"
@@ -1360,4 +1396,4 @@ entries:
     urls:
     - https://github.com/OPSWAT/metadefender-k8s/releases/download/metadefender_storage_security-0.0.28/metadefender_storage_security-0.0.28.tgz
     version: 0.0.28
-generated: "2026-10-06T11:17:12.343057289Z"
+generated: "2026-10-13T11:16:47.005476305Z"
