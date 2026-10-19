@@ -39,7 +39,7 @@ Currently supported modules:
 
 `azureblob,amazonsdk,googlecloud,alibabacloud,azurefiles,smb,box,graph,sftp,nfs,mft,ftp,oraclesdk`
 
-`smb` deploys the SMB sidecar (`smbservice`),it runs as root with `CAP_SYS_ADMIN` and an unconfined AppArmor profile, so the namespace must admit privileged pods and the nodes need the `cifs` kernel module. EKS Fargate and GKE Autopilot do not allow this. Where it is not possible, switch to the unprivileged SMB sidecar (the `mdss-noroot-rofs.yml` and `mdss-openshift.yml` examples do):
+`smb` deploys the SMB sidecar (`smbservice`),it runs as root with `CAP_SYS_ADMIN` and an unconfined AppArmor profile, so the namespace must admit privileged pods and the nodes need the `cifs` kernel module. On SELinux-enforcing nodes (OpenShift, RHEL with CRI-O) it also needs the SELinux type `spc_t`, which `mdss-openshift.yml` sets. EKS Fargate and GKE Autopilot do not allow this, and on FIPS-enabled nodes the kernel cannot use NTLM. Where it is not possible, switch to the unprivileged SMB sidecar (the `mdss-noroot-rofs.yml` example does, and `mdss-openshift.yml` has it as a commented alternative):
 ```
 mdss_components:
   smbservice:
@@ -249,15 +249,17 @@ helm install my_mdss <path_to_chart> -f mdss-noroot-rofs.yml
 
 ### OpenShift
 
-[mdss-openshift.yml](mdss-openshift.yml) deploys the chart on Red Hat OpenShift. Create the service account used by the components that cannot run under the default restricted SCC first:
+[mdss-openshift.yml](mdss-openshift.yml) deploys the chart on Red Hat OpenShift. First create, in the namespace you deploy into, the service account used by the components that cannot run under the default restricted SCC:
 
 ```
-oc create sa mdss
-oc adm policy add-scc-to-user privileged -z mdss -n mdss
-helm install my_mdss <path_to_chart> -n mdss -f mdss-openshift.yml
+oc create sa mdss -n <namespace>
+oc adm policy add-scc-to-user privileged -z mdss -n <namespace>
+helm install my-mdss <path_to_chart> -n <namespace> -f mdss-openshift.yml
 ```
 
-Most services run under the restricted SCC as an arbitrary UID; the example disables the two root-only startup steps for them (`EXPOSE_LOCALHOST_ENABLED: "false"`, `ROTATELOGS_ENABLED: "false"`, so logs go to stdout only). The API gateway, licensing service, webclient and Redis run as root and PostgreSQL as its own user (UID 999) through the `mdss` service account. It also points the webclient's nginx resolver at the OpenShift DNS service. For queue based autoscaling install the *Custom Metrics Autoscaler* operator (KEDA) from OperatorHub.
+Most services run under the restricted SCC as an arbitrary UID; the example disables the two root-only startup steps for them (`EXPOSE_LOCALHOST_ENABLED: "false"`, `ROTATELOGS_ENABLED: "false"`, so logs go to stdout only). The API gateway, licensing service, webclient and Redis run as root and PostgreSQL as its own user (UID 999) through the `mdss` service account. It also points the webclient's nginx resolver at the OpenShift DNS service.
+
+With the `smb` module, the SMB sidecar also runs on the `mdss` service account, as root with `CAP_SYS_ADMIN` and the SELinux type `spc_t`, so it can mount shares with the kernel's CIFS client; this is why the account needs the `privileged` SCC. For NetApp, add the address MDSS connects from to the SVM's Vscan scanner pool, otherwise ONTAP refuses access to the `ONTAP_ADMIN$` share. On FIPS-enabled clusters, or where `privileged` is not allowed, use the unprivileged SMB sidecar that `mdss-openshift.yml` shows commented out
 
 ### Licensing
 

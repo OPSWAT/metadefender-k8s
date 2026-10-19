@@ -7,15 +7,15 @@
 # Each entry in mdss_components may override these via its own `tag:` field.
 # When `tag:` is not set on a component, mdss_version is used as the default.
 # =============================================================================
-mdss_version: "4.6.0"
-mdplatform_version: "2.7.0"
+mdss_version: "4.6.1"
+mdplatform_version: "2.7.1"
 
 # Image tags for the two integrations that still ship a workload of their own.
 # Every other vendor is an in-process provider: the orchestrators compile the provider
 # assemblies in, and the scanning service loads them from the providers directory the
 # MDSS-flavoured scanning image bakes in. They have no image, no version and no workload.
-nfs_version: "2.4.0"
-smb_version: "2.4.0"
+nfs_version: "2.4.1"
+smb_version: "2.4.1"
 
 # Generate secrets for MDSS database username, password, postgres user and password
 mdss_generate_secrets: true

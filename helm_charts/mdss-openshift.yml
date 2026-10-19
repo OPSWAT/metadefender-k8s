@@ -1,11 +1,13 @@
-# Run these commands in the current project before deploying the chart for priviledged access
-# oc create sa mdss
-# oc adm policy add-scc-to-user privileged -z mdss -n mdss
+# Run these commands in the namespace you deploy into, before installing the chart:
+# oc create sa mdss -n <namespace>
+# oc adm policy add-scc-to-user privileged -z mdss -n <namespace>
 #
 # Components without an explicit securityContext below run under the default restricted SCC,
 # i.e. as an arbitrary non-root UID that belongs to the root group. The images support this
 # once the two root-only startup steps are switched off (see mdss-common-environment).
 # The components that still need root are pinned to UID 0 and use the mdss service account.
+# The SMB service (deployed when "smb" is in ENABLED_MODULES) is the one that needs the
+# privileged SCC: it mounts shares with the kernel's CIFS client (see smbservice below).
 
 persistance_enabled: false
 
@@ -52,16 +54,36 @@ mdss_components:
       runAsUser: 0
     customPodDefinitions:
       serviceAccountName: mdss
+  # The .NET SMB service (the chart's default image) mounts each share with the kernel's CIFS
+  # client. On OpenShift that needs root, CAP_SYS_ADMIN and the SELinux type spc_t: SELinux
+  # denies a normal container (container_t) a CIFS mount even as root with CAP_SYS_ADMIN.
+  # The privileged SCC on the mdss service account allows all three.
+  # It also needs the cifs kernel module on the nodes, a share account allowed to sign in with
+  # NTLMv2, and, for NetApp, the address MDSS connects from (each worker's IP, or an EgressIP
+  # for the namespace) in the SVM's Vscan scanner pool, for access to the ONTAP_ADMIN$ share.
   smbservice:
-    image: mdintegrations_smbservice
-    securityContext: null
-    extraVolumes:
-      smb-logs:
-        name: smb-logs
-        emptyDir: {}
-    extraVolumeMounts:
-      - name: smb-logs
-        mountPath: /app/logs
+    securityContext:
+      runAsUser: 0
+      capabilities:
+        add: [SYS_ADMIN]
+      seLinuxOptions:
+        type: spc_t
+      appArmorProfile: null            # the chart default's AppArmor setting; OpenShift nodes use SELinux
+    customPodDefinitions:
+      serviceAccountName: mdss
+  # On FIPS-enabled clusters the kernel cannot use NTLM, so the .NET SMB service cannot sign in.
+  # There, or where the privileged SCC is not allowed, replace the block above with the
+  # unprivileged SMB service, which runs under the restricted SCC:
+  # smbservice:
+  #   image: mdintegrations_smbservice
+  #   securityContext: null
+  #   extraVolumes:
+  #     smb-logs:
+  #       name: smb-logs
+  #       emptyDir: {}
+  #   extraVolumeMounts:
+  #     - name: smb-logs
+  #       mountPath: /app/logs
 
 # On OpenShift a Route is the native way to expose a Service outside the cluster, so this
 # example uses one instead of an Ingress. The chart renders it from
