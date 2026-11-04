@@ -15,6 +15,12 @@ MDCORE="false"
 ICAP="false"
 namespace="default"
 replicas=1
+ingress_enabled=false
+exposure_mode="none"
+gateway_enabled=false
+gateway_mode="shared"
+gateway_name=""
+gateway_class_name=""
 db_user="postgres"
 db_password=null
 mdcore_user="postgres"
@@ -186,35 +192,83 @@ function askIPType () {
 }
 function askAccess () {
 
-  read -p "Do you have your own access point or want to create an ingress to access? [Own/Ingress] " ans
+  read -p "Do you have your own access point or want to create Ingress/Gateway access? [Own/Ingress/Gateway] " ans
 
   case "$ans" in
     Own | OWN )
       if [ "$LOCATION_PARAM" == "local" ];then
-        echo "Disabling variables for Ingress, service type ClusterIp"
+        echo "Disabling chart-managed exposure, service type ClusterIp"
       else
-        echo "Disabling variables for Ingress but it will create a LoadBalancer service type"
+        echo "Disabling chart-managed exposure but it will create a LoadBalancer service type"
         askIPType
       fi
       optAccessSelec="Own"
       ingress_enabled=false
+      exposure_mode="none"
+      gateway_enabled=false
     ;;
     ingress | Ingress )
-
         if [ "$LOCATION_PARAM" == "local" ];then
-          echo "Enabling variables for Ingress, service type ClusterIp"
+          echo "Enabling Ingress via exposure.mode=ingress, service type ClusterIp"
         else
-          echo "Enabling variables for Ingress, service type LoadBalancer"
+          echo "Enabling Ingress via exposure.mode=ingress, service type LoadBalancer"
         fi
         optAccessSelec="Ingress"
         ingress_enabled=true
-
+        exposure_mode="ingress"
+        gateway_enabled=false
+    ;;
+    gateway | Gateway )
+        if [ "$LOCATION_PARAM" == "local" ];then
+          echo "Enabling Gateway API exposure, service type ClusterIp"
+        else
+          echo "Enabling Gateway API exposure, service type LoadBalancer"
+        fi
+        optAccessSelec="Gateway"
+        ingress_enabled=false
+        exposure_mode="gateway"
+        gateway_enabled=true
+        askGatewayMode
     ;;
     * )
       echo "invalid response"
       askAccess
     ;;
   esac
+}
+
+function askGatewayMode () {
+  read -p "Gateway mode [shared/dedicated]: " gwans
+  case "$gwans" in
+    shared | Shared )
+      gateway_mode="shared"
+      read -p "Existing Gateway name: " gateway_name
+      gateway_class_name=""
+    ;;
+    dedicated | Dedicated )
+      gateway_mode="dedicated"
+      read -p "GatewayClass name (e.g. nginx, istio): " gateway_class_name
+      gateway_name="core-gateway"
+    ;;
+    * )
+      echo "invalid response"
+      askGatewayMode
+    ;;
+  esac
+}
+
+# Extra --set flags for mdcore exposure. Echoes nothing harmful when Gateway is off.
+function mdcoreExposureHelmSets () {
+  echo --set exposure.mode="$exposure_mode"
+  if [ "$gateway_enabled" == "true" ]; then
+    echo --set exposure.gateway.mode="$gateway_mode"
+    if [ "$gateway_mode" == "shared" ]; then
+      echo --set exposure.gateway.gatewayName="$gateway_name"
+    else
+      echo --set exposure.gateway.className="$gateway_class_name"
+      echo --set exposure.gateway.name="$gateway_name"
+    fi
+  fi
 }
 
 function askPrivateConnection () {
@@ -974,7 +1028,7 @@ function installMDCore() {
     if [ "$LOCATION_PARAM" == "local" ];then
 
         helm upgrade --install mdcore mdcore/ --namespace $namespace --create-namespace \
-        --set core_ingress.enabled=$ingress_enabled \
+        $(mdcoreExposureHelmSets) \
         --set mdcore_license_key=$MDCORE_LICENSE_KEY \
         --set deploy_with_core_db=$k8s_db \
         --set pvc.enabled=$k8s_db \
@@ -996,7 +1050,7 @@ function installMDCore() {
             ipInternal="external"
           fi
           helm upgrade --install mdcore mdcore/ --namespace $namespace --create-namespace -f $helm_file \
-          --set core_ingress.enabled=$ingress_enabled \
+          $(mdcoreExposureHelmSets) \
           --set mdcore_license_key=$MDCORE_LICENSE_KEY \
           --set deploy_with_core_db=$k8s_db \
           --set pvc.enabled=$k8s_db \
@@ -1013,7 +1067,7 @@ function installMDCore() {
           helm_file="mdcore-azure-aks-values.yml"
 
           helm upgrade --install mdcore mdcore/ --namespace $namespace --create-namespace -f $helm_file \
-          --set core_ingress.enabled=$ingress_enabled \
+          $(mdcoreExposureHelmSets) \
           --set mdcore_license_key=$MDCORE_LICENSE_KEY \
           --set deploy_with_core_db=$k8s_db \
           --set pvc.enabled=$k8s_db \
@@ -1040,7 +1094,7 @@ function installMDCore() {
           if [ "$ipInternal" == "true" ];then
 
             helm upgrade --install mdcore mdcore/ --namespace $namespace --create-namespace -f $helm_file \
-            --set core_ingress.enabled=$ingress_enabled \
+            $(mdcoreExposureHelmSets) \
             --set mdcore_license_key=$MDCORE_LICENSE_KEY \
             --set deploy_with_core_db=$k8s_db \
             --set pvc.enabled=$k8s_db \
@@ -1056,7 +1110,7 @@ function installMDCore() {
           else
 
             helm upgrade --install mdcore mdcore/ --namespace $namespace --create-namespace -f $helm_file \
-            --set core_ingress.enabled=$ingress_enabled \
+            $(mdcoreExposureHelmSets) \
             --set mdcore_license_key=$MDCORE_LICENSE_KEY \
             --set deploy_with_core_db=$k8s_db \
             --set pvc.enabled=$k8s_db \

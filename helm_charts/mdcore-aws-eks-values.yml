@@ -63,13 +63,26 @@ core_components:
 
 
 # Ingress setting for mdss and md core (md core setting are ignored if deploy_with_core is false)
+# Set exposure.mode: ingress to create this Ingress (default is none: Service only).
 core_ingress:
   host: <APP_NAMESPACE>-mdcore.k8s
-  enabled: false
   spec_className: true
   ingress_annotations:
     alb.ingress.kubernetes.io/scheme: internet-facing
     alb.ingress.kubernetes.io/target-type: ip
+
+## Optional Gateway API example (opt-in; requires Gateway API CRDs + a GatewayClass impl).
+## Cloud-specific ALB annotation parity is not covered yet — do not expect 1:1 Ingress annotation mapping.
+# exposure:
+#   mode: gateway
+#   gateway:
+#     mode: shared                    # or dedicated + className (e.g. alb)
+#     gatewayName: shared-gateway
+#   defaults:
+#     hostnames:
+#       - <APP_NAMESPACE>-mdcore.k8s
+#     tls:
+#       mode: None                    # or providerManaged for ACM ARN listeners
 
 
 # enable TLS

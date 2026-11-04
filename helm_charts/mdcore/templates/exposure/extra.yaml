@@ -1,0 +1,8 @@
+{{- include "mdcore.exposure.validate" . -}}
+{{- $e := .Values.exposure | default dict }}
+{{- if and (eq (include "mdcore.exposure.mode" .) "gateway") $e.extraPolicies (gt (len $e.extraPolicies) 0) }}
+{{- range $e.extraPolicies }}
+---
+{{ . | toYaml }}
+{{- end }}
+{{- end }}

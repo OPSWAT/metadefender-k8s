@@ -1,0 +1,60 @@
+{{- include "mdcore.exposure.validate" . -}}
+{{- if eq (include "mdcore.exposure.mode" .) "gateway" }}
+{{- $e := .Values.exposure | default dict }}
+{{- $g := $e.gateway | default dict }}
+{{- if eq (include "mdcore.exposure.gatewayIsDedicated" .) "true" }}
+{{- $d := $e.defaults | default dict }}
+{{- $tls := $d.tls | default dict }}
+{{- $tlsMode := default "None" $tls.mode }}
+{{- $infra := $g.infrastructure | default dict }}
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: Gateway
+metadata:
+  name: {{ default "core-gateway" $g.name }}
+spec:
+  gatewayClassName: {{ $g.className | quote }}
+  {{- if or $infra.annotations $infra.parametersRef }}
+  infrastructure:
+    {{- if $infra.annotations }}
+    annotations:
+      {{- toYaml $infra.annotations | nindent 6 }}
+    {{- end }}
+    {{- if $infra.parametersRef }}
+    parametersRef:
+      {{- toYaml $infra.parametersRef | nindent 6 }}
+    {{- end }}
+  {{- end }}
+  listeners:
+  {{- /* Derive listeners: HTTP :80 always; HTTPS :443 when TLS is Terminate/Passthrough/providerManaged */}}
+  - name: http
+    protocol: HTTP
+    port: 80
+    allowedRoutes:
+      namespaces:
+        from: Same
+  {{- if ne $tlsMode "None" }}
+  - name: https
+    protocol: HTTPS
+    port: 443
+    allowedRoutes:
+      namespaces:
+        from: Same
+    {{- if eq $tlsMode "Passthrough" }}
+    tls:
+      mode: Passthrough
+    {{- else }}
+    tls:
+      mode: Terminate
+      {{- if ne $tlsMode "providerManaged" }}
+      certificateRefs:
+      - kind: Secret
+        name: {{ default "mdcore-tls" $tls.secret }}
+        {{- if $tls.secretNamespace }}
+        namespace: {{ $tls.secretNamespace | quote }}
+        {{- end }}
+      {{- end }}
+    {{- end }}
+  {{- end }}
+{{- end }}
+{{- end }}

@@ -143,20 +143,70 @@ storage_provisioner: hostPath       # Type of storage to use in the pod definiti
 storage_name: pvc-name              # Fallback PVC name when a component has no storage_name
 hostPathPrefix: mdcore-storage-<APP_NAMESPACE>      # Node path prefix for hostPath persistence
 
-### Ingress Configuration
-### Optional Kubernetes Ingress for MD Core. Disabled by default; use LoadBalancer service or your own ingress/route instead.
-### When enabled, set `class` and `ingress_annotations` for your cluster's ingress controller (e.g. AWS ALB, GCE).
-core_ingress:
-  host: <APP_NAMESPACE>-mdcore.k8s       # Hostname for the publicly accessible ingress, the `<APP_NAMESPACE>` string will be replaced with the namespace where the chart is deployed
-  service: md-core                  # Service name where the ingress should route to, this should be left unchanged
-  port: 8008                        # Port where the ingress should route to
-  enabled: false                    # Enable or disable the ingress creation
-  spec_className: true              # true -> ingressClassName in spec; false -> kubernetes.io/ingress.class annotation (required for some GKE setups)
-  class: ""                         # Ingress class name; required when enabled (e.g. alb, gce). See cloud-specific values files for examples.
-  tls: false                        # Flag for set up tls section in ingress
-  secret: mdcore-tls                # SecretName of the tls secret created to be used for ingress
-  ingress_annotations: null         # Controller-specific annotations; see mdcore-aws-eks-values.yml for ALB examples
-  rules: []                         # Optional: override the entire rules section; leave empty to use host/service/port above
+### StatefulSet (opt-in)
+### By default md-core runs as a Deployment. Set `statefulset.enabled: true` to run it as a StatefulSet instead
+### (templates/statefulset-template.yml): stable pod names (md-core-0, md-core-1, ...) so MD_INSTANCE_NAME and the
+### instance's storage directory survive restarts, plus a governing headless Service `md-core-headless`.
+### postgres-core is always a Deployment. A live workload cannot switch kind in place: uninstall and reinstall, or
+### delete the old Deployment/StatefulSet first.
+statefulset:
+  enabled: false
+  podManagementPolicy: Parallel     # Parallel | OrderedReady
+  updateStrategy:
+    type: RollingUpdate
+  # Give each replica its own PVC for core_components.md-core.persistentDir instead of one shared volume.
+  # Requires md-core.persistentDir to be set. Note: a live StatefulSet rejects changes to volumeClaimTemplates.
+  volumeClaimTemplate:
+    enabled: false
+    size: 10Gi
+    storageClassName: ""            # empty = cluster default StorageClass
+    accessModes:
+      - ReadWriteOnce
+
+### Exposure
+### How MD Core is exposed outside the cluster. Everything is disabled by default: only the `md-core`
+### Service is created (see core_components.md-core.service_type: ClusterIP, NodePort, LoadBalancer, Headless).
+### exposure.mode selects what the chart creates in addition:
+###   none     (default) no Ingress and no Gateway API objects
+###   ingress  a Kubernetes Ingress (settings: see mdcore-ingress-contour-values.yml and the cloud values files)
+###   gateway  Gateway API objects for Envoy Gateway (Gateway + HTTPRoute + ClientTrafficPolicy), configured by exposure.* below.
+###            Gateway API CRDs and Envoy Gateway are NOT installed by this chart, install them first (GatewayClass `eg`).
+###   route    an OpenShift Route, configured by core_route (see mdcore-openshift.yml)
+exposure:
+  mode: none                        # none | ingress | gateway | route
+  gateway:
+    mode: dedicated                 # dedicated (chart creates Gateway + HTTPRoute) | shared (HTTPRoute only, attaches to an existing Gateway)
+    className: eg                   # GatewayClass name (required for dedicated); eg = Envoy Gateway default
+    name: core-gateway              # name of the chart-created Gateway
+    gatewayName: ""                 # shared: existing Gateway name (required when gateway.mode=shared)
+    gatewayNamespace: ""            # shared: Gateway namespace (empty = release namespace)
+    sectionName: ""                 # optional Listener name for HTTPRoute parentRefs
+    infrastructure:
+      annotations: {}               # Gateway.spec.infrastructure.annotations (implementation-specific)
+      parametersRef: null           # optional LocalObjectReference-style parametersRef (raw object)
+  defaults:
+    hostnames:
+      - <APP_NAMESPACE>-mdcore.k8s  # default hostnames when routes[] is empty (gateway mode)
+    service: md-core                # default backend Service name
+    port: 8008                      # default backend Service port
+    tls:
+      mode: None                    # Terminate | Passthrough | providerManaged | None
+      secret: mdcore-tls            # TLS Secret name when tls.mode=Terminate
+      secretNamespace: ""           # cross-namespace Secret namespace (operator must apply ReferenceGrant; see README)
+  routes: []                        # optional explicit routes; empty → one PathPrefix / route from defaults
+  extraPolicies:                    # list of complete API objects, each emitted as its own document (Envoy/Istio/GKE/…); not a YAML string
+    # Envoy drops request headers containing underscores by default, which MD Core relies on
+    - apiVersion: gateway.envoyproxy.io/v1alpha1
+      kind: ClientTrafficPolicy
+      metadata:
+        name: mdcore-allow-underscore-headers
+      spec:
+        targetRefs:
+          - group: gateway.networking.k8s.io
+            kind: Gateway
+            name: core-gateway          # must match exposure.gateway.name
+        headers:
+          withUnderscoresAction: Allow
 
 
 ## Uncomment if you want to use a private repo (it must already be configured in the cluster as a secret)
@@ -205,6 +255,10 @@ env:                                                            # Set additional
   OLMS_PROXY_PASSWORD: ""
   OLMS_PROXY_TYPE: ""         
   OLMS_CONNECTION_TYPE: ""
+  # OPSWAT Central Management (OCM) auto-enrollment. Set both to auto-enroll MD Core into OCM on startup
+  # and auto-unenroll on termination (leave empty to disable).
+  OCM_URL: ""                 # OCM server URL to enroll into
+  OCM_REG_CODE: ""            # OCM registration code
   MDCORE_CERT_PASSPHRASE: ""
   MDCORE_SSL_PROTOCOLS: ""
   MDCORE_SSL_ADVANCED_CONFIGS: ""
@@ -340,7 +394,7 @@ core_components:
       certKeySecretSubPath: mdcore.key
     ports:
       - port: 8008                                       # Port to expose for the MD Core pod
-    service_type: ClusterIP                              # Sets the service type for MD Core service (ClusterIP, NodePort, LoadBalancer)
+    service_type: ClusterIP                              # Sets the service type for MD Core service (ClusterIP, NodePort, LoadBalancer, Headless)
     sessionAffinity: None
     service_annotations: null
     extra_labels:

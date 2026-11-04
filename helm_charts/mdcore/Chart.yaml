@@ -4,6 +4,9 @@ description: |
   This is a Helm chart for deploying MetaDefender Core (https://www.opswat.com/products/metadefender/core) in a Kubernetes cluster. 
 
   Release Notes
+  - BREAKING: core_ingress.enabled and core_route.enabled are removed. Nothing is exposed by default (Service only); set exposure.mode to ingress (Ingress from the optional core_ingress block, see mdcore-ingress-contour-values.yml), gateway (Envoy Gateway API: Gateway, HTTPRoute, ClientTrafficPolicy; requires Gateway API CRDs and Envoy Gateway, GatewayClass eg) or route (OpenShift Route from core_route)
+  - statefulset.enabled (default false) runs md-core as a StatefulSet with stable pod names, a headless Service and optional per-replica PVCs (example: mdcore-statefulset-values.yml)
+  - service_type: Headless is a new option for the md-core Service (alongside ClusterIP, NodePort, LoadBalancer)
   - Default MD Core image bumped to 5.23.0
   - K8S DB upgrade initContainer: when UPGRADE_DB=true with remote DB (MDCORE_DB_MODE=4), the chart runs DB upgrade in an initContainer and sets UPGRADE_DB_SKIP on the main md-core container (requires Core 5.23.0+)
   - Stable instance names for shared-database mode: MD_INSTANCE_SLOTS and the MD_INSTANCE_SLOT_* settings let a restarted pod reclaim its instance name and per-instance settings

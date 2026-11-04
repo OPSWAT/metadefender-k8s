@@ -1,0 +1,97 @@
+## Example: MD Core behind Envoy Gateway (shared Gateway).
+## Prerequisites: Gateway API CRDs + Envoy Gateway installed; an existing Gateway named below.
+## GatewayClass name is typically `eg`.
+##
+## Session persistence: add a BackendTrafficPolicy via exposure.extraPolicies (see commented block).
+## Data-plane knobs (EnvoyProxy): set exposure.gateway.infrastructure.parametersRef in dedicated mode.
+##
+## The ClientTrafficPolicy below is REQUIRED, not optional - see the comment on it.
+## It needs the Envoy Gateway extension CRDs (ClientTrafficPolicy, BackendTrafficPolicy,
+## EnvoyProxy, ...), which are NOT part of the upstream Gateway API CRD set. If you installed
+## only the upstream CRDs, add them from the gateway-helm chart's crds/generated directory,
+## then restart the envoy-gateway controller - it does not watch CRD types that did not exist
+## when it started, and until it is restarted the policy is accepted but silently has no effect.
+##
+## Minimum changes: set mdcore_license_key below (or pass --set mdcore_license_key=<KEY>) and
+## exposure.gateway.gatewayName to your existing Gateway. The hostname defaults to <namespace>-mdcore.k8s;
+## change exposure.defaults.hostnames to your real hostname. Nothing else in values.yaml needs to be edited.
+## To let the chart create its own Gateway instead of attaching to an existing one, set
+## exposure.gateway.mode: dedicated (it then uses className eg).
+##
+## helm upgrade --install mdcore ./helm_charts/mdcore -f helm_charts/mdcore-gateway-envoy-values.yml \
+##   --set mdcore_license_key=<KEY>
+
+mdcore_license_key: <SET_LICENSE_KEY_HERE>   # A valid license key, **this value is mandatory**
+
+exposure:
+  mode: gateway
+  gateway:
+    mode: shared
+    gatewayName: eg-gateway             # existing Gateway managed by Envoy Gateway
+    # gatewayNamespace: ""
+    # sectionName: http
+  defaults:
+    hostnames:
+      - <APP_NAMESPACE>-mdcore.k8s
+    service: md-core
+    port: 8008
+    tls:
+      mode: None                      # HTTP-only: fine for API clients, but MD Core issues its
+                                      # session cookie with `Secure`, which browsers refuse to
+                                      # store over http://. Use tls.mode: Terminate (and an HTTPS
+                                      # listener on the Gateway) if the web UI must be usable.
+  extraPolicies:
+    ## REQUIRED for the MD Core web UI behind Envoy Gateway - not an optional example.
+    ## Envoy rejects any request whose header names contain underscores
+    ## (headers_with_underscores_action defaults to RejectRequest), and MD Core's login API
+    ## takes the `need_session_cookie` header: POST /login returns 400 at the proxy and the UI
+    ## cannot log in. The dashed spelling passes Envoy but is ignored by MD Core, so renaming
+    ## is not a workaround. Verified on mdcore-dev.
+    ##
+    ## `targetRefs[].name` must match exposure.gateway.gatewayName above (or gateway.name in
+    ## dedicated mode); the policy has no effect if it targets a Gateway that does not exist.
+    - apiVersion: gateway.envoyproxy.io/v1alpha1
+      kind: ClientTrafficPolicy
+      metadata:
+        name: mdcore-allow-underscore-headers
+      spec:
+        targetRefs:
+          - group: gateway.networking.k8s.io
+            kind: Gateway
+            name: eg-gateway
+        headers:
+          withUnderscoresAction: Allow
+    ## Session persistence (optional), e.g.:
+    # - apiVersion: gateway.envoyproxy.io/v1alpha1
+    #   kind: BackendTrafficPolicy
+    #   metadata:
+    #     name: mdcore-session-affinity
+    #   spec:
+    #     targetRefs:
+    #       - group: gateway.networking.k8s.io
+    #         kind: HTTPRoute
+    #         name: core-httproute
+    #     loadBalancer:
+    #       type: ConsistentHash
+    #       consistentHash:
+    #         type: SourceIP
+
+## Dedicated-mode alternative (chart creates Gateway + HTTPRoute):
+# exposure:
+#   mode: gateway
+# #   gateway:
+#     mode: dedicated
+#     className: eg
+#     name: core-gateway
+#     # infrastructure:
+#     #   parametersRef:
+#     #     group: gateway.envoyproxy.io
+#     #     kind: EnvoyProxy
+#     #     name: eg-proxy-config
+#   defaults:
+#     hostnames:
+#       - <APP_NAMESPACE>-mdcore.k8s
+#     tls:
+#       mode: Terminate
+#       secret: mdcore-tls
+

@@ -1,0 +1,73 @@
+{{- include "mdcore.exposure.validate" . -}}
+{{- if eq (include "mdcore.exposure.mode" .) "gateway" }}
+{{- $e := .Values.exposure | default dict }}
+{{- $g := $e.gateway | default dict }}
+{{- $csv := include "mdcore.exposure.hostnamesCSV" . }}
+{{- $hosts := list }}
+{{- if $csv }}{{ $hosts = splitList "," $csv }}{{ end }}
+{{- $backendName := include "mdcore.exposure.backendName" . }}
+{{- $backendPort := include "mdcore.exposure.backendPort" . | int }}
+{{- $dedicated := eq (include "mdcore.exposure.gatewayIsDedicated" .) "true" }}
+{{- $parentName := $g.gatewayName }}
+{{- $parentNS := $g.gatewayNamespace }}
+{{- if $dedicated }}
+  {{- $parentName = default "core-gateway" $g.name }}
+  {{- $parentNS = "" }}
+{{- end }}
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: core-httproute
+spec:
+  parentRefs:
+  - group: gateway.networking.k8s.io
+    kind: Gateway
+    name: {{ $parentName | quote }}
+    {{- if $parentNS }}
+    namespace: {{ $parentNS | quote }}
+    {{- end }}
+    {{- if $g.sectionName }}
+    sectionName: {{ $g.sectionName | quote }}
+    {{- end }}
+  {{- if $hosts }}
+  hostnames:
+  {{- range $hosts }}
+  - {{ . | quote }}
+  {{- end }}
+  {{- end }}
+  rules:
+  {{- if and $e.routes (gt (len $e.routes) 0) }}
+    {{- range $e.routes }}
+  - matches:
+      {{- if .matches }}
+      {{- toYaml .matches | nindent 6 }}
+      {{- else }}
+      - path:
+          type: PathPrefix
+          value: /
+      {{- end }}
+    {{- if .filters }}
+    filters:
+      {{- toYaml .filters | nindent 6 }}
+    {{- end }}
+    backendRefs:
+    - group: ""
+      kind: Service
+      name: {{ dig "backend" "name" $backendName . }}
+      port: {{ dig "backend" "port" $backendPort . }}
+      weight: 1
+    {{- end }}
+  {{- else }}
+  - matches:
+    - path:
+        type: PathPrefix
+        value: /
+    backendRefs:
+    - group: ""
+      kind: Service
+      name: {{ $backendName }}
+      port: {{ $backendPort }}
+      weight: 1
+  {{- end }}
+{{- end }}

@@ -1,0 +1,48 @@
+{{- include "mdcore.exposure.validate" . -}}
+{{- if eq (include "mdcore.exposure.mode" .) "ingress" }}
+{{- $ci := .Values.core_ingress | default dict }}
+{{- $host := default "<APP_NAMESPACE>-mdcore.k8s" $ci.host | replace "<APP_NAMESPACE>" .Release.Namespace }}
+{{- $specClassName := true }}
+{{- if hasKey $ci "spec_className" }}{{ $specClassName = $ci.spec_className }}{{ end }}
+---
+kind: Ingress
+apiVersion: networking.k8s.io/v1
+metadata:
+  name: core-ingress
+  {{- if or (and (not $specClassName) $ci.class) $ci.ingress_annotations }}
+  annotations:
+    {{- if and (not $specClassName) $ci.class }}
+    kubernetes.io/ingress.class: {{ $ci.class }}
+    {{- end }}
+    {{- if $ci.ingress_annotations }}
+    {{- toYaml $ci.ingress_annotations | nindent 4 }}
+    {{- end }}
+  {{- end }}
+
+spec:
+  {{- if and $specClassName $ci.class }}
+  ingressClassName: {{ $ci.class }}
+  {{- end }}
+  {{- if $ci.rules }}
+  rules:
+    {{- toYaml $ci.rules | nindent 4 }}
+  {{- else }}
+  rules:
+  - host: {{ $host }}
+    http:
+      paths:
+        - path: /
+          pathType: Prefix
+          backend:
+            service:
+              name: {{ default "md-core" $ci.service }}
+              port:
+                number: {{ default 8008 $ci.port }}
+  {{- end }}
+  {{- if $ci.tls }}
+  tls:
+  - hosts:
+    - {{ $host }}
+    secretName: {{ default "mdcore-tls" $ci.secret }}
+  {{- end }}
+{{- end }}

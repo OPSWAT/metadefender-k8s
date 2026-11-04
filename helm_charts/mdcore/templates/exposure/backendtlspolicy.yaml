@@ -1,0 +1,22 @@
+{{- include "mdcore.exposure.validate" . -}}
+{{- if eq (include "mdcore.exposure.mode" .) "gateway" }}
+{{- $e := .Values.exposure | default dict }}
+{{- $backendName := include "mdcore.exposure.backendName" . }}
+{{- range $e.routes | default list }}
+  {{- $btls := dig "backend" "tls" dict . }}
+  {{- if $btls }}
+---
+apiVersion: gateway.networking.k8s.io/v1alpha3
+kind: BackendTLSPolicy
+metadata:
+  name: {{ printf "%s-backend-tls" (default "core" .name) }}
+spec:
+  targetRefs:
+  - group: ""
+    kind: Service
+    name: {{ dig "backend" "name" $backendName . }}
+  validation:
+    {{- toYaml $btls | nindent 4 }}
+  {{- end }}
+{{- end }}
+{{- end }}

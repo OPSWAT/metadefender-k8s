@@ -1,0 +1,60 @@
+# Run md-core as a StatefulSet instead of a Deployment. Opt-in: statefulset.enabled (default false).
+# Gives each replica a stable name (md-core-0, md-core-1, ...) and, optionally, its own PVC.
+{{- if .Values.statefulset.enabled }}
+{{- $component := index .Values.core_components "md-core" }}
+{{- $sts := .Values.statefulset }}
+{{- $vct := and $sts.volumeClaimTemplate.enabled $component.persistentDir }}
+{{- if and $sts.volumeClaimTemplate.enabled (not $component.persistentDir) }}
+{{- fail "statefulset.volumeClaimTemplate.enabled requires core_components.md-core.persistentDir to be set." }}
+{{- end }}
+---
+# Governing headless Service of the StatefulSet (stable per-pod DNS: <pod>.md-core-headless)
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ printf "%s-headless" $component.name | quote }}
+spec:
+  clusterIP: None
+  publishNotReadyAddresses: true
+  ports:
+  {{- range $component.ports }}
+    - name: {{ .port | quote }}
+      port: {{ .port }}
+      targetPort: {{ .port }}
+  {{- end }}
+  selector:
+    app: {{ $component.name | quote }}
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ $component.name | quote }}
+  labels:
+    product: mdcore
+spec:
+  replicas: {{ $component.replicas }}
+  serviceName: {{ printf "%s-headless" $component.name | quote }}
+  podManagementPolicy: {{ $sts.podManagementPolicy }}
+  {{- if $sts.updateStrategy }}
+  updateStrategy:
+    {{- toYaml $sts.updateStrategy | nindent 4 }}
+  {{- end }}
+  selector:
+    matchLabels:
+      app: {{ $component.name | quote }}
+{{ include "mdcore.podTemplate" (dict "root" $ "component" $component "vct" $vct) }}
+  {{- if $vct }}
+  volumeClaimTemplates:
+    - metadata:
+        name: {{ $component.name | quote }}
+      spec:
+        accessModes:
+          {{- toYaml $sts.volumeClaimTemplate.accessModes | nindent 10 }}
+        {{- if $sts.volumeClaimTemplate.storageClassName }}
+        storageClassName: {{ $sts.volumeClaimTemplate.storageClassName | quote }}
+        {{- end }}
+        resources:
+          requests:
+            storage: {{ $sts.volumeClaimTemplate.size }}
+  {{- end }}
+{{- end }}

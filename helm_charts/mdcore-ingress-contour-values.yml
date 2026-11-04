@@ -1,0 +1,32 @@
+## Kubernetes Ingress for MD Core through an Envoy-based ingress controller (Contour).
+##
+## Contour is an ingress controller whose data plane is Envoy. It serves the standard Kubernetes
+## Ingress resource through its own IngressClass. (Envoy Gateway does not serve Ingress: for
+## Envoy Gateway use mdcore-gateway-envoy-values.yml and exposure.mode: gateway.)
+##
+## Prerequisite: Contour installed in the cluster, for example
+##   helm install contour oci://registry-1.docker.io/bitnamicharts/contour -n projectcontour --create-namespace
+##   (its IngressClass is "contour")
+##
+## Minimum change: set mdcore_license_key below (or pass --set mdcore_license_key=<KEY>). The host defaults
+## to <namespace>-mdcore.k8s; change core_ingress.host to your real hostname. Nothing else in values.yaml
+## needs to be edited to use this file:
+##
+## helm upgrade --install mdcore ./helm_charts/mdcore -f helm_charts/mdcore-ingress-contour-values.yml \
+##   --set mdcore_license_key=<KEY>
+
+mdcore_license_key: <SET_LICENSE_KEY_HERE>   # A valid license key, **this value is mandatory**
+
+exposure:
+  mode: ingress                           # create the Ingress below (default is none: Service only)
+
+core_ingress:
+  host: <APP_NAMESPACE>-mdcore.k8s        # <APP_NAMESPACE> is replaced with the release namespace
+  class: contour                          # IngressClass of the Contour controller
+  spec_className: true                    # true -> spec.ingressClassName; false -> kubernetes.io/ingress.class annotation
+  ingress_annotations:
+    projectcontour.io/response-timeout: 300s     # allow long file uploads / scans
+    # projectcontour.io/websocket-routes: "/"    # only if you need websockets
+  # TLS: create the secret first (kubectl create secret tls mdcore-tls --cert=... --key=...)
+  # tls: true
+  # secret: mdcore-tls

@@ -103,11 +103,12 @@ helm install my_mdcore ./helm_charts/mdcore -f mdcore-openshift.yml \
 
 #### **Exposing MD Core**
 
-The chart can create the OpenShift Route for you, so no manual step in the console is needed. It is rendered from `templates/route-template.yml` and is only created when `core_route.enabled` is `true` — `core_route` is absent from the chart's default values, so the template is inert on non-OpenShift clusters and the Route API does not need to exist there. `mdcore-openshift.yml` enables it:
+The chart can create the OpenShift Route for you, so no manual step in the console is needed. It is rendered from `templates/exposure/route.yaml` when `exposure.mode` is `route`, using the `core_route` block. `core_route` is absent from the chart's default values and the default mode is `none`, so nothing is created on non-OpenShift clusters and the Route API does not need to exist there. `mdcore-openshift.yml` enables it:
 
 ```yaml
+exposure:
+  mode: route
 core_route:
-  enabled: true
   service: md-core
   port: 8008
   host: ""                             # empty -> OpenShift generates the hostname
@@ -125,9 +126,95 @@ Check the assigned hostname after installation with:
 oc get route core-route
 ```
 
-To expose MD Core some other way instead, set `core_route.enabled` to `false` and use a `LoadBalancer`/`NodePort` service (`core_components.md-core.service_type`) or the chart's Ingress (`core_ingress`).
+To expose MD Core some other way instead, leave `exposure.mode` at `none` and use a `LoadBalancer`/`NodePort` service (`core_components.md-core.service_type`), or select the chart's Ingress or Gateway API with `exposure.mode` (below).
 
-Ingress creation is **disabled by default** (`core_ingress.enabled: false`). To expose MD Core via a Kubernetes Ingress, set `core_ingress.enabled` to `true` and configure `core_ingress.class` and `core_ingress.ingress_annotations` for your cluster's ingress controller (for example AWS ALB or GCE). Cloud-specific values files include ready-made examples.
+### Exposure
+
+Nothing is exposed by default: the chart only creates the `md-core` Service (`core_components.md-core.service_type`: `ClusterIP`, `NodePort`, `LoadBalancer` or `Headless`). Set `exposure.mode` to have the chart create more:
+
+| `exposure.mode` | Behaviour |
+|-----------------|-----------|
+| `none` (default) | No Ingress and no Gateway API objects, Service only |
+| `ingress` | Creates a Kubernetes Ingress. Configure it with the optional `core_ingress` block (`host`, `class`, `ingress_annotations`, `tls`, ...), which is not in the default values: see `mdcore-ingress-contour-values.yml` (Envoy-based Contour controller) and the cloud values files (AWS ALB, GCE, AGIC). Without the block the Ingress uses host `<APP_NAMESPACE>-mdcore.k8s`, service `md-core` and port 8008. |
+| `gateway` | Creates Gateway API objects for Envoy Gateway: a `Gateway` (dedicated mode), an `HTTPRoute` to `md-core:8008`, and a `ClientTrafficPolicy` that allows underscore headers |
+| `route` | Creates an OpenShift Route from the `core_route` block |
+
+```console
+helm install mdcore ./mdcore -f mdcore-ingress-contour-values.yml
+helm install mdcore ./mdcore --set exposure.mode=gateway --set 'exposure.defaults.hostnames={mdcore.example.com}'
+```
+
+Envoy appears in two ways: `exposure.mode: gateway` uses Envoy Gateway through the Gateway API (`mdcore-gateway-envoy-values.yml`), while `exposure.mode: ingress` with the Contour controller uses Envoy through the Ingress resource (`mdcore-ingress-contour-values.yml`). Envoy Gateway itself does not serve Ingress.
+
+**Prerequisites for `mode: gateway`:** install the Gateway API CRDs and Envoy Gateway (GatewayClass `eg`) in the cluster; this chart does **not** install them, and `helm install` fails if the CRDs are missing. Set `exposure.defaults.hostnames`, the default is a placeholder. TLS is off by default.
+
+**Shared vs dedicated Gateway:**
+
+```yaml
+# Dedicated (default) - chart creates Gateway + HTTPRoute
+exposure:
+  mode: gateway
+  gateway:
+    mode: dedicated
+    className: eg
+  defaults:
+    hostnames:
+      - <APP_NAMESPACE>-mdcore.k8s
+    tls:
+      mode: Terminate          # or Passthrough | providerManaged | None
+      secret: mdcore-tls
+
+# Shared - HTTPRoute only, attach to an existing Gateway
+exposure:
+  mode: gateway
+  gateway:
+    mode: shared
+    gatewayName: shared-gateway
+  defaults:
+    hostnames:
+      - <APP_NAMESPACE>-mdcore.k8s
+```
+
+`tls.mode: providerManaged` emits an HTTPS listener **without** `certificateRefs` (ACM ARN / GKE certificate map). For a TLS Secret in another namespace, the Gateway owner must apply a `ReferenceGrant` in that Secret's namespace (see the Gateway API docs); this chart does not create cross-namespace grants.
+
+**Upgrading from a release that used `core_ingress.enabled` / `core_route.enabled`:** those flags are gone. Set `exposure.mode: ingress` (or `route`) instead.
+
+**Deprecation:** Ingress remains supported with **no removal date in chart 5.22 / Core 5.24**. OpenShift Route is not retired. Recipes for other Gateway API implementations (NGINX Gateway Fabric, Istio, AWS, Azure, GKE) are provided separately.
+
+**Envoy Gateway:** GatewayClass name is typically `eg`. Shared mode attaches an `HTTPRoute` to an existing Gateway; dedicated mode sets `exposure.gateway.className: eg` so the chart creates the Gateway. Optional EnvoyProxy config goes through `exposure.gateway.infrastructure.parametersRef`. Session persistence is not a portable chart key — emit a `BackendTrafficPolicy` (or similar) via `exposure.extraPolicies`. See `mdcore-gateway-envoy-values.yml`.
+
+> **Required for the web UI behind Envoy Gateway.** Envoy rejects any request whose header
+> names contain underscores (`headers_with_underscores_action` defaults to `RejectRequest`),
+> and the MD Core login API takes the `need_session_cookie` header — so `POST /login` is
+> answered with **400 at the proxy** and the UI cannot log in. The REST API is unaffected
+> unless a client sends underscore headers. The dashed spelling is accepted by Envoy but
+> ignored by MD Core, so renaming is not a workaround. `mdcore-gateway-envoy-values.yml`
+> ships the fix in `exposure.extraPolicies`:
+>
+> ```yaml
+> exposure:
+>   extraPolicies:
+>     - apiVersion: gateway.envoyproxy.io/v1alpha1
+>       kind: ClientTrafficPolicy
+>       metadata:
+>         name: mdcore-allow-underscore-headers
+>       spec:
+>         targetRefs:
+>           - group: gateway.networking.k8s.io
+>             kind: Gateway
+>             name: eg-gateway     # must match your Gateway's name
+>         headers:
+>           withUnderscoresAction: Allow
+> ```
+
+Two prerequisites that are easy to miss with Envoy Gateway:
+
+- **The extension CRDs are separate.** `ClientTrafficPolicy`, `BackendTrafficPolicy`, `EnvoyProxy` and friends are **not** part of the upstream Gateway API CRD set. If only the upstream CRDs are installed, apply the Envoy Gateway ones from the `gateway-helm` chart's `crds/generated/` directory (they are all in the `gateway.envoyproxy.io` group, so the upstream Gateway API CRDs are untouched).
+- **Restart the controller after installing them.** `envoy-gateway` does not watch CRD types that did not exist when it started, so a policy created before the restart is accepted but silently has no effect — it appears simply to be ignored. `kubectl rollout restart deployment/envoy-gateway -n envoy-gateway-system`.
+
+**Browser login needs TLS.** MD Core issues its session cookie with the `Secure` attribute, and browsers refuse to store a `Secure` cookie over plain `http://`. An HTTP-only listener (`tls.mode: None`, the shared example's default) is fine for REST clients but will not complete a web-UI login — use `tls.mode: Terminate` with an HTTPS listener on the Gateway for that.
+
+**Documented gaps:** OpenShift router-generated hostname has no Gateway equivalent (keep Route); session stickiness under multi-replica / KEDA is implementation-specific (often `extraPolicies` or experimental Gateway API channel).
 
 ## Operational Notes
 The entire deployment can be customized by overwriting the chart's default configuration values. Here are a few point to look out for when changing these values:
@@ -153,7 +240,7 @@ The entire deployment can be customized by overwriting the chart's default confi
 
 See [MD Core Docker environment variables](https://www.opswat.com/docs/mdcore/container-deployment/docker-image-published-on-opswat-docker-hub) for `STORAGE_PATH` semantics.
 
-### Database upgrade in an initContainer (LMS-29194)
+### Database upgrade in an initContainer
 
 For **remote/shared PostgreSQL** (`MDCORE_DB_MODE=4`), set `env.UPGRADE_DB` to `"true"` when upgrading the Core image against an existing database. The chart then:
 
@@ -165,7 +252,7 @@ Both initContainer and main container mount the same `STORAGE_PATH` volume so Po
 
 **Requirements:**
 
-- Core image **5.23.0+** with LMS-29194 support (`MDCORE_RUN_MODE`, `UPGRADE_DB_SKIP`).
+- Core image **5.23.0+** with DB upgrade initContainer support (`MDCORE_RUN_MODE`, `UPGRADE_DB_SKIP`).
 - Remote DB mode only — the initContainer path is not enabled for other `MDCORE_DB_MODE` values.
 - Set `env.MDCORE_UPGRADE_FROM_DB_NAME` to the source database name before upgrade.
 
@@ -179,6 +266,21 @@ helm upgrade --install my_mdcore ./helm_charts/mdcore \
 ```
 
 When `env.UPGRADE_DB` is `false` (default), behaviour is unchanged — DB upgrade runs inside the main container on first start.
+
+## StatefulSet (opt-in)
+
+By default md-core runs as a Deployment, so every pod gets a random name. `MD_INSTANCE_NAME` is derived from the pod name and a license activation binds to it, so a restarted pod looks like a new instance. Set `statefulset.enabled: true` to run md-core as a StatefulSet instead (`templates/statefulset-template.yml`):
+
+- Stable pod names (`md-core-0`, `md-core-1`, ...) and a governing headless Service `md-core-headless`. The regular `md-core` Service, the Ingress, the Gateway and the OpenShift Route are unchanged.
+- `statefulset.volumeClaimTemplate.enabled: true` (needs `core_components.md-core.persistentDir`) gives each replica its own PVC instead of one volume shared by all of them.
+- `postgres-core` always stays a Deployment. KEDA targets the StatefulSet when it is enabled.
+
+```console
+helm install mdcore ./mdcore --set statefulset.enabled=true
+helm install mdcore ./mdcore -f mdcore-statefulset-values.yml   # with persistentDir and one PVC per replica
+```
+
+A running workload cannot change kind in place, and a live StatefulSet rejects changes to `volumeClaimTemplates`: reinstall, or delete the old Deployment/StatefulSet first (`kubectl delete statefulset md-core --cascade=orphan` keeps the pods).
 
 ## KEDA Autoscaling
 
@@ -273,13 +375,21 @@ The following table lists the configurable parameters of the Metadefender core c
 | `environment` | Deployment environment type, the default `generic` value will not configure or provision any additional resources in the cloud provider (like load balancers), other values: `aws_eks_fargate` | `"generic"` |
 | `install_alb` | If set to true and `environment` is set to `aws_eks_fargate`, an ALB ingress controller will be installed | `true` |
 | `eks_cluster_name` | Name of the EKS cluster, mandatory only if `environment` is set to `aws_eks_fargate` | `null` |
-| `app_name` | Application name, it also sets the namespace on all created resources and replaces `<APP_NAME>` in the ingress host (if the ingress is enabled) | `"default"` |
-| `core_ingress.host` | Hostname for the publicly accessible ingress, the `<APP_NAME>` string will be replaced with the `app_name` value | `"<APP_NAME>-mdss.local"` |
+| `app_name` | Application name / namespace hint used by the installer | `"default"` |
+| `core_ingress.host` | (optional block, not in default values) Hostname for the publicly accessible ingress; `<APP_NAMESPACE>` is replaced with the release namespace | `"<APP_NAMESPACE>-mdcore.k8s"` |
 | `core_ingress.service` | Service name where the ingress should route to, this should be left unchanged | `"md-core"` |
 | `core_ingress.port` | Port where the ingress should route to | `8008` |
-| `core_ingress.enabled` | Enable or disable the ingress creation | `false` |
-| `core_ingress.class` | Ingress class name; required when ingress is enabled | `""` |
+| `core_ingress.class` | Ingress class name; set it when `exposure.mode` is `ingress` | `""` |
 | `core_ingress.ingress_annotations` | Controller-specific ingress annotations | `null` |
+| `exposure.mode` | Exposure selector: `none` \| `ingress` \| `gateway` \| `route` | `"none"` |
+| `exposure.gateway.mode` | `dedicated` (Gateway + HTTPRoute) or `shared` (HTTPRoute only) | `"dedicated"` |
+| `exposure.gateway.className` | GatewayClass name for dedicated mode | `"eg"` |
+| `exposure.gateway.gatewayName` | Existing Gateway name for shared mode | `""` |
+| `exposure.defaults.hostnames` | Hostnames for `gateway` mode (`<APP_NAMESPACE>` substituted) | see `values.yaml` |
+| `exposure.defaults.tls.mode` | `None` \| `Terminate` \| `Passthrough` \| `providerManaged` | `"None"` |
+| `exposure.extraPolicies` | Raw YAML docs for implementation-specific policies (`gateway` mode); defaults to the Envoy ClientTrafficPolicy | see `values.yaml` |
+| `statefulset.enabled` | Run md-core as a StatefulSet instead of a Deployment | `false` |
+| `statefulset.volumeClaimTemplate.enabled` | Give each md-core replica its own PVC for `persistentDir` | `false` |
 | `keda.enabled` | Enable KEDA autoscaling for the `md-core` Deployment | `false` |
 | `keda.deployment` | Deployment name targeted by the KEDA `ScaledObject` | `"md-core"` |
 | `keda.minReplicas` | Minimum number of `md-core` pods when KEDA is enabled | `1` |

@@ -60,9 +60,20 @@ core_components:
 
 
 # Ingress setting for mdss and md core (md core setting are ignored if deploy_with_core is false)
+# Set exposure.mode: ingress to create this Ingress (default is none: Service only).
 core_ingress:
   host: <APP_NAMESPACE>-mdcore.k8s
-  enabled: false
+
+## Optional Gateway API example (Application Gateway for Containers / azure-alb-external).
+## AGIC does not implement Gateway API — stay on Ingress for AGIC.
+# exposure:
+#   mode: gateway
+#   gateway:
+#     mode: shared
+#     gatewayName: shared-gateway
+#   defaults:
+#     hostnames:
+#       - <APP_NAMESPACE>-mdcore.k8s
 
 # enable TLS
 # md-core:

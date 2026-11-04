@@ -217,7 +217,11 @@ core_components:
 ############# SERVICE EXPOSURE #######################
 ## On OpenShift a Route is the native way to expose a Service outside the cluster,
 ## so this example uses one instead of an Ingress. The chart renders it from
-## templates/route-template.yml, which is inert unless core_route.enabled is true.
+## templates/exposure/route.yaml (from core_route when exposure.mode=route).
+##
+## Gateway API is optional on OpenShift if the cluster provides it, but this recipe
+## keeps Route: Gateway API has no equivalent for the router-generated hostname when
+## core_route.host is empty. Do not switch this file to exposure.mode=gateway.
 ##
 ## `host` is left empty on purpose: OpenShift then generates a hostname from the
 ## cluster's own ingress domain (<name>-<namespace>.apps.<cluster-domain>), which
@@ -229,8 +233,9 @@ core_components:
 ## the cluster. The router's default certificate is used; to serve your own, add
 ## `certificate` and `key` under `tls`, or configure MD Core for end-to-end TLS
 ## (core_components.md-core.tls) and switch termination to `reencrypt`.
+exposure:
+  mode: route                          # create the OpenShift Route below
 core_route:
-  enabled: true
   name: core-route
   service: md-core
   port: 8008
@@ -238,11 +243,6 @@ core_route:
   tls:
     termination: edge
     insecureEdgeTerminationPolicy: Redirect
-
-## Ingress is disabled: the Route above replaces it. Enable this instead only if
-## your cluster runs an ingress controller you specifically want to use.
-core_ingress:
-  enabled: false
 
 # Docker repo to use, this should be changed when using private images (this string will be prepended to the image name)
 # If a component has "custom_repo: true" then the image name will be formated as "{docker_repo/}image_name{:BRANCH}" otherwise it will remain unaltered

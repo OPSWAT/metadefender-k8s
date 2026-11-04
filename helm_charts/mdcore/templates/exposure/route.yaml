@@ -1,16 +1,12 @@
+{{- include "mdcore.exposure.validate" . -}}
 {{/*
-Optional OpenShift Route for MD Core.
+OpenShift Route for MD Core, rendered when exposure.mode=route from the core_route block.
+Routes are the native way to expose a Service outside an OpenShift cluster.
+See helm_charts/mdcore-openshift.yml for a configured example.
 
-Routes are the native way to expose a Service outside an OpenShift cluster, so this
-is the counterpart to core_ingress for OpenShift deployments. It is rendered only
-when core_route.enabled is true, and `core_route` is not part of the chart's default
-values, so this template is inert on non-OpenShift clusters and the Route API does
-not need to exist. See helm_charts/mdcore-openshift.yml for a configured example.
-
-Leave core_route.host empty to let OpenShift generate a hostname from the cluster's
-ingress domain, which is the portable choice.
+Leave host empty to let OpenShift generate a hostname from the cluster's ingress domain.
 */}}
-{{- if and .Values.core_route .Values.core_route.enabled }}
+{{- if eq (include "mdcore.exposure.mode" .) "route" }}
 {{- $route := .Values.core_route }}
 ---
 apiVersion: route.openshift.io/v1

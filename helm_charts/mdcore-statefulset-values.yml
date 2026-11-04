@@ -1,0 +1,42 @@
+## MD Core as a StatefulSet with a persistent directory and one PVC per replica.
+##
+## Minimum change: set mdcore_license_key below (or pass --set mdcore_license_key=<KEY>). Nothing else in
+## values.yaml needs to be edited to use this file:
+##
+##   helm upgrade --install mdcore ./helm_charts/mdcore -f helm_charts/mdcore-statefulset-values.yml \
+##     --set mdcore_license_key=<KEY>
+##
+## Pods are named md-core-0, md-core-1, ... so MD_INSTANCE_NAME (and the license activation bound to it) and the
+## instance's storage directory survive restarts. A governing headless Service, md-core-headless, is created.
+##
+## A running Deployment/StatefulSet cannot switch kind or change volumeClaimTemplates in place:
+## reinstall, or delete the old workload first.
+
+mdcore_license_key: <SET_LICENSE_KEY_HERE>   # A valid license key, **this value is mandatory**
+
+## How STORAGE_PATH, persistentDir and the StatefulSet are linked:
+##  - STORAGE_PATH is the directory MD Core writes its files to (sanitized, DLP and quarantined files, in a
+##    per-instance subdirectory: <STORAGE_PATH>/md-core-0, <STORAGE_PATH>/md-core-1, ...).
+##  - core_components.md-core.persistentDir is where the chart mounts the volume in the md-core container.
+##  - The two MUST be the same path, otherwise MD Core writes to the container's ephemeral disk instead of the volume.
+##  - statefulset.volumeClaimTemplate gives each replica its own PVC, mounted at persistentDir
+##    (PVCs are named md-core-md-core-0, md-core-md-core-1, ...).
+STORAGE_PATH: /metadefendercore
+
+statefulset:
+  enabled: true
+  podManagementPolicy: Parallel
+  volumeClaimTemplate:
+    enabled: true                          # one PVC per replica for md-core persistentDir
+    size: 10Gi                             # sanitized, DLP and quarantined files
+    storageClassName: ""                   # empty = cluster default StorageClass
+    accessModes:
+      - ReadWriteOnce
+
+core_components:
+  md-core:
+    replicas: 1
+    persistentDir: /metadefendercore       # must equal STORAGE_PATH above
+    customPodDefinitions:
+      securityContext:
+        fsGroup: 1000                      # MD Core runs as uid/gid 1000 and must be able to write the fresh PVC

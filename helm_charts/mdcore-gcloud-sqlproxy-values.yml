@@ -73,10 +73,22 @@ core_components:
       runAsNonRoot: true
 
 # Ingress setting for mdss and md core
+# Set exposure.mode: ingress to create this Ingress (default is none: Service only).
 core_ingress:
   host: <APP_NAMESPACE>-mdcore.k8s
   class: gce
-  enabled: false
+
+## Optional Gateway API example — see mdcore-gcloud-values.yml.
+# exposure:
+#   mode: gateway
+#   gateway:
+#     mode: dedicated
+#     className: gke-l7-global-external-managed
+#   defaults:
+#     hostnames:
+#       - <APP_NAMESPACE>-mdcore.k8s
+#     tls:
+#       mode: providerManaged
 
 # enable TLS
 # md-core:
