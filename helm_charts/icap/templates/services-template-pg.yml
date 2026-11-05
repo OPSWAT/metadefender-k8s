@@ -1,4 +1,5 @@
 {{- if .Values.postgres_mdicapsrv.enabled }}
+{{- if (eq .Values.icap_components.md_icapsrv.database.db_mode "4")}}
 
 # Create a service for each component in MD ICAP Server it has exposed ports
 {{ $component := .Values.postgres_mdicapsrv }}
@@ -28,4 +29,5 @@ spec:
       app: {{ $component.name | quote }}
 status:
   loadBalancer: {}
+{{- end }}
 {{- end }}

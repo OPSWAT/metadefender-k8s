@@ -116,8 +116,8 @@ mdssc-common-environment:
   SMBSERVICE_URL: "http://smbservice"
   SMBSERVICE_PORT: "5002"
   
-  CODE_VERSION: "30a858390ca19fff81f2092f83a32f11c07d4fc8"
-  BUILD_VERSION: "4.1.0.0"
+  CODE_VERSION: "3b4e64896a8b1e602a09c2c0e9f60f0a2638bc71"
+  BUILD_VERSION: "4.2.0.0"
 
   # OPSWAT OTLP telemetry target (matches the shipped release default). Blank both to disable export.
   OPTEL_OPSWAT_COLLECTOR_ENDPOINT: "https://mdssc-telemetry.metadefender.com:4317"
@@ -128,7 +128,7 @@ mdssc-common-environment:
 
   HTTPS_ACTIVE: "no"
   BRANCH: "platform-2.5.2"          # Set Platform version (image tag)
-  MDSSC_BRANCH: "4.1.0"          # Set MDSSC version (image tag)
+  MDSSC_BRANCH: "4.2.0"          # Set MDSSC version (image tag)
 
   # These variables can be changed to reveal debug information in the application
   LOG_LEVEL: "4"

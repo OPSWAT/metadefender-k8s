@@ -25,8 +25,8 @@ mdicapsrv_license_key: <SET_LICENSE_KEY_HERE>    # A valid license key, **this v
 ## If left unset the following will apply:
 ## - if no "mdicapsrv-postgres-cred" secret exists, it will be created with the user "postgres" and a random password
 ## - if the "mdicapsrv-postgres-cred" secret exists, the values from the secret are used as credentials
-db_user: postgres                      # PostgreSQL database username 
-db_password: postgres                  # PostgreSQL database password, if not set it will be randomly generated
+db_user: postgres                      # PostgreSQL database username
+db_password: null                      # PostgreSQL database password; if not set, the existing secret is used or a random password is generated
 # Support customize the database name. Default is `metadefender_icapsrv`
 db_name: metadefender_icapsrv
 # Support customize private user, if not set it will be randomly generated as prefix usr_***
@@ -199,7 +199,7 @@ icap_components:
     name: md-icapsrv
     custom_repo: true
     # Overrides the default docker image for the MD ICAP Server service, this value can be changed if you want to set a different version of MD ICAP Server
-    image: metadefendericapsrv-debian:5.15.0
+    image: metadefendericapsrv-debian:5.16.0
     # Warning: When to use this feature!
     # Sets the number of replicas if you want to have multiple MD ICAP Server instances
     replicas: 1
@@ -369,12 +369,12 @@ icap_components:
       initialDelaySeconds: 30
       periodSeconds: 10
       timeoutSeconds: 10
-      failureThreshold: 3
+      failureThreshold: 6
     readinessProbe:
       initialDelaySeconds: 10
       periodSeconds: 3
       timeoutSeconds: 3
-      failureThreshold: 3
+      failureThreshold: 6
     strategy:
       type: RollingUpdate
       rollingUpdate:

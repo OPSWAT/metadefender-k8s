@@ -3,6 +3,16 @@ apiVersion: rbac.authorization.k8s.io/v1
 metadata:
   name: mdicapsrv-worker-role
 rules:
+# Licensing cleanup (LICENSING_CLEANUP) reads the MD ICAP Server pods and
+# records/removes license deployment IDs in the custom_secret. Other chart
+# secrets reach the pods as secretKeyRef env vars, which need no RBAC.
 - apiGroups: [""] # "" indicates the core API group
-  resources: ["pods","secrets"]
-  verbs: ["create","update","get","list","patch"]
+  resources: ["pods"]
+  verbs: ["get", "list"]
+{{- with .Values.icap_components.md_icapsrv.custom_secret }}
+- apiGroups: [""]
+  resources: ["secrets"]
+  resourceNames:
+    - {{ . | quote }}
+  verbs: ["get", "patch"]
+{{- end }}
