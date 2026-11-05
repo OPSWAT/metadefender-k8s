@@ -262,7 +262,7 @@ Example:
 helm upgrade --install my_mdcore ./helm_charts/mdcore \
   --set env.UPGRADE_DB=true \
   --set env.MDCORE_UPGRADE_FROM_DB_NAME=metadefender_core \
-  --set core_components.md-core.image=opswat/metadefendercore-debian:5.23.0
+  --set core_components.md-core.image=opswat/metadefendercore-debian:5.24.0
 ```
 
 When `env.UPGRADE_DB` is `false` (default), behaviour is unchanged — DB upgrade runs inside the main container on first start.
