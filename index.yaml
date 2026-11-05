@@ -25,6 +25,34 @@ entries:
     version: 0.0.28
   MetaDefender_ICAP_Server:
   - apiVersion: v2
+    appVersion: 5.16.0
+    created: "2026-11-05T15:25:00.931307309Z"
+    description: 'This is a Helm chart for deploying MetaDefender ICAP Server (https://www.opswat.com/products/metadefender/icap)
+      in a Kubernetes cluster.  Release Notes - Default MD ICAP Server image bumped
+      to 5.16.0 - The worker Role is reduced to what licensing cleanup needs: `get`/`list`
+      on pods and `get`/`patch` on the `custom_secret` only, instead of create/update/patch
+      on every pod and secret in the namespace - The in-cluster PostgreSQL Service
+      is created only when `postgres_mdicapsrv.enabled` is true and `database.db_mode`
+      is "4", matching the PostgreSQL Deployment - `db_password` defaults to empty:
+      a fresh install generates a random PostgreSQL password, and an upgrade keeps
+      the password stored in the existing `mdicapsrv-postgres-cred` secret. Set `db_password`
+      explicitly when rendering without cluster access (`helm template`, GitOps tools),
+      otherwise a new password is generated on every render - Liveness and readiness
+      probes tolerate 6 consecutive failures (was 3) before restarting or unreadying
+      the MD ICAP Server pod - Removed the invalid container-level `imagePullSecrets`
+      from the PostgreSQL container; `imagePullSecrets` stays set at pod level '
+    digest: a8271ba7a03a390620a36a57e8fa25ce4369bc6476ed80d546bedcac28fcf692
+    home: https://docs.opswat.com/mdicap/installation
+    keywords:
+    - mdicapsrv
+    - icap
+    - MetaDefender ICAP Server
+    name: MetaDefender_ICAP_Server
+    type: application
+    urls:
+    - https://github.com/OPSWAT/metadefender-k8s/releases/download/MetaDefender_ICAP_Server-5.16.0/MetaDefender_ICAP_Server-5.16.0.tgz
+    version: 5.16.0
+  - apiVersion: v2
     appVersion: 5.15.0
     created: "2026-09-22T17:37:53.065066922Z"
     description: 'This is a Helm chart for deploying MetaDefender ICAP Server (https://www.opswat.com/products/metadefender/icap)
@@ -920,6 +948,18 @@ entries:
     version: 3.3.0-0
   metadefender_software_supply_chain:
   - apiVersion: v2
+    appVersion: 4.2.0
+    created: "2026-11-05T15:25:01.129656867Z"
+    description: This is a Helm chart for deploying MetaDefender Software Supply Chain
+      (https://www.opswat.com/products/metadefender/software-supply-chain) in a Kubernetes
+      cluster
+    digest: e9fe23e51565d727e81b59357ac0a694af2679263309949fff855d9075e5c08f
+    name: metadefender_software_supply_chain
+    type: application
+    urls:
+    - https://github.com/OPSWAT/metadefender-k8s/releases/download/metadefender_software_supply_chain-4.2.0/metadefender_software_supply_chain-4.2.0.tgz
+    version: 4.2.0
+  - apiVersion: v2
     appVersion: 4.1.0
     created: "2026-10-13T11:16:46.841304917Z"
     description: This is a Helm chart for deploying MetaDefender Software Supply Chain
@@ -1435,4 +1475,4 @@ entries:
     urls:
     - https://github.com/OPSWAT/metadefender-k8s/releases/download/metadefender_storage_security-0.0.28/metadefender_storage_security-0.0.28.tgz
     version: 0.0.28
-generated: "2026-11-05T14:07:05.678355324Z"
+generated: "2026-11-05T15:25:01.1301818Z"
