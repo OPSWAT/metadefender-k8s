@@ -25,6 +25,39 @@ entries:
     version: 0.0.28
   MetaDefender_ICAP_Server:
   - apiVersion: v2
+    appVersion: 5.16.1
+    created: "2026-11-12T17:29:23.301707798Z"
+    description: 'This is a Helm chart for deploying MetaDefender ICAP Server (https://www.opswat.com/products/metadefender/icap)
+      in a Kubernetes cluster.  Release Notes - Default MD ICAP Server image bumped
+      to 5.16.1-2 (5.16.1 with fewer image CVEs: Debian packages installed without
+      Recommends, Rocky Kubernetes client on Python 3.12) - `cleanup_db` no longer
+      treats running MD ICAP Server instances as inactive: an instance is running
+      while its pod exists, and its partitions and storage are removed only after
+      its pod has been gone for `cleanup_db.range` minutes (default 120) - `cleanup_db`
+      keeps the database by default; set `cleanup_db.drop_empty_database: true` to
+      drop it once every instance is cleaned and no session is connected - The `cleanup_db`
+      CronJob runs as non-root with the MD ICAP Server service account, and mounts
+      storage only when `cleanup_db.storage.claimName` is set - `cleanup_db` mounts
+      its own short-lived service account token (10 minutes), so it also works when
+      the service account sets `automountServiceAccountToken: false` - `cleanup_db`
+      handles only this release''s database: `db_name` in shared mode, or in standalone
+      mode with `CUSTOMIZE_DB_NAME=true`. `DB_MODE`, `MDICAPSRV_DB_NAME` and `CUSTOMIZE_DB_NAME`
+      set in `icap_components.md_icapsrv.env` (as a value, `configMapKeyRef` or `secretKeyRef`)
+      reach the job too - `cleanup_db` skips instances whose pod is shutting down,
+      and installs `psycopg2-binary` only when `cleanup_db.image` does not have `psycopg2`
+      already, so an image with it works without Internet access '
+    digest: d9e1d3e1eebca7b0b7e0ad8aafac2780e0c8ad5a27e60e6458e166199cc29987
+    home: https://docs.opswat.com/mdicap/installation
+    keywords:
+    - mdicapsrv
+    - icap
+    - MetaDefender ICAP Server
+    name: MetaDefender_ICAP_Server
+    type: application
+    urls:
+    - https://github.com/OPSWAT/metadefender-k8s/releases/download/MetaDefender_ICAP_Server-5.16.1/MetaDefender_ICAP_Server-5.16.1.tgz
+    version: 5.16.1
+  - apiVersion: v2
     appVersion: 5.16.0
     created: "2026-11-05T15:25:00.931307309Z"
     description: 'This is a Helm chart for deploying MetaDefender ICAP Server (https://www.opswat.com/products/metadefender/icap)
@@ -1475,4 +1508,4 @@ entries:
     urls:
     - https://github.com/OPSWAT/metadefender-k8s/releases/download/metadefender_storage_security-0.0.28/metadefender_storage_security-0.0.28.tgz
     version: 0.0.28
-generated: "2026-11-05T15:25:01.1301818Z"
+generated: "2026-11-12T17:29:23.703627458Z"
