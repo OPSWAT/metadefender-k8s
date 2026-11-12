@@ -1,0 +1,37 @@
+# Persistent storage for the PostgreSQL pod bundled with the MDSS chart (postgres-mdss).
+# Pick ONE of the three variants below and pass the file with: helm install ... -f mdss-persistent-postgres-example.yml
+# Only the bundled database needs a volume; with an external database (deploy_with_mdss_db: false) none is created.
+
+deploy_with_mdss_db: true
+persistance_enabled: true        # false = ephemeral database, data is lost when the pod is recreated
+
+# --- Variant 1 (default): hostPath on the node -------------------------------------------------
+# Data lives in /<hostPathPrefix>/postgres-mdss on the node the pod runs on. Survives pod restarts,
+# NOT node replacement. Use only on single-node clusters or when the pod is pinned to one node.
+storage_provisioner: hostPath
+hostPathPrefix: mdss-storage-<APP_NAMESPACE>      # <APP_NAMESPACE> is replaced with the release namespace
+
+# --- Variant 2: local static volume pinned to a node -------------------------------------------
+# Create /data/<namespace>-<storage_name> on the node first. The chart creates the StorageClass,
+# a 15Gi PersistentVolume with node affinity and the PVC.
+# storage_provisioner: no-provisioner
+# storage_name: mdss-storage
+# storage_node: <NODE_HOSTNAME>                   # value of the kubernetes.io/hostname label
+
+# --- Variant 3: AWS EFS (survives node replacement) --------------------------------------------
+# Needs the EFS CSI driver installed in the cluster and an existing file system.
+# Data lands in /<namespace>/postgres-mdss on the file system.
+# storage_provisioner: efs.csi.aws.com
+# storage_name: mdss-storage
+# EfsVolumeHandle: fs-0123456789abcdef0
+
+# --- Optional: tune the bundled PostgreSQL -----------------------------------------------------
+# The defaults request 12Gi of memory and set shared_buffers=16GB; lower them for small nodes.
+# Args replace the whole list, so repeat every flag you want to keep.
+# mdss_components:
+#   postgres-mdss:
+#     args: ["postgres", "-c", "max_connections=1000", "-c", "shared_buffers=4GB", "-c", "effective_cache_size=8GB"]
+#     resources:
+#       requests:
+#         memory: "6Gi"
+#         cpu: "1"

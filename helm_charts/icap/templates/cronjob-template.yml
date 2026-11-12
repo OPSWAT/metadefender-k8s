@@ -1,4 +1,5 @@
 {{ if .Values.cleanup_db.enabled }}
+{{- $storage := .Values.cleanup_db.storage | default dict }}
 apiVersion: batch/v1
 kind: CronJob
 metadata:
@@ -6,40 +7,79 @@ metadata:
   namespace: {{ .Release.Namespace }}
 spec:
   schedule: {{ .Values.cleanup_db.schedule | quote }}
+  concurrencyPolicy: Forbid
   successfulJobsHistoryLimit: {{ .Values.cleanup_db.successfulJobsHistoryLimit  }}
   failedJobsHistoryLimit: {{ .Values.cleanup_db.failedJobsHistoryLimit }}
   jobTemplate:
     spec:
       template:
+        metadata:
+          labels:
+            app: mdicapsrv-cleanup-db
         spec:
+          # Lists the pods to tell which instances still run (mdicapsrv-worker-role: pods get/list)
+          serviceAccountName: {{ .Values.icap_components.md_icapsrv.service_account_name }}
           restartPolicy: OnFailure
           containers:
           - name: mdicapsrv-cleanup-db
-            image: python
+            image: {{ .Values.cleanup_db.image | default "python:3.12" | quote }}
             imagePullPolicy: IfNotPresent
+            securityContext:
+              {{- toYaml .Values.cleanup_db.securityContext | nindent 14 }}
             envFrom:
               - configMapRef:
                   name: mdicapsrv-env
-            ports:
-              - name: python
-                containerPort: 80
-                protocol: TCP
             volumeMounts:
             - name: config-volume
               mountPath: /home/opswat/
-            - name: {{ printf "%s-storage" $.Values.icap_components.md_icapsrv.name }}
+            - name: sa-token
+              mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+              readOnly: true
+            {{- if $storage.claimName }}
+            - name: icap-storage
               mountPath: /home/storage
+              {{- with $storage.subPath }}
+              subPath: {{ . | quote }}
+              {{- end }}
+            {{- end }}
             env:
             - name: database_check
               value: 'true'
             - name: storage_check
-              value: 'true'
+              value: {{ ternary "true" "false" (not (empty $storage.claimName)) | quote }}
             - name: enable_check
               value: 'true'
             - name: STORAGE_PATH
               value: /home/storage
             - name: range
-              value: '120'
+              value: {{ .Values.cleanup_db.range | default 120 | quote }}
+            - name: drop_empty_database
+              value: {{ .Values.cleanup_db.drop_empty_database | default false | quote }}
+            # Database naming set on the MD ICAP Server container overrides mdicapsrv-env, so the job reads the same values.
+            # A value or a ConfigMap/Secret reference resolves the same in both pods; a pod field does not.
+            {{- range .Values.icap_components.md_icapsrv.env }}
+            {{- if has .name (list "DB_MODE" "MDICAPSRV_DB_NAME" "CUSTOMIZE_DB_NAME") }}
+            {{- if or (dig "valueFrom" "fieldRef" "" .) (dig "valueFrom" "resourceFieldRef" "" .) }}
+            {{- fail (printf "cleanup_db: %s in icap_components.md_icapsrv.env reads a pod field, which differs in the cleanup job. Use value, configMapKeyRef or secretKeyRef." .name) }}
+            {{- end }}
+            {{- if regexMatch "(^|[^$])\\$\\(" (toString (.value | default "")) }}
+            {{- fail (printf "cleanup_db: %s in icap_components.md_icapsrv.env uses $(VAR) expansion, which the cleanup job cannot resolve the same way. Use a plain value, configMapKeyRef or secretKeyRef." .name) }}
+            {{- end }}
+            - name: {{ .name }}
+              {{- if .valueFrom }}
+              valueFrom:
+                {{- toYaml .valueFrom | nindent 16 }}
+              {{- else }}
+              value: {{ .value | default "" | quote }}
+              {{- end }}
+            {{- end }}
+            {{- end }}
+            - name: HOME
+              value: /tmp
+            - name: POD_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
             - name: DB_USER
               valueFrom:
                 secretKeyRef:
@@ -54,16 +94,29 @@ spec:
               - /bin/sh
               - -c
               - |
-                pip3 install pycryptodomex
-                pip3 install psycopg2
-                cp -R /home/opswat/ /root/opswat
-                python /root/opswat/main.py
-                #sleep 3600
+                # Install psycopg2 only when the image does not have it (offline clusters can use such an image)
+                python -c "import psycopg2" 2>/dev/null || pip3 install --quiet --no-cache-dir --target /tmp/pylib psycopg2-binary
+                PYTHONPATH=/tmp/pylib exec python /home/opswat/main.py
           volumes:
           - name: config-volume
             configMap:
               name: ignition-file
-          - name: {{ printf "%s-pvc" $.Values.icap_components.md_icapsrv.name }}
+          # Service account token (10 minutes, renewed by the kubelet) and cluster CA, to read the pod list
+          - name: sa-token
+            projected:
+              defaultMode: 0444
+              sources:
+              - serviceAccountToken:
+                  path: token
+                  expirationSeconds: 600
+              - configMap:
+                  name: kube-root-ca.crt
+                  items:
+                  - key: ca.crt
+                    path: ca.crt
+          {{- if $storage.claimName }}
+          - name: icap-storage
             persistentVolumeClaim:
-              claimName: {{ printf "%s-pvc" $.Values.icap_components.md_icapsrv.name }}
+              claimName: {{ $storage.claimName | quote }}
+          {{- end }}
 {{ end }}

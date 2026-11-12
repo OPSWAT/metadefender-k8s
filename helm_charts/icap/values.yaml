@@ -163,13 +163,39 @@ extra_storage_configs:              # Example for creating PVC for ICAP containe
 # Enable feature health check
 healthcheck:
   enabled: true
-# The feature to support cleanup database of the instance in-active
+# The feature to support cleanup database of the instance in-active.
+# The job handles only this release's database (db_name in shared mode, or in standalone mode with
+# CUSTOMIZE_DB_NAME=true in icap_components.md_icapsrv.env). An instance counts as
+# running while a pod in this namespace runs it, so enable it only when every MD ICAP Server that
+# uses this database runs in this namespace.
 cleanup_db:
   enabled: false
 # At minute 0 past every 12th hour.
   schedule: "0 */12 * * *"
   successfulJobsHistoryLimit: 1
   failedJobsHistoryLimit: 1
+  # Image that runs the cleanup script. psycopg2-binary is installed with pip unless the image has
+  # psycopg2 already (use such an image when the cluster has no Internet access)
+  image: "python:3.12"
+  # Minutes an instance must be gone (no pod in the namespace) before its data is removed
+  range: 120
+  # Also drop the whole database once every instance in it has been cleaned and no session is
+  # connected. Off by default: dropping it removes shared settings (users, SSO, workflows).
+  drop_empty_database: false
+  # PVC (and optional subPath) that holds MD ICAP Server's STORAGE_PATH. When set, the folder of a
+  # cleaned instance is removed too. Leave empty to skip storage cleanup.
+  storage:
+    claimName: ""
+    subPath: ""
+  securityContext:
+    allowPrivilegeEscalation: false
+    runAsNonRoot: true
+    runAsUser: 1000
+    runAsGroup: 1000
+    capabilities:
+      drop: ["ALL"]
+    seccompProfile:
+      type: RuntimeDefault
 icap_components:
   md_icapsrv:
   # Init container to check database system is ready to accept connections
@@ -199,7 +225,7 @@ icap_components:
     name: md-icapsrv
     custom_repo: true
     # Overrides the default docker image for the MD ICAP Server service, this value can be changed if you want to set a different version of MD ICAP Server
-    image: metadefendericapsrv-debian:5.16.0
+    image: metadefendericapsrv-debian:5.16.1-2
     # Warning: When to use this feature!
     # Sets the number of replicas if you want to have multiple MD ICAP Server instances
     replicas: 1

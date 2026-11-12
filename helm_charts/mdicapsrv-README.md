@@ -76,10 +76,16 @@ The following table lists the configurable parameters of the Metadefender ICAP c
 | `storage_configs.resources.resources.storage` | Set the size of the storage PVC | `"5Gi"` |
 | `storage_configs.storageClassName` | The name of the Storage class of the Kubernetes cluster | `"nfs-client"` |
 | `healthcheck.enabled` | The config allow expose API health check for feature health check on Kubernetes | `"true"` |
-| `cleanup_db.enabled` | Enable create cron job for clean up database of the instance is inactive | `"false"` |
+| `cleanup_db.enabled` | Enable create cron job for clean up database of the instance is inactive. The job handles only this release's database (`db_name` in shared mode, or in standalone mode with `CUSTOMIZE_DB_NAME=true` in `icap_components.md_icapsrv.env`). An instance counts as running while a pod in the release namespace runs it, so enable it only when every MD ICAP Server that uses the database runs in that namespace | `"false"` |
 | `cleanup_db.schedule` | Field to include a timezone; for example: CRON_TZ=UTC * * * * * or TZ=UTC * * * * *. | `"0 */12 * * *"` |
 | `cleanup_db.successfulJobsHistoryLimit` | The field specify how many completed jobs should be kept | `"1"` |
 | `cleanup_db.failedJobsHistoryLimit` | The field specify how many failed jobs should be kept  | `"1"` |
+| `cleanup_db.image` | Image that runs the cleanup script. `psycopg2-binary` is installed with `pip` unless the image has `psycopg2` already, so use such an image when the cluster has no Internet access | `"python:3.12"` |
+| `cleanup_db.range` | Minutes an instance must have no pod in the namespace before its data is removed | `120` |
+| `cleanup_db.drop_empty_database` | Also drop the database once every instance in it is cleaned and no session is connected. Dropping it removes shared settings such as users and SSO | `false` |
+| `cleanup_db.storage.claimName` | PVC that holds MD ICAP Server's `STORAGE_PATH`. When set, the folder of a cleaned instance is removed too | `""` |
+| `cleanup_db.storage.subPath` | Sub path of `STORAGE_PATH` in that PVC | `""` |
+| `cleanup_db.securityContext` | Container securityContext of the cleanup job | non-root 1000, no privilege escalation, `RuntimeDefault` seccomp |
 | `icap_components.md_icapsrv.initContainers.name` |  | `"check-db-ready"` |
 | `icap_components.md_icapsrv.initContainers.image` |  | `"postgres:12.12"` |
 | `icap_components.md_icapsrv.initContainers.envFrom.configMapRef.name` | The name of the config map reference with MD ICAP Server | `"mdicapsrv-env"` |

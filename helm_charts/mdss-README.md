@@ -237,6 +237,27 @@ All MDSS services are stateless: configuration comes from the ConfigMaps and Sec
 
 The only volume the chart creates is the in-cluster database's data directory. With an external database (`deploy_with_mdss_db: false`) nothing in the deployment needs persistent storage. `persistance_enabled: false` removes the volumes entirely, making the in-cluster database ephemeral as well (useful for tests; its data is lost when the pod is recreated). Services write their logs to the container filesystem (or only to stdout with `ROTATELOGS_ENABLED: "false"`), so collect logs from stdout in the cluster.
 
+### Persistent storage for the bundled PostgreSQL
+
+The PostgreSQL pod deployed with the chart (`postgres-mdss`, enabled by `deploy_with_mdss_db: true`) is the only component with a volume: its data directory `/var/lib/postgresql/data`. Storage is selected with `storage_provisioner`; ready-to-use values are in [mdss-persistent-postgres-example.yml](mdss-persistent-postgres-example.yml).
+
+| `storage_provisioner` | Where the data lives | Survives pod restart | Survives node loss | Extra values |
+|---|---|---|---|---|
+| `hostPath` (default) | `/<hostPathPrefix>/postgres-mdss` on the node | yes | no | `hostPathPrefix` |
+| `no-provisioner` | local static PV (`/data/<namespace>-<storage_name>`) with node affinity, 15Gi | yes | no | `storage_name`, `storage_node` |
+| `efs.csi.aws.com` | existing AWS EFS file system, path `/<namespace>` | yes | yes | `storage_name`, `EfsVolumeHandle` |
+| `minikube-hostpath` | minikube dynamic provisioner | yes | no | `storage_name` |
+
+- For every provisioner except `hostPath` the chart creates a StorageClass named `<namespace>-<storage_name>`, a PersistentVolumeClaim named `<storage_name>-pvc` (ReadWriteMany, 15Gi) and mounts it with the subPath `postgres-mdss`. The PVs and the PVC use a `Retain` reclaim policy, so the data stays after `helm uninstall`. Delete the PV and its backing data by hand when you no longer need it.
+- Dynamic StorageClasses (EBS, Azure Disk, GCE PD) are not selectable through these values. On those clusters keep `hostPath` for evaluation, or use a managed external database (`deploy_with_mdss_db: false`, `POSTGRESQL_URL`), which is the recommended setup for production.
+- `persistance_enabled: false` removes the volume entirely and the database is lost whenever the pod is recreated.
+- Do not change `storage_provisioner` on an existing release: the data stays in the old location and the new pod starts with an empty database. Back up first, as described in [Upgrading](#upgrading).
+- When PostgreSQL sits on its own disk, also set `GUARDRAILS_PG_DISK_SIZE_BYTES` (and, if needed, `GUARDRAILS_DISK_MONITOR_PATH`) so the disk guardrails watch it.
+
+```bash
+helm install my_mdss mdk8s/metadefender_storage_security -f mdss-persistent-postgres-example.yml
+```
+
 ### Non-root user and read-only root filesystem
 
 [mdss-noroot-rofs.yml](mdss-noroot-rofs.yml) runs every MDSS service as UID 1000 with a read-only root filesystem, no privilege escalation and the RuntimeDefault seccomp profile. The chart mounts emptyDir volumes at `/tmp` and `/var/tmp` for any component with `readOnlyRootFilesystem: true`.
