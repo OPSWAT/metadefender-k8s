@@ -17,7 +17,7 @@ There is no Ingress or HorizontalPodAutoscaler template — exposure and scaling
 
 - A Kubernetes cluster and `kubectl`/`helm` (Helm 3) configured against it
 - A MetaDefender Cluster license key (`secrets.LICENSE_KEY`) — contact sales-inquiry@opswat.com if you don't have one
-- Access to the container images referenced by `DOCKER_REPO`/`MDCLS_VERSION` (default `opswat/metadefendercluster-debian:<component>-2.10.0`); set `imagePullSecrets` if the registry is private
+- Access to the container images referenced by `DOCKER_REPO`/`MDCLS_VERSION` (default `opswat/metadefendercluster-debian:<component>-2.11.0`); set `imagePullSecrets` if the registry is private
 - If you disable the bundled PostgreSQL/Redis/RabbitMQ (recommended for production, see below), reachable endpoints for your own instances
 
 ## Installation
@@ -100,7 +100,7 @@ For anything beyond a smoke test, put it behind your own Ingress/LoadBalancer �
 | Key | Default | Notes |
 |---|---|---|
 | `DOCKER_REPO` | `opswat/metadefendercluster-debian` | Image repo prefix; images are tagged `<repo>:<component>-<version>` |
-| `MDCLS_VERSION` | `2.10.0` | Default image tag for every component |
+| `MDCLS_VERSION` | `2.11.0` | Default image tag for every component |
 | `imagePullPolicy` | `IfNotPresent` | Overridable per component |
 | `imagePullSecrets` | *(commented out)* | Set for private registries |
 
@@ -169,6 +169,8 @@ To point at external infrastructure, disable the corresponding component (`postg
 | `workers.<name>.tls` | *(unset)* | HTTPS on the deployed instance — same `{enabled, secretName}` shape as `control-center.tls` above — **only supported for `api-gateway`**; any other name fails the render. No self-signed fallback: `enabled: true` without `secretName` also fails the render |
 | `workers.<name>.terminationGracePeriodSeconds` | `1800` | Long by design, so in-flight scans finish before the pod is killed. Lower it only if losing in-flight scans on rollout/scale-down is acceptable |
 | `workers.<name>.logLevel` | `info` | Maps to `WORKER_INSTANCE_LOG_LEVEL` |
+| `workers.<name>.connectionPerFileService` | *(Core default)* | Maps to `WORKER_INSTANCE_CONNECTION_PER_FILE_SERVICE` (`1`–`40`) — **only supported for `ometascan`**; any other name fails the render |
+| `workers.<name>.tempDir` | *(unset)* | `{path, medium, sizeLimit}` — mounts an `emptyDir` at `path` and uses it as MD Core's temp directory (`WORKER_INSTANCE_TEMP_DIR`). `medium: Memory` makes it a RAM disk, counted against the pod's memory limit. `path` must be absolute and at most 67 characters. **Only supported for `ometascan`**; any other name fails the render |
 | `workers.<name>.isolate.enabled` / `.timeout` | `true` / `1600` | `WORKER_ISOLATE_INSTANCE(_TIMEOUT)` |
 | `workers.<name>.version` | *(falls back to `MDCLS_VERSION`)* | Image tag override, i.e. `worker-<type>-<version>` |
 

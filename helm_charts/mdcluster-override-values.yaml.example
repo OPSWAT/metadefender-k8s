@@ -6,7 +6,7 @@
 
 # --- Images -----------------------------------------------------------------
 DOCKER_REPO: 'opswat/metadefendercluster-debian'  # <DOCKER_REPO>:<service>-<MDCLS_VERSION>
-MDCLS_VERSION: '2.10.0'
+MDCLS_VERSION: '2.11.0'
 imagePullPolicy: IfNotPresent
 # imagePullSecrets:
 #   - name: regcred
